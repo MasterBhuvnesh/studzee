@@ -1,6 +1,7 @@
 {
     "recommendations": [
         "miguelsolorio.symbols",
-        "enkia.tokyo-night"
+        "enkia.tokyo-night",
+        "expo.vscode-expo-tools"
     ]
 }
