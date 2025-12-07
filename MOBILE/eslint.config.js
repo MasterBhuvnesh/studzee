@@ -12,16 +12,16 @@ module.exports = defineConfig([
       'prettier/prettier': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
-      {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
-      },
-    ],
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'react/prop-types': 'off', // TypeScript handles this
-    'react/react-in-jsx-scope': 'off', // Not needed in React Native
-  },
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'react/prop-types': 'off', // TypeScript handles this
+      'react/react-in-jsx-scope': 'off', // Not needed in React Native
+    },
     env: {
       node: true,
       browser: true,

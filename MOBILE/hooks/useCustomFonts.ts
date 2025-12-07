@@ -1,12 +1,12 @@
-import { useFonts } from "expo-font";
-import { useEffect } from "react";
-import { SplashScreen } from "expo-router";
+import { useFonts } from 'expo-font';
+import { useEffect } from 'react';
+import { SplashScreen } from 'expo-router';
 
 export const useCustomFonts = () => {
   const [fontsLoaded, fontError] = useFonts({
-    GoogleSans: require("../assets/fonts/GoogleSansFlex.ttf"),
-    ProductSans: require("../assets/fonts/ProductSansRegular.ttf"),
-    "ProductSans-Bold": require("../assets/fonts/ProductSansBold.ttf"),
+    GoogleSans: require('../assets/fonts/GoogleSansFlex.ttf'),
+    ProductSans: require('../assets/fonts/ProductSansRegular.ttf'),
+    'ProductSans-Bold': require('../assets/fonts/ProductSansBold.ttf'),
   });
 
   useEffect(() => {
