@@ -1,33 +1,33 @@
 import { colors } from '@/constants/colors';
-import { useUser } from '@clerk/clerk-expo';
-import { Image } from 'expo-image';
+import logger from '@/utils/logger';
+import { Image, ImageSource } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-interface ProfileCardProps {
-  name: string;
-  email: string;
+interface ActionCardProps {
+  title: string;
+  description: string;
   buttonText: string;
-  image: string;
+  image: ImageSource;
   onPress?: () => void;
 }
 
-const ProfileCard = ({
-  name,
-  email,
+const ActionCard = ({
+  title,
+  description,
   buttonText,
   image,
   onPress,
-}: ProfileCardProps) => (
+}: ActionCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
     <View className="flex-row items-center justify-between p-6">
       <View className="flex-1 pr-4">
         <Text className="mb-2 font-product text-base text-zinc-800">
-          {name}
+          {title}
         </Text>
         <Text className="mb-4 font-sans text-base leading-5 text-zinc-500">
-          {email}
+          {description}
         </Text>
         <TouchableOpacity
           onPress={onPress}
@@ -42,7 +42,7 @@ const ProfileCard = ({
       <View className="items-center justify-center">
         <Image
           source={image}
-          style={{ width: 80, height: 80, borderRadius: 50 }}
+          style={{ width: 100, height: 100 }}
           className="rounded-lg"
         />
       </View>
@@ -50,9 +50,7 @@ const ProfileCard = ({
   </View>
 );
 
-export default function HomePage() {
-  const { user } = useUser();
-
+export default function ProgressPage() {
   return (
     <LinearGradient
       colors={[colors.zinc[50], colors.zinc[100]]}
@@ -62,12 +60,28 @@ export default function HomePage() {
     >
       <SafeAreaView className="flex-1">
         <ScrollView className="flex-1 px-6 pt-6">
-          <ProfileCard
-            name={user?.fullName || 'User'}
-            email={user?.emailAddresses[0]?.emailAddress || 'User'}
-            buttonText="View Profile"
-            image={user?.imageUrl || require('@/assets/images/sample/1.png')}
-            onPress={() => console.log(user?.emailAddresses[0]?.emailAddress)}
+          <ActionCard
+            title="Rapid Content Access"
+            description="Redis caching ensures instant access to educational content, always available."
+            buttonText="Explore Content"
+            image={require('@/assets/images/sample/1.png')}
+            onPress={() => logger.debug('Explore Content pressed')}
+          />
+
+          <ActionCard
+            title="Smart Quiz System"
+            description="Interactive quizzes with performance tracking and AI-generated learning assessments."
+            buttonText="Test Knowledge"
+            image={require('@/assets/images/sample/2.jpeg')}
+            onPress={() => logger.debug('Test Knowledge pressed')}
+          />
+
+          <ActionCard
+            title="Gamified Learning"
+            description="Earn XP, unlock achievements, and compete on leaderboards while studying."
+            buttonText="Start Earning"
+            image={require('@/assets/images/sample/3.jpeg')}
+            onPress={() => logger.debug('Start Earning pressed')}
           />
         </ScrollView>
       </SafeAreaView>

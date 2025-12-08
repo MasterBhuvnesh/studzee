@@ -1,9 +1,21 @@
 import { colors } from '@/constants/colors';
 import logger from '@/utils/logger';
 import { useSignIn } from '@clerk/clerk-expo';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { BanIcon, CheckCircle } from 'lucide-react-native';
 import React from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 
 export default function ForgotPasswordScreen() {
   const { signIn, isLoaded } = useSignIn();
@@ -24,9 +36,7 @@ export default function ForgotPasswordScreen() {
         identifier: emailAddress,
       });
 
-      setSuccessMessage(
-        'A password reset code has been sent to your email address.'
-      );
+      setSuccessMessage('Reset code sent! Check your email.');
 
       // Navigate to reset password screen after a short delay
       setTimeout(() => {
@@ -42,52 +52,100 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View className="flex-1 justify-center bg-zinc-50 px-6">
-      <Text className="mb-2 font-product-bold text-4xl text-zinc-900">
-        Forgot Password?
-      </Text>
-      <Text className="mb-8 text-base text-zinc-600">
-        Enter your email address and we'll send you a code to reset your
-        password.
-      </Text>
-
-      {error ? (
-        <View className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3">
-          <Text className="text-sm text-red-800">{error}</Text>
-        </View>
-      ) : null}
-
-      {successMessage ? (
-        <View className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3">
-          <Text className="text-sm text-green-800">{successMessage}</Text>
-        </View>
-      ) : null}
-
-      <TextInput
-        autoCapitalize="none"
-        value={emailAddress}
-        placeholder="Email address"
-        onChangeText={setEmailAddress}
-        keyboardType="email-address"
-        className="mb-6 rounded-lg border border-zinc-200 bg-white px-4 py-3 text-zinc-900"
-        placeholderTextColor={colors.zinc[400]}
-      />
-
-      <TouchableOpacity
-        onPress={onRequestReset}
-        className="mb-4 items-center rounded-lg bg-zinc-900 py-4"
+    <LinearGradient
+      colors={[
+        '#ffffff',
+        '#ffffff',
+        '#ffffff',
+        '#ffffff',
+        colors.zinc[50],
+        colors.zinc[100],
+        colors.zinc[200],
+      ]}
+      start={{ x: 0, y: 1 }}
+      end={{ x: 0, y: 0 }}
+      className="flex-1"
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
       >
-        <Text className="font-product-bold text-base text-white">
-          Send Reset Code
-        </Text>
-      </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View className="flex-1 justify-center px-6">
+              <Text className="mb-2 pb-4 font-product text-4xl text-zinc-800">
+                Forgot Password?
+              </Text>
+              <Text className="mb-8 font-product text-base text-zinc-500">
+                Enter your email address and we'll send you a code to reset your
+                password.
+              </Text>
 
-      <TouchableOpacity
-        onPress={() => router.back()}
-        className="items-center py-2"
-      >
-        <Text className="text-sm text-zinc-600">Back to Sign In</Text>
-      </TouchableOpacity>
-    </View>
+              {error ? (
+                <View className="mb-4 flex-row items-center rounded-lg border border-red-200 bg-red-50 p-3">
+                  <BanIcon
+                    size={16}
+                    color={colors.red[500]}
+                    strokeWidth={1.5}
+                    stroke={colors.red[500]}
+                    fill="none"
+                  />
+                  <Text className="ml-2 font-sans text-sm text-red-500">
+                    {error}
+                  </Text>
+                </View>
+              ) : null}
+
+              {successMessage ? (
+                <View className="mb-4 flex-row items-center rounded-lg border border-green-200 bg-green-50 p-3">
+                  <CheckCircle
+                    size={16}
+                    color={colors.green[600]}
+                    strokeWidth={1.5}
+                    stroke={colors.green[600]}
+                    fill="none"
+                  />
+                  <Text className="ml-2 mr-2 font-sans text-sm text-green-700">
+                    {successMessage}
+                  </Text>
+                </View>
+              ) : null}
+
+              <TextInput
+                autoCapitalize="none"
+                value={emailAddress}
+                placeholder="Email address"
+                onChangeText={setEmailAddress}
+                keyboardType="email-address"
+                className="mb-6 rounded-lg border border-zinc-200 bg-white px-4 py-3 font-product text-zinc-700"
+                placeholderTextColor={colors.zinc[400]}
+              />
+
+              <TouchableOpacity
+                onPress={onRequestReset}
+                className="mb-4 items-center rounded-lg bg-zinc-800 py-4"
+              >
+                <Text className="font-product text-base text-white">
+                  Send Reset Code
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="items-center py-2"
+              >
+                <Text className="font-product text-sm text-zinc-500">
+                  Back to Sign In
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }

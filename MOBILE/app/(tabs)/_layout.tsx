@@ -2,7 +2,7 @@ import { colors } from '@/constants/colors';
 import { useAuth } from '@clerk/clerk-expo';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Home, Package, User } from 'lucide-react-native';
+import { Home, Package, Settings } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -14,12 +14,21 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: colors.zinc[900],
-          tabBarInactiveTintColor: colors.zinc[400],
+          tabBarActiveTintColor: colors.zinc[700],
+          tabBarInactiveTintColor: colors.zinc[300],
           tabBarStyle: {
             backgroundColor: colors.zinc[50],
             borderTopColor: colors.zinc[200],
+            borderCurve: 'continuous',
             borderTopWidth: 1,
+            height: 60,
+            paddingVertical: 10,
+            paddingBottom: 5,
+            paddingTop: 5,
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontFamily: 'ProductSans',
           },
         }}
       >
@@ -29,25 +38,25 @@ export default function TabLayout() {
             options={{
               tabBarLabel: 'Home',
               tabBarIcon: ({ color, size }) => (
-                <Home color={color} size={size} />
+                <Home color={color} size={size} strokeWidth={1.5} />
               ),
             }}
           />
           <Tabs.Screen
-            name="profile"
+            name="progress"
             options={{
-              tabBarLabel: 'Profile',
+              tabBarLabel: 'Progress',
               tabBarIcon: ({ color, size }) => (
-                <User color={color} size={size} />
+                <Package color={color} size={size} strokeWidth={1.5} />
               ),
             }}
           />
           <Tabs.Screen
-            name="packages"
+            name="settings"
             options={{
-              tabBarLabel: 'Packages',
+              tabBarLabel: 'Settings',
               tabBarIcon: ({ color, size }) => (
-                <Package color={color} size={size} />
+                <Settings color={color} size={size} strokeWidth={1.5} />
               ),
             }}
           />

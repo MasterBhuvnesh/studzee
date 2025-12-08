@@ -54,140 +54,6 @@ export default function SignInScreen() {
   };
 
   return (
-    // <LinearGradient
-    //   colors={[
-    //     '#ffffff',
-    //     '#ffffff',
-    //     '#ffffff',
-    //     '#ffffff',
-    //     colors.zinc[50],
-    //     colors.zinc[100],
-    //     colors.zinc[200],
-    //   ]}
-    //   start={{ x: 0, y: 1 }}
-    //   end={{ x: 0, y: 0 }}
-    //   className="flex-1"
-    // >
-    //   <SafeAreaView className="flex-1">
-    //     {/* Header */}
-    //     <View className="items-center justify-center px-4">
-    //       <Image
-    //         source={require('@/assets/images/studzee.png')}
-    //         contentFit="cover"
-    //         style={{ width: 150, height: 150 }}
-    //         className="items-center justify-center"
-    //       />
-    //       {/* <Text className="text-md mb-2 text-center font-product text-zinc-500">
-    //         Learn concepts easily with interactive quizzes and clear
-    //         explanations.
-    //       </Text> */}
-    //       <Text className="mb-2 font-product text-4xl text-zinc-800">
-    //         Yooo, welcome back !
-    //       </Text>
-    //       <Text className="m-2 mb-4 text-center font-product text-base text-zinc-500">
-    //         Continue learning smarter with clear, simplified concepts.
-    //       </Text>
-    //     </View>
-
-    //     {error ? (
-    //       <View className="m-4 flex-row items-center rounded-lg border border-red-200 bg-red-50 p-3">
-    //         <BanIcon
-    //           size={16}
-    //           color={colors.red[500]}
-    //           strokeWidth={1.5}
-    //           stroke={colors.red[500]}
-    //           fill="none"
-    //         />
-    //         <Text className="ml-2 font-sans text-sm text-red-500">{error}</Text>
-    //       </View>
-    //     ) : null}
-
-    //     <View className="mb-4">
-    //       <OAuthButtons onError={setError} />
-    //     </View>
-
-    //     <View className=" flex-row items-center gap-4">
-    //       <View className="h-px flex-1 bg-zinc-200" />
-    //       <Text className="font-product text-base text-zinc-500">or</Text>
-    //       <View className="h-px flex-1 bg-zinc-200" />
-    //     </View>
-
-    //     <View className="m-4 gap-4">
-    //       <TextInput
-    //         autoCapitalize="none"
-    //         value={emailAddress}
-    //         placeholder="Email address"
-    //         onChangeText={setEmailAddress}
-    //         keyboardType="email-address"
-    //         className="rounded-lg border border-zinc-200 bg-white px-4 py-3 font-product text-zinc-700"
-    //         placeholderTextColor={colors.zinc[400]}
-    //       />
-    //       <View className="relative">
-    //         <TextInput
-    //           value={password}
-    //           placeholder="Password"
-    //           secureTextEntry={!showPassword}
-    //           onChangeText={setPassword}
-    //           className="rounded-lg border border-zinc-200 bg-white px-4 py-3 pr-12 font-product text-zinc-700"
-    //           placeholderTextColor={colors.zinc[400]}
-    //         />
-    //         <TouchableOpacity
-    //           onPress={() => setShowPassword(!showPassword)}
-    //           className="absolute right-3 top-3"
-    //         >
-    //           {showPassword ? (
-    //             <EyeOff
-    //               size={20}
-    //               strokeWidth={1.5}
-    //               stroke={colors.zinc[400]}
-    //               fill="none"
-    //               color={colors.zinc[400]}
-    //             />
-    //           ) : (
-    //             <Eye
-    //               size={20}
-    //               strokeWidth={1.5}
-    //               stroke={colors.zinc[400]}
-    //               fill="none"
-    //               color={colors.zinc[400]}
-    //             />
-    //           )}
-    //         </TouchableOpacity>
-    //       </View>
-    //     </View>
-
-    //     <View className="mr-6 items-end">
-    //       <Link href="/(auth)/forgot-password" asChild>
-    //         <TouchableOpacity>
-    //           <Text className="font-product text-sm text-zinc-500">
-    //             Forgot password?
-    //           </Text>
-    //         </TouchableOpacity>
-    //       </Link>
-    //     </View>
-
-    //     <TouchableOpacity
-    //       onPress={onSignInPress}
-    //       className="m-4 items-center rounded-lg bg-zinc-800 py-4"
-    //     >
-    //       <Text className="font-product text-base text-white">Sign In</Text>
-    //     </TouchableOpacity>
-
-    //     <View className="flex-row items-center justify-center gap-2">
-    //       <Text className="font-product text-base text-zinc-500">
-    //         Don't have an account?
-    //       </Text>
-    //       <Link href="/(auth)/sign-up" asChild>
-    //         <TouchableOpacity>
-    //           <Text className="font-product text-base text-zinc-700">
-    //             Sign up
-    //           </Text>
-    //         </TouchableOpacity>
-    //       </Link>
-    //     </View>
-    //   </SafeAreaView>
-    // </LinearGradient>
-
     <LinearGradient
       colors={[
         '#ffffff',
@@ -245,17 +111,17 @@ export default function SignInScreen() {
                 </View>
               ) : null}
 
-              <View className="mb-4">
+              <View className="mb-6">
                 <OAuthButtons onError={setError} />
               </View>
 
-              <View className=" flex-row items-center gap-4">
+              <View className="ml-6 mr-6 flex-row items-center gap-4">
                 <View className="h-px flex-1 bg-zinc-200" />
-                <Text className="font-product text-base text-zinc-500">or</Text>
+                <Text className="font-product text-base text-zinc-400">or</Text>
                 <View className="h-px flex-1 bg-zinc-200" />
               </View>
 
-              <View className="m-4 gap-4">
+              <View className="m-4 mt-6 gap-4">
                 <TextInput
                   autoCapitalize="none"
                   value={emailAddress}

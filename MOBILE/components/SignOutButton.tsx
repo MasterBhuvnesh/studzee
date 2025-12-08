@@ -22,7 +22,7 @@ export const SignOutButton = () => {
       onPress={handleSignOut}
       className="items-center rounded-lg bg-red-500 py-4"
     >
-      <Text className="font-product-bold text-base text-white">Sign Out</Text>
+      <Text className="font-product text-base text-white">Sign Out</Text>
     </TouchableOpacity>
   );
 };
