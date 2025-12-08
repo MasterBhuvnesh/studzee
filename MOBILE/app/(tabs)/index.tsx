@@ -1,6 +1,6 @@
 import { SignedIn, useUser } from '@clerk/clerk-expo';
-import { Text, View, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { ScrollView, Text, View } from 'react-native';
 
 export default function HomePage() {
   const { user } = useUser();

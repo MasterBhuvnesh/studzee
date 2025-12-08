@@ -1,8 +1,8 @@
 import { useSSO } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
-import { Text, TouchableOpacity, View } from 'react-native';
-import React from 'react';
 import * as AuthSession from 'expo-auth-session';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 interface OAuthButtonsProps {
   onError: (error: string) => void;
@@ -50,14 +50,14 @@ export default function OAuthButtons({ onError }: OAuthButtonsProps) {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         onPress={() => onSSOPress('oauth_github')}
         className="flex-row items-center justify-center gap-3 rounded-lg border border-zinc-900 bg-zinc-900 py-4"
       >
         <Text className="font-product text-base text-white">
           Continue with GitHub
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }

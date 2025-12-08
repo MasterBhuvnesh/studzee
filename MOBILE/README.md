@@ -19,3 +19,27 @@ npm install expo-auth-session
 
 using skia and reanimated to add as many animation as possible :
 npm install @shopify/react-native-skia
+
+Instruction for onboarding images :
+
+1. place your images in assets folder
+2. import the images in app/(onboarding)/index.tsx
+3. add to the onboardingData array
+   how ?
+   here :
+4. For Remote URL : imageSource: { uri: 'https://example.com/image.gif' }
+5. For Local Image : imageSource: require('@/assets/image.gif')
+6. direclty :
+
+// 1. Import your image
+import WelcomeImage from '@/assets/my-image.png';
+
+// 2. Add to the data
+const onboardingData = [
+{
+id: '1',
+title: 'Welcome to Studzee',
+// ...
+imageSource: WelcomeImage,
+},
+];
