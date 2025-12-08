@@ -1,16 +1,16 @@
+import OAuthButtons from '@/components/auth/OAuthButtons';
+import { colors } from '@/constants/colors';
+import logger from '@/utils/logger';
+import { useSignUp } from '@clerk/clerk-expo';
+import { Link, useRouter } from 'expo-router';
 import * as React from 'react';
 import {
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  ScrollView,
-  ActivityIndicator,
 } from 'react-native';
-import { useSignUp } from '@clerk/clerk-expo';
-import { Link, useRouter } from 'expo-router';
-import { colors } from '@/constants/colors';
-import OAuthButtons from '@/components/auth/OAuthButtons';
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -36,7 +36,7 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
+      logger.error(JSON.stringify(err, null, 2));
       setError(err.errors?.[0]?.message || 'Sign-up failed');
     }
   };
@@ -55,11 +55,11 @@ export default function SignUpScreen() {
         await setActive({ session: signUpAttempt.createdSessionId });
         router.replace('/(tabs)');
       } else {
-        console.error(JSON.stringify(signUpAttempt, null, 2));
+        logger.error(JSON.stringify(signUpAttempt, null, 2));
         setError('Verification incomplete. Please try again.');
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
+      logger.error(JSON.stringify(err, null, 2));
       setError(err.errors?.[0]?.message || 'Verification failed');
     }
   };

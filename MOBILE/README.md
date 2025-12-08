@@ -43,3 +43,8 @@ title: 'Welcome to Studzee',
 imageSource: WelcomeImage,
 },
 ];
+
+TODO :
+Fix the UI for onboarding flow
+Implement Zod schema for validation
+Implement Zustand for state management

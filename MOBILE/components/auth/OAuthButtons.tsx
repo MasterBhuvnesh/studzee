@@ -1,8 +1,11 @@
 import { useSSO } from '@clerk/clerk-expo';
 import * as AuthSession from 'expo-auth-session';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
+
+import logger from '@/utils/logger';
 
 interface OAuthButtonsProps {
   onError: (error: string) => void;
@@ -31,7 +34,7 @@ export default function OAuthButtons({ onError }: OAuthButtonsProps) {
         router.replace('/(tabs)');
       }
     } catch (err: any) {
-      console.error('SSO error:', err);
+      logger.error('SSO error: ' + err);
       onError(
         err.errors?.[0]?.message ||
           `${provider === 'oauth_google' ? 'Google' : 'GitHub'} authentication failed`
@@ -40,24 +43,30 @@ export default function OAuthButtons({ onError }: OAuthButtonsProps) {
   };
 
   return (
-    <View className="gap-4">
+    <View className="flex-row gap-4 px-4">
       <TouchableOpacity
         onPress={() => onSSOPress('oauth_google')}
-        className="flex-row items-center justify-center gap-3 rounded-lg border border-zinc-200 bg-white py-4"
+        className="flex-1 flex-row items-center justify-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 py-3"
       >
-        <Text className="font-product text-base text-zinc-900">
-          Continue with Google
-        </Text>
+        <Image
+          source={require('@/assets/images/google.svg')}
+          style={{ width: 24, height: 24 }}
+          contentFit="cover"
+        />
+        <Text className="font-product text-base text-zinc-500">Google</Text>
       </TouchableOpacity>
 
-      {/* <TouchableOpacity
+      <TouchableOpacity
         onPress={() => onSSOPress('oauth_github')}
-        className="flex-row items-center justify-center gap-3 rounded-lg border border-zinc-900 bg-zinc-900 py-4"
+        className="flex-1 flex-row items-center justify-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 py-3"
       >
-        <Text className="font-product text-base text-white">
-          Continue with GitHub
-        </Text>
-      </TouchableOpacity> */}
+        <Image
+          source={require('@/assets/images/github.svg')}
+          style={{ width: 24, height: 24 }}
+          contentFit="cover"
+        />
+        <Text className="font-product text-base text-zinc-500">GitHub</Text>
+      </TouchableOpacity>
     </View>
   );
 }

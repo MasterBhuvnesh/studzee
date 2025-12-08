@@ -1,8 +1,9 @@
-import { useSignIn } from '@clerk/clerk-expo';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
-import React from 'react';
 import { colors } from '@/constants/colors';
+import logger from '@/utils/logger';
+import { useSignIn } from '@clerk/clerk-expo';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ResetPasswordScreen() {
   const { signIn, isLoaded } = useSignIn();
@@ -44,7 +45,7 @@ export default function ResetPasswordScreen() {
         setError('Password reset incomplete. Please try again.');
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
+      logger.error(JSON.stringify(err, null, 2));
       setError(err.errors?.[0]?.message || 'Failed to reset password');
     }
   };

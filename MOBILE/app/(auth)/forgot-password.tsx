@@ -1,8 +1,9 @@
+import { colors } from '@/constants/colors';
+import logger from '@/utils/logger';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import React from 'react';
-import { colors } from '@/constants/colors';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ForgotPasswordScreen() {
   const { signIn, isLoaded } = useSignIn();
@@ -35,7 +36,7 @@ export default function ForgotPasswordScreen() {
         });
       }, 2000);
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
+      logger.error(JSON.stringify(err, null, 2));
       setError(err.errors?.[0]?.message || 'Failed to send reset code');
     }
   };

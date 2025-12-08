@@ -2,6 +2,8 @@ import { useClerk } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Text, TouchableOpacity } from 'react-native';
 
+import logger from '@/utils/logger';
+
 export const SignOutButton = () => {
   const { signOut } = useClerk();
   const router = useRouter();
@@ -11,7 +13,7 @@ export const SignOutButton = () => {
       await signOut();
       router.replace('/(auth)/sign-in');
     } catch (err) {
-      console.error(JSON.stringify(err, null, 2));
+      logger.error(JSON.stringify(err, null, 2));
     }
   };
 
