@@ -1,5 +1,6 @@
-import { Redirect, Stack } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
+import { Redirect, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 
 export default function AuthRoutesLayout() {
   const { isSignedIn } = useAuth();
@@ -8,5 +9,10 @@ export default function AuthRoutesLayout() {
     return <Redirect href="/(tabs)" />;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <>
+      <StatusBar style="dark" />
+      <Stack screenOptions={{ headerShown: false }} />
+    </>
+  );
 }

@@ -16,3 +16,6 @@ npm install expo-secure-store
 npm install expo-image
 npm install expo-image-picker expo-document-picker expo-image-manipulator
 npm install expo-auth-session
+
+using skia and reanimated to add as many animation as possible :
+npm install @shopify/react-native-skia
