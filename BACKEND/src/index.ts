@@ -41,6 +41,18 @@ const main = async () => {
     await connectDB()
     await connectRedis()
 
+    // --- Welcome Route ---
+    app.get('/', (req, res) => {
+      res.json({
+        message: 'Studzee Backend API',
+        status: 'running',
+        endpoints: {
+          health: '/health/liveness',
+          content: '/content',
+          admin: '/admin',
+        },
+      })
+    })
     // --- Routes ---
     app.use('/content', contentRoutes)
     app.use('/auth', authRoutes)
