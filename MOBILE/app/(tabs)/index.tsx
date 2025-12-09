@@ -1,17 +1,10 @@
 import { colors } from '@/constants/colors';
+import { ProfileCardProps } from '@/types';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-interface ProfileCardProps {
-  name: string;
-  email: string;
-  buttonText: string;
-  image: string;
-  onPress?: () => void;
-}
 
 const ProfileCard = ({
   name,
@@ -21,8 +14,8 @@ const ProfileCard = ({
   onPress,
 }: ProfileCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
-    <View className="flex-row items-center justify-between p-6">
-      <View className="flex-1 pr-4">
+    <View className="flex-row items-center  p-6">
+      <View className="flex-1 pr-2">
         <Text className="mb-2 font-product text-base text-zinc-800">
           {name}
         </Text>

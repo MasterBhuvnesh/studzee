@@ -1,17 +1,10 @@
 import { colors } from '@/constants/colors';
+import { ActionCardProps } from '@/types';
 import logger from '@/utils/logger';
-import { Image, ImageSource } from 'expo-image';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-interface ActionCardProps {
-  title: string;
-  description: string;
-  buttonText: string;
-  image: ImageSource;
-  onPress?: () => void;
-}
 
 const ActionCard = ({
   title,

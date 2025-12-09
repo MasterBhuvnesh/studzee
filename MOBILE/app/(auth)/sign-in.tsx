@@ -1,4 +1,5 @@
 import OAuthButtons from '@/components/auth/OAuthButtons';
+import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
 import logger from '@/utils/logger';
 import { useSignIn } from '@clerk/clerk-expo';
@@ -88,7 +89,7 @@ export default function SignInScreen() {
                   className="items-center justify-center"
                 />
                 <Text className="mb-2 font-product text-4xl text-zinc-800">
-                  Yooo, welcome back !
+                  Welcome Back !
                 </Text>
                 <Text className="m-2 mb-4 text-center font-product text-base text-zinc-500">
                   Continue learning smarter with clear, simplified concepts.
@@ -98,12 +99,11 @@ export default function SignInScreen() {
               {/* Error */}
               {error ? (
                 <View className="m-4 flex-row items-center rounded-lg border border-red-200 bg-red-50 p-3">
-                  <BanIcon
+                  <AppIcon
+                    Icon={BanIcon}
                     size={16}
                     color={colors.red[500]}
                     strokeWidth={1.5}
-                    stroke={colors.red[500]}
-                    fill="none"
                   />
                   <Text className="ml-2 font-sans text-sm text-red-500">
                     {error}
@@ -145,19 +145,17 @@ export default function SignInScreen() {
                     className="absolute right-3 top-3"
                   >
                     {showPassword ? (
-                      <EyeOff
+                      <AppIcon
+                        Icon={EyeOff}
                         size={20}
                         strokeWidth={1.5}
-                        stroke={colors.zinc[400]}
-                        fill="none"
                         color={colors.zinc[400]}
                       />
                     ) : (
-                      <Eye
+                      <AppIcon
+                        Icon={Eye}
                         size={20}
                         strokeWidth={1.5}
-                        stroke={colors.zinc[400]}
-                        fill="none"
                         color={colors.zinc[400]}
                       />
                     )}

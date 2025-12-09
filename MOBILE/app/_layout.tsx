@@ -1,4 +1,4 @@
-import { LoadingScreen } from '@/components/LoadingScreen';
+import { LoadingScreen } from '@/components/global/LoadingScreen';
 import { useCustomFonts } from '@/hooks/useCustomFonts';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import '@/styles/global.css';

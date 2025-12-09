@@ -1,8 +1,9 @@
+import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
 import { useAuth } from '@clerk/clerk-expo';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Home, Package, Settings } from 'lucide-react-native';
+import { ChartColumnBig, Home, Package, Settings } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -38,7 +39,12 @@ export default function TabLayout() {
             options={{
               tabBarLabel: 'Home',
               tabBarIcon: ({ color, size }) => (
-                <Home color={color} size={size} strokeWidth={1.5} />
+                <AppIcon
+                  Icon={Home}
+                  color={color}
+                  size={size}
+                  strokeWidth={1.5}
+                />
               ),
             }}
           />
@@ -47,7 +53,26 @@ export default function TabLayout() {
             options={{
               tabBarLabel: 'Progress',
               tabBarIcon: ({ color, size }) => (
-                <Package color={color} size={size} strokeWidth={1.5} />
+                <AppIcon
+                  Icon={ChartColumnBig}
+                  color={color}
+                  size={size}
+                  strokeWidth={1.5}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="resources"
+            options={{
+              tabBarLabel: 'Resources',
+              tabBarIcon: ({ color, size }) => (
+                <AppIcon
+                  Icon={Package}
+                  color={color}
+                  size={size}
+                  strokeWidth={1.5}
+                />
               ),
             }}
           />
@@ -56,7 +81,12 @@ export default function TabLayout() {
             options={{
               tabBarLabel: 'Settings',
               tabBarIcon: ({ color, size }) => (
-                <Settings color={color} size={size} strokeWidth={1.5} />
+                <AppIcon
+                  Icon={Settings}
+                  color={color}
+                  size={size}
+                  strokeWidth={1.5}
+                />
               ),
             }}
           />

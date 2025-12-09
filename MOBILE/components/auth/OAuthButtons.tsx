@@ -5,18 +5,15 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
+import { OAuthButtonsProps, OAuthProvider } from '@/types';
 import logger from '@/utils/logger';
-
-interface OAuthButtonsProps {
-  onError: (error: string) => void;
-}
 
 export default function OAuthButtons({ onError }: OAuthButtonsProps) {
   const router = useRouter();
   const { startSSOFlow: startGoogleSSO } = useSSO();
   const { startSSOFlow: startGithubSSO } = useSSO();
 
-  const onSSOPress = async (provider: 'oauth_google' | 'oauth_github') => {
+  const onSSOPress = async (provider: OAuthProvider) => {
     try {
       const startSSO =
         provider === 'oauth_google' ? startGoogleSSO : startGithubSSO;

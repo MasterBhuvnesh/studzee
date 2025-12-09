@@ -294,11 +294,4 @@ export const colors = {
   },
 } as const;
 
-export type ColorGroup = keyof typeof colors;
-
-export type ColorShade<G extends ColorGroup> = keyof (typeof colors)[G];
-
-export type ColorValue<
-  G extends ColorGroup,
-  S extends ColorShade<G>,
-> = (typeof colors)[G][S];
+export type { ColorGroup, ColorShade, ColorValue } from '@/types/colors';

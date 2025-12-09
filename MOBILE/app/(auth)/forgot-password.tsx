@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
 import logger from '@/utils/logger';
 import { useSignIn } from '@clerk/clerk-expo';
@@ -87,12 +88,11 @@ export default function ForgotPasswordScreen() {
 
               {error ? (
                 <View className="mb-4 flex-row items-center rounded-lg border border-red-200 bg-red-50 p-3">
-                  <BanIcon
+                  <AppIcon
+                    Icon={BanIcon}
                     size={16}
                     color={colors.red[500]}
                     strokeWidth={1.5}
-                    stroke={colors.red[500]}
-                    fill="none"
                   />
                   <Text className="ml-2 font-sans text-sm text-red-500">
                     {error}
@@ -102,12 +102,11 @@ export default function ForgotPasswordScreen() {
 
               {successMessage ? (
                 <View className="mb-4 flex-row items-center rounded-lg border border-green-200 bg-green-50 p-3">
-                  <CheckCircle
+                  <AppIcon
+                    Icon={CheckCircle}
                     size={16}
                     color={colors.green[600]}
                     strokeWidth={1.5}
-                    stroke={colors.green[600]}
-                    fill="none"
                   />
                   <Text className="ml-2 mr-2 font-sans text-sm text-green-700">
                     {successMessage}

@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
 import logger from '@/utils/logger';
 import { useSignIn } from '@clerk/clerk-expo';
@@ -103,12 +104,11 @@ export default function ResetPasswordScreen() {
 
               {error ? (
                 <View className="mb-4 flex-row items-center rounded-lg border border-red-200 bg-red-50 p-3">
-                  <BanIcon
+                  <AppIcon
+                    Icon={BanIcon}
                     size={16}
                     color={colors.red[500]}
                     strokeWidth={1.5}
-                    stroke={colors.red[500]}
-                    fill="none"
                   />
                   <Text className="ml-2 mr-2 font-sans text-sm text-red-500">
                     {error}
@@ -139,19 +139,17 @@ export default function ResetPasswordScreen() {
                     className="absolute right-3 top-3"
                   >
                     {showPassword ? (
-                      <EyeOff
+                      <AppIcon
+                        Icon={EyeOff}
                         size={20}
                         strokeWidth={1.5}
-                        stroke={colors.zinc[400]}
-                        fill="none"
                         color={colors.zinc[400]}
                       />
                     ) : (
-                      <Eye
+                      <AppIcon
+                        Icon={Eye}
                         size={20}
                         strokeWidth={1.5}
-                        stroke={colors.zinc[400]}
-                        fill="none"
                         color={colors.zinc[400]}
                       />
                     )}
@@ -171,19 +169,17 @@ export default function ResetPasswordScreen() {
                     className="absolute right-3 top-3"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff
+                      <AppIcon
+                        Icon={EyeOff}
                         size={20}
                         strokeWidth={1.5}
-                        stroke={colors.zinc[400]}
-                        fill="none"
                         color={colors.zinc[400]}
                       />
                     ) : (
-                      <Eye
+                      <AppIcon
+                        Icon={Eye}
                         size={20}
                         strokeWidth={1.5}
-                        stroke={colors.zinc[400]}
-                        fill="none"
                         color={colors.zinc[400]}
                       />
                     )}

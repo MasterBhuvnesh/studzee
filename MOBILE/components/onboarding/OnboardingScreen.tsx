@@ -3,12 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Text, View } from 'react-native';
 
-interface OnboardingScreenProps {
-  title: string;
-  description: string;
-  gradientColors: string[];
-  imageSource?: any; // Can be require() or URI string for jpg, png, svg, gif
-}
+import { OnboardingScreenProps } from '@/types';
 
 export default function OnboardingScreen({
   title,
