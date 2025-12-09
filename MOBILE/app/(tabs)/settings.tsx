@@ -1,4 +1,3 @@
-// TODO : icons and user profile
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
