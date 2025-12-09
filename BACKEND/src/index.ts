@@ -1,21 +1,23 @@
-import express from 'express'
-import helmet from 'helmet'
-import cors from 'cors'
-import morgan from 'morgan'
-import rateLimit from 'express-rate-limit'
 import compression from 'compression'
+import cors from 'cors'
+import express from 'express'
+import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
+import morgan from 'morgan'
 
+import adminRoutes from './api/routes/admin'
+import authRoutes from './api/routes/auth'
+import contentRoutes from './api/routes/content'
+import healthRoutes from './api/routes/health'
 import { config } from './config'
-import logger from './utils/logger'
 import { connectDB } from './config/mongo'
 import { connectRedis } from './config/redis'
-import contentRoutes from './api/routes/content'
-import authRoutes from './api/routes/auth'
-import healthRoutes from './api/routes/health'
-import adminRoutes from './api/routes/admin'
 import { scheduleJobs } from './jobs/cache-refresh'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
+import logger from './utils/logger'
 
+import healthcheckRoute from './api/routes/healthcheck' // For healthcheck route for Render
+import { startHeartbeatJob } from './jobs/heartbeat' // Import the heartbeat job for scheduling Render pings
 const main = async () => {
   try {
     const app = express()
@@ -44,6 +46,7 @@ const main = async () => {
     app.use('/auth', authRoutes)
     app.use('/health', healthRoutes)
     app.use('/admin', adminRoutes)
+    app.use('/', healthcheckRoute) // For healthcheck route for Render
 
     // --- Error Handling ---
     app.use(notFoundHandler)
@@ -52,6 +55,7 @@ const main = async () => {
     // --- Start Server ---
     app.listen(config.PORT, () => {
       logger.info(`Server running at http://localhost:${config.PORT}`)
+      startHeartbeatJob()
       scheduleJobs()
     })
   } catch (err) {

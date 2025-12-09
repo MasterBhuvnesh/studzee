@@ -3,7 +3,7 @@ name: Build, Test, and Deploy Docker Image - Notification
 on:
   push:
     tags:
-      - 'notification-v*'
+      - "notification-v*"
     # Uncomment the following lines when we want to trigger on branch pushes as well
     # branches:
     #   - 'production'
@@ -27,7 +27,7 @@ jobs:
         run: |
           openssl aes-256-cbc -pbkdf2 -d -in ./NOTIFICATION/.env.enc -out ./NOTIFICATION/.env -k "${{ secrets.ENV_SECRET_KEY }}"
 
-      - name: Run Unit Tests [ Pre-Deployment ] 
+      - name: Run Unit Tests [ Pre-Deployment ]
         run: bun test
         working-directory: ./NOTIFICATION
 
@@ -58,6 +58,6 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/studzee-notification:latest
             ${{ secrets.DOCKER_USERNAME }}/studzee-notification:${{ steps.version.outputs.VERSION }}
 
-# Trigger Render deploy hook
-      # - name: Trigger Render deploy hook
-        # run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      # Trigger Render deploy hook
+      - name: Trigger Render deploy hook
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_NOTIFICATION }}
