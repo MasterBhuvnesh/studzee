@@ -1,5 +1,6 @@
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { AppIcon } from '@/components/global/AppIcon';
+import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { SettingCardProps } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -62,11 +63,7 @@ export default function SettingsPage() {
     >
       <SafeAreaView className="flex-1 bg-transparent">
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View className="px-6 pt-6">
-            <Text className="py-2 font-product text-4xl text-zinc-900">
-              Settings
-            </Text>
-          </View>
+          <Header title="Settings" />
           <View className="px-6 pb-8 pt-6">
             {/* Experience Settings */}
             <SettingCard

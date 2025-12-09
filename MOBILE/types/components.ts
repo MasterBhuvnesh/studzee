@@ -18,6 +18,13 @@ export interface OAuthButtonsProps {
 }
 
 /**
+ * Props for the Header component
+ */
+export interface HeaderProps {
+  title: string;
+}
+
+/**
  * Props for the SettingCard component
  */
 export interface SettingCardProps {
@@ -31,6 +38,41 @@ export interface SettingCardProps {
 export interface SettingItem {
   label: string;
   onPress?: () => void;
+  icon: React.ComponentType<any>;
+}
+
+/**
+ * Props for the ResourceCard component
+ */
+export interface ResourceCardProps {
+  title: string;
+  items: ResourceItem[];
+}
+
+/**
+ * Individual resource item
+ */
+export interface ResourceItem {
+  label: string;
+  onPress?: () => void;
+  size?: string;
+}
+
+/**
+ * Props for the DownloadedCard component
+ */
+export interface DownloadedCardProps {
+  title: string;
+  items: DownloadedItem[];
+}
+
+/**
+ * Individual downloaded item
+ */
+export interface DownloadedItem {
+  label: string;
+  onPress?: () => void;
+  size?: string;
   icon: React.ComponentType<any>;
 }
 
