@@ -3,7 +3,13 @@ import { colors } from '@/constants/colors';
 import { useAuth } from '@clerk/clerk-expo';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ChartColumnBig, Home, Package, Settings } from 'lucide-react-native';
+import {
+  ChartColumnIncreasing,
+  Home,
+  Package,
+  Settings,
+  User,
+} from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -54,7 +60,7 @@ export default function TabLayout() {
               tabBarLabel: 'Progress',
               tabBarIcon: ({ color, size }) => (
                 <AppIcon
-                  Icon={ChartColumnBig}
+                  Icon={ChartColumnIncreasing}
                   color={color}
                   size={size}
                   strokeWidth={1.5}
@@ -69,6 +75,20 @@ export default function TabLayout() {
               tabBarIcon: ({ color, size }) => (
                 <AppIcon
                   Icon={Package}
+                  color={color}
+                  size={size}
+                  strokeWidth={1.5}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="profile"
+            options={{
+              tabBarLabel: 'Profile',
+              tabBarIcon: ({ color, size }) => (
+                <AppIcon
+                  Icon={User}
                   color={color}
                   size={size}
                   strokeWidth={1.5}

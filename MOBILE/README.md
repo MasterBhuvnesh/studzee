@@ -17,6 +17,9 @@ npm install expo-image
 npm install expo-image-picker expo-document-picker expo-image-manipulator
 npm install expo-auth-session
 
+implementing bottomsheet using gorhom-bottomsheet :
+npm i @gorhom/bottom-sheet
+npx expo install react-native-reanimated react-native-gesture-handler
 Instruction for onboarding images :
 
 1. place your images in assets folder
@@ -45,3 +48,7 @@ TODO :
 Fix the UI for onboarding flow
 Implement Zod schema for validation
 Implement Zustand for state management
+
+WILL NEEDED TO FIGURE OUT THE DOWNLOAD THING
+we will be make a json file for the downloaded pdfs record
+whenever the application is open we will be needed to check for all the pdfs

@@ -1,10 +1,15 @@
+// We will be required to save the pdfs in the device storage and a json for the info too
 import { AppIcon } from '@/components/global/AppIcon';
+import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
+import { DownloadedPdfInfo } from '@/components/global/DownloadedPdfInfo';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
-import { DownloadedCardProps, ResourceCardProps } from '@/types/components';
+import { DownloadedCardProps, PdfItem, ResourceCardProps } from '@/types';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, Info } from 'lucide-react-native';
+import React, { useCallback, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -57,6 +62,7 @@ const ResourceCard = ({ title, items }: ResourceCardProps) => (
     </View>
   </View>
 );
+
 const DownloadedCard = ({ title, items }: DownloadedCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
     <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
@@ -72,7 +78,7 @@ const DownloadedCard = ({ title, items }: DownloadedCardProps) => (
       </TouchableOpacity>
     </View>
     <View className="p-2">
-      {items.map((item, index) => (
+      {items.map((item: PdfItem, index: number) => (
         <View key={index}>
           <TouchableOpacity
             onPress={item.onPress}
@@ -96,12 +102,14 @@ const DownloadedCard = ({ title, items }: DownloadedCardProps) => (
                   {item.size}
                 </Text>
               </View>
-              <AppIcon
-                Icon={item.icon}
-                color={colors.zinc[500]}
-                size={16}
-                strokeWidth={1.5}
-              />
+              {item.icon && (
+                <AppIcon
+                  Icon={item.icon}
+                  color={colors.zinc[500]}
+                  size={16}
+                  strokeWidth={1.5}
+                />
+              )}
             </View>
           </TouchableOpacity>
           {index < items.length - 1 && (
@@ -114,64 +122,121 @@ const DownloadedCard = ({ title, items }: DownloadedCardProps) => (
 );
 
 export default function ResourcesPage() {
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const [selectedPdf, setSelectedPdf] = useState<PdfItem | null>(null);
+
+  const openDownloadedPdf = useCallback((item: PdfItem) => {
+    setSelectedPdf(item);
+    // give the ref a touch, present should exist on the forwarded ref
+    bottomSheetRef.current?.present?.();
+  }, []);
+
+  const closeBottomSheet = useCallback(() => {
+    bottomSheetRef.current?.dismiss?.();
+    setSelectedPdf(null);
+  }, []);
+
   return (
-    <LinearGradient
-      colors={[colors.zinc[50], colors.zinc[100]]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      className="flex-1"
-    >
-      <SafeAreaView className="flex-1 bg-transparent">
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <Header title="Resources" />
-          <View className="px-6 pb-8 pt-6">
-            <ResourceCard
-              title="Top 3 PDFs"
-              items={[
-                {
-                  label: 'Deep Learning for Images with pytorch',
-                  onPress: () =>
-                    console.log('Deep Learning for Images with pytorch'),
-                  size: '5 mb',
-                },
-                {
-                  label: 'Natural language processing withSpacy',
-                  onPress: () =>
-                    console.log('Natural language processing withSpacy'),
-                  size: '15 mb',
-                },
-                {
-                  label: 'Extreme Gradient Boosting with XGBoost',
-                  onPress: () =>
-                    console.log('Extreme Gradient Boosting with XGBoost'),
-                  size: '7 mb',
-                },
-              ]}
+    <>
+      <LinearGradient
+        colors={[colors.zinc[50], colors.zinc[100]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        className="flex-1"
+      >
+        <SafeAreaView className="flex-1 bg-transparent">
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <Header title="Resources" />
+            <View className="px-6 pb-8 pt-6">
+              <ResourceCard
+                title="Top 3 PDFs"
+                items={[
+                  {
+                    label: 'Deep Learning for Images with pytorch',
+                    onPress: () =>
+                      console.log('Deep Learning for Images with pytorch'),
+                    size: '5 mb',
+                  },
+                  {
+                    label: 'Natural language processing withSpacy',
+                    onPress: () =>
+                      console.log('Natural language processing withSpacy'),
+                    size: '15 mb',
+                  },
+                  {
+                    label: 'Extreme Gradient Boosting with XGBoost',
+                    onPress: () =>
+                      console.log('Extreme Gradient Boosting with XGBoost'),
+                    size: '7 mb',
+                  },
+                ]}
+              />
+
+              <DownloadedCard
+                title="Downloaded PDFs"
+                items={[
+                  {
+                    label: 'Feature engineering for Machine Learning in python',
+                    // now calls the open function with item data
+                    onPress: () =>
+                      openDownloadedPdf({
+                        label:
+                          'Feature engineering for Machine Learning in python',
+                        size: '5 mb',
+                        date: '2025-12-12',
+                        location: '/storage/emulated/0/Documents',
+                        path: '/storage/emulated/0/Documents/feature_engineering.pdf',
+                        icon: Info,
+                      }),
+                    size: '5 mb',
+                    icon: Info,
+                  },
+                  {
+                    label: 'Data Visualization with matplotlib',
+                    onPress: () =>
+                      openDownloadedPdf({
+                        label: 'Data Visualization with matplotlib',
+                        size: '15 mb',
+                        date: '2025-12-12',
+                        location: '/storage/emulated/0/Documents',
+                        path: '/storage/emulated/0/Documents/data_viz_matplotlib.pdf',
+                        icon: Info,
+                      }),
+                    size: '15 mb',
+                    icon: Info,
+                  },
+                ]}
+              />
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+
+      <CustomBottomSheetModal ref={bottomSheetRef}>
+        <View className="flex-1 p-4">
+          {/* If selectedPdf is null show a minimal fallback or empty state */}
+          {selectedPdf ? (
+            <DownloadedPdfInfo
+              title={selectedPdf.label}
+              location={selectedPdf.location ?? 'Unknown location'}
+              size={selectedPdf.size ?? '—'}
+              date={selectedPdf.date ?? '—'}
+              onView={() => console.log('View PDF pressed', selectedPdf)}
+              onShare={() => console.log('Share PDF pressed', selectedPdf)}
+              onRemove={() => {
+                console.log('Remove PDF pressed', selectedPdf);
+                closeBottomSheet();
+              }}
             />
-            <DownloadedCard
-              title="Downloaded PDFs"
-              items={[
-                {
-                  label: 'Feature engineering for Machine Learning in python',
-                  onPress: () =>
-                    console.log(
-                      'Feature engineering for Machine Learning in python'
-                    ),
-                  size: '5 mb',
-                  icon: Info,
-                },
-                {
-                  label: 'Data Visualization with matplotlib',
-                  onPress: () =>
-                    console.log('Data Visualization with matplotlib'),
-                  size: '15 mb',
-                  icon: Info,
-                },
-              ]}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+          ) : (
+            <View className="items-center justify-center py-8">
+              <Text className="font-sans text-sm text-zinc-500">
+                No PDF selected
+              </Text>
+            </View>
+          )}
+        </View>
+      </CustomBottomSheetModal>
+    </>
   );
 }

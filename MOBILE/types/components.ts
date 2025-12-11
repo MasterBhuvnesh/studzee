@@ -88,6 +88,32 @@ export interface ActionCardProps {
 }
 
 /**
+ * Props for the DownloadedPdfInfo component
+ */
+export interface DownloadedPdfInfoProps {
+  title: string;
+  location: string;
+  size: string;
+  date: string;
+  onRemove?: () => void;
+  onView?: () => void;
+  onShare?: () => void;
+}
+
+/**
+ * Props for the PdfItem component
+ */
+export interface PdfItem {
+  label: string;
+  size?: string;
+  location?: string;
+  path?: string;
+  icon?: any;
+  date?: string;
+  onPress?: () => void;
+}
+
+/**
  * Props for the ProfileCard component
  */
 export interface ProfileCardProps {

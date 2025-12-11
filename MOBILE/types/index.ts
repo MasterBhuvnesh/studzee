@@ -5,9 +5,15 @@
 // Component types
 export type {
   ActionCardProps,
+  DownloadedCardProps,
+  DownloadedItem,
+  DownloadedPdfInfoProps,
   OAuthButtonsProps,
   OnboardingScreenProps,
+  PdfItem,
   ProfileCardProps,
+  ResourceCardProps,
+  ResourceItem,
   SettingCardProps,
   SettingItem,
 } from './components';
