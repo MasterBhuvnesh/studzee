@@ -5,6 +5,7 @@ import { DownloadedPdfInfo } from '@/components/global/DownloadedPdfInfo';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { DownloadedCardProps, PdfItem, ResourceCardProps } from '@/types';
+import logger from '@/utils/logger';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -154,19 +155,25 @@ export default function ResourcesPage() {
                   {
                     label: 'Deep Learning for Images with pytorch',
                     onPress: () =>
-                      console.log('Deep Learning for Images with pytorch'),
+                      logger.debug(
+                        'Deep Learning for Images with pytorch pressed'
+                      ),
                     size: '5 mb',
                   },
                   {
                     label: 'Natural language processing withSpacy',
                     onPress: () =>
-                      console.log('Natural language processing withSpacy'),
+                      logger.debug(
+                        'Natural language processing withSpacy pressed'
+                      ),
                     size: '15 mb',
                   },
                   {
                     label: 'Extreme Gradient Boosting with XGBoost',
                     onPress: () =>
-                      console.log('Extreme Gradient Boosting with XGBoost'),
+                      logger.debug(
+                        'Extreme Gradient Boosting with XGBoost pressed'
+                      ),
                     size: '7 mb',
                   },
                 ]}
@@ -221,10 +228,14 @@ export default function ResourcesPage() {
               location={selectedPdf.location ?? 'Unknown location'}
               size={selectedPdf.size ?? '—'}
               date={selectedPdf.date ?? '—'}
-              onView={() => console.log('View PDF pressed', selectedPdf)}
-              onShare={() => console.log('Share PDF pressed', selectedPdf)}
+              onView={() =>
+                logger.debug(`View PDF pressed: ${selectedPdf.label}`)
+              }
+              onShare={() =>
+                logger.debug(`Share PDF pressed: ${selectedPdf.label}`)
+              }
               onRemove={() => {
-                console.log('Remove PDF pressed', selectedPdf);
+                logger.debug(`Remove PDF pressed: ${selectedPdf.label}`);
                 closeBottomSheet();
               }}
             />

@@ -1,4 +1,5 @@
 import { LoadingScreen } from '@/components/global/LoadingScreen';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import { useCustomFonts } from '@/hooks/useCustomFonts';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import '@/styles/global.css';
@@ -62,9 +63,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
         <SafeAreaProvider>
-          <BottomSheetModalProvider>
-            <RootLayoutNav />
-          </BottomSheetModalProvider>
+          <NotificationProvider>
+            <BottomSheetModalProvider>
+              <RootLayoutNav />
+            </BottomSheetModalProvider>
+          </NotificationProvider>
         </SafeAreaProvider>
       </ClerkProvider>
     </GestureHandlerRootView>

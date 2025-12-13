@@ -307,3 +307,8 @@ This project is licensed under the ISC License.
 ## Support
 
 For issues and questions, please create an issue in the repository or contact the maintainer.
+
+TODO :
+
+- Clerk for Authorization
+- Notification logic for single and multiple users

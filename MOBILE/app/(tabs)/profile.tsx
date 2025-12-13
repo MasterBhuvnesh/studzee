@@ -1,6 +1,7 @@
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { ProfileCardProps } from '@/types';
+import logger from '@/utils/logger';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -63,7 +64,11 @@ export default function ProfilePage() {
               email={user?.emailAddresses[0]?.emailAddress || 'User'}
               buttonText="View Profile"
               image={user?.imageUrl || require('@/assets/images/sample/1.png')}
-              onPress={() => console.log(user?.emailAddresses[0]?.emailAddress)}
+              onPress={() =>
+                logger.debug(
+                  `View Profile pressed: ${user?.emailAddresses[0]?.emailAddress}`
+                )
+              }
             />
           </ScrollView>
         </SafeAreaView>

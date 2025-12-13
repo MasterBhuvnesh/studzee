@@ -3,6 +3,7 @@ import { AppIcon } from '@/components/global/AppIcon';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { SettingCardProps } from '@/types';
+import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Bell,
@@ -71,17 +72,17 @@ export default function SettingsPage() {
               items={[
                 {
                   label: 'App Notifications',
-                  onPress: () => console.log('App Notifications'),
+                  onPress: () => logger.debug('App Notifications pressed'),
                   icon: Bell,
                 },
                 {
                   label: 'Language',
-                  onPress: () => console.log('Language'),
+                  onPress: () => logger.debug('Language pressed'),
                   icon: Languages,
                 },
                 {
                   label: 'Newsletters',
-                  onPress: () => console.log('Newsletters'),
+                  onPress: () => logger.debug('Newsletters pressed'),
                   icon: Mail,
                 },
               ]}
@@ -93,22 +94,22 @@ export default function SettingsPage() {
               items={[
                 {
                   label: 'Get Support',
-                  onPress: () => console.log('Get Support'),
+                  onPress: () => logger.debug('Get Support pressed'),
                   icon: HelpCircle,
                 },
                 {
                   label: 'Send Feedback',
-                  onPress: () => console.log('Send Feedback'),
+                  onPress: () => logger.debug('Send Feedback pressed'),
                   icon: MessageCircle,
                 },
                 {
                   label: 'Terms of Use',
-                  onPress: () => console.log('Terms of Use'),
+                  onPress: () => logger.debug('Terms of Use pressed'),
                   icon: Menu,
                 },
                 {
                   label: 'Privacy Policy',
-                  onPress: () => console.log('Privacy Policy'),
+                  onPress: () => logger.debug('Privacy Policy pressed'),
                   icon: FileText,
                 },
               ]}
@@ -120,7 +121,7 @@ export default function SettingsPage() {
               items={[
                 {
                   label: 'Change Password',
-                  onPress: () => console.log('Change Password'),
+                  onPress: () => logger.debug('Change Password pressed'),
                   icon: Lock,
                 },
               ]}
