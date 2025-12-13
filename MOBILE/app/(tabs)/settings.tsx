@@ -1,9 +1,12 @@
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { AppIcon } from '@/components/global/AppIcon';
+import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { Header } from '@/components/global/Header';
+import { NotificationPermissionSection } from '@/components/global/NotificationPermissionSection';
 import { colors } from '@/constants/colors';
 import { SettingCardProps } from '@/types';
 import logger from '@/utils/logger';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Bell,
@@ -16,6 +19,7 @@ import {
   Menu,
   MessageCircle,
 } from 'lucide-react-native';
+import { useRef } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -55,83 +59,96 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
 );
 
 export default function SettingsPage() {
+  const notificationBottomSheetRef = useRef<BottomSheetModal>(null);
+
+  const handleOpenNotificationSettings = () => {
+    notificationBottomSheetRef.current?.present();
+  };
+
   return (
-    <LinearGradient
-      colors={[colors.zinc[50], colors.zinc[100]]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      className="flex-1"
-    >
-      <SafeAreaView className="flex-1 bg-transparent">
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <Header title="Settings" />
-          <View className="px-6 pb-8 pt-6">
-            {/* Experience Settings */}
-            <SettingCard
-              title="Experience"
-              items={[
-                {
-                  label: 'App Notifications',
-                  onPress: () => logger.debug('App Notifications pressed'),
-                  icon: Bell,
-                },
-                {
-                  label: 'Language',
-                  onPress: () => logger.debug('Language pressed'),
-                  icon: Languages,
-                },
-                {
-                  label: 'Newsletters',
-                  onPress: () => logger.debug('Newsletters pressed'),
-                  icon: Mail,
-                },
-              ]}
-            />
+    <>
+      <LinearGradient
+        colors={[colors.zinc[50], colors.zinc[100]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        className="flex-1"
+      >
+        <SafeAreaView className="flex-1 bg-transparent">
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <Header title="Settings" />
+            <View className="px-6 pb-8 pt-6">
+              {/* Experience Settings */}
+              <SettingCard
+                title="Experience"
+                items={[
+                  {
+                    label: 'App Notifications',
+                    onPress: handleOpenNotificationSettings,
+                    icon: Bell,
+                  },
+                  {
+                    label: 'Language',
+                    onPress: () => logger.debug('Language pressed'),
+                    icon: Languages,
+                  },
+                  {
+                    label: 'Newsletters',
+                    onPress: () => logger.debug('Newsletters pressed'),
+                    icon: Mail,
+                  },
+                ]}
+              />
 
-            {/* Support Settings */}
-            <SettingCard
-              title="Support"
-              items={[
-                {
-                  label: 'Get Support',
-                  onPress: () => logger.debug('Get Support pressed'),
-                  icon: HelpCircle,
-                },
-                {
-                  label: 'Send Feedback',
-                  onPress: () => logger.debug('Send Feedback pressed'),
-                  icon: MessageCircle,
-                },
-                {
-                  label: 'Terms of Use',
-                  onPress: () => logger.debug('Terms of Use pressed'),
-                  icon: Menu,
-                },
-                {
-                  label: 'Privacy Policy',
-                  onPress: () => logger.debug('Privacy Policy pressed'),
-                  icon: FileText,
-                },
-              ]}
-            />
+              {/* Support Settings */}
+              <SettingCard
+                title="Support"
+                items={[
+                  {
+                    label: 'Get Support',
+                    onPress: () => logger.debug('Get Support pressed'),
+                    icon: HelpCircle,
+                  },
+                  {
+                    label: 'Send Feedback',
+                    onPress: () => logger.debug('Send Feedback pressed'),
+                    icon: MessageCircle,
+                  },
+                  {
+                    label: 'Terms of Use',
+                    onPress: () => logger.debug('Terms of Use pressed'),
+                    icon: Menu,
+                  },
+                  {
+                    label: 'Privacy Policy',
+                    onPress: () => logger.debug('Privacy Policy pressed'),
+                    icon: FileText,
+                  },
+                ]}
+              />
 
-            {/* Account Settings */}
-            <SettingCard
-              title="Account"
-              items={[
-                {
-                  label: 'Change Password',
-                  onPress: () => logger.debug('Change Password pressed'),
-                  icon: Lock,
-                },
-              ]}
-            />
+              {/* Account Settings */}
+              <SettingCard
+                title="Account"
+                items={[
+                  {
+                    label: 'Change Password',
+                    onPress: () => logger.debug('Change Password pressed'),
+                    icon: Lock,
+                  },
+                ]}
+              />
 
-            {/* Sign Out Button */}
-            <SignOutButton />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+              {/* Sign Out Button */}
+              <SignOutButton />
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+
+        {/* Notification Settings Bottom Sheet */}
+        <CustomBottomSheetModal ref={notificationBottomSheetRef}>
+          <NotificationPermissionSection />
+        </CustomBottomSheetModal>
+      </LinearGradient>
+    </>
   );
 }

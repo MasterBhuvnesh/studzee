@@ -52,3 +52,6 @@ Implement Zustand for state management
 WILL NEEDED TO FIGURE OUT THE DOWNLOAD THING
 we will be make a json file for the downloaded pdfs record
 whenever the application is open we will be needed to check for all the pdfs
+
+UI :
+App notification bottomsheet & model -might make a custom model for it
