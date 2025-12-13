@@ -42,3 +42,6 @@ nativewind-env.d.ts
 /ios
 /android
 
+services/
+.easignore
+.expo/

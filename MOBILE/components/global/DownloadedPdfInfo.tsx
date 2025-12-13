@@ -1,7 +1,6 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
 import { DownloadedPdfInfoProps } from '@/types';
-import { Image } from 'expo-image';
 import { Calendar, Eye, FolderOpen, Share2, Trash2 } from 'lucide-react-native';
 import { Text, TouchableOpacity, View } from 'react-native';
 
@@ -17,11 +16,11 @@ export const DownloadedPdfInfo = ({
   return (
     <View className="overflow-hidden">
       <View className="flex-row items-start gap-4">
-        <Image
+        {/* <Image
           source={require('@/assets/images/pdf.svg')}
           style={{ width: 48, height: 48 }}
           className="rounded-lg"
-        />
+        /> */}
         <View className="flex-1">
           <Text
             className="mb-2 font-product text-lg text-zinc-800"

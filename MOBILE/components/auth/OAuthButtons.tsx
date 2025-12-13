@@ -1,6 +1,5 @@
 import { useSSO } from '@clerk/clerk-expo';
 import * as AuthSession from 'expo-auth-session';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -45,11 +44,11 @@ export default function OAuthButtons({ onError }: OAuthButtonsProps) {
         onPress={() => onSSOPress('oauth_google')}
         className="flex-1 flex-row items-center justify-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 py-3"
       >
-        <Image
+        {/* <Image
           source={require('@/assets/images/google.svg')}
           style={{ width: 24, height: 24 }}
           contentFit="cover"
-        />
+        /> */}
         <Text className="font-product text-base text-zinc-500">Google</Text>
       </TouchableOpacity>
 
@@ -57,11 +56,11 @@ export default function OAuthButtons({ onError }: OAuthButtonsProps) {
         onPress={() => onSSOPress('oauth_github')}
         className="flex-1 flex-row items-center justify-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 py-3"
       >
-        <Image
+        {/* <Image
           source={require('@/assets/images/github.svg')}
           style={{ width: 24, height: 24 }}
           contentFit="cover"
-        />
+        /> */}
         <Text className="font-product text-base text-zinc-500">GitHub</Text>
       </TouchableOpacity>
     </View>

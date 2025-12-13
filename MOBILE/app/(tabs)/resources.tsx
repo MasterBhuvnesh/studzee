@@ -6,7 +6,6 @@ import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { DownloadedCardProps, PdfItem, ResourceCardProps } from '@/types';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, Info } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
@@ -36,11 +35,11 @@ const ResourceCard = ({ title, items }: ResourceCardProps) => (
             activeOpacity={0.7}
           >
             <View className="flex-1 flex-row items-center">
-              <Image
+              {/* <Image
                 source={require('@/assets/images/pdf.svg')}
                 style={{ width: 26, height: 26 }}
                 className="rounded-lg"
-              />
+              /> */}
               <View className="ml-3 flex-1">
                 <Text
                   className="font-sans text-base text-zinc-500"
@@ -86,11 +85,11 @@ const DownloadedCard = ({ title, items }: DownloadedCardProps) => (
             activeOpacity={0.7}
           >
             <View className="flex-1 flex-row items-center">
-              <Image
+              {/* <Image
                 source={require('@/assets/images/pdf.svg')}
                 style={{ width: 26, height: 26 }}
                 className="rounded-lg"
-              />
+              /> */}
               <View className="ml-3 flex-1">
                 <Text
                   className="font-sans text-base text-zinc-500"
