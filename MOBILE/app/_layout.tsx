@@ -34,19 +34,19 @@ function RootLayoutNav() {
     const inAuth = segments[0] === '(auth)';
     const inTabs = segments[0] === '(tabs)';
 
-    // If not completed onboarding, redirect to onboarding
-    if (!hasCompletedOnboarding && !inOnboarding) {
+    // Priority 1: If signed in, go to tabs (highest priority to prevent onboarding loop)
+    if (isSignedIn && !inTabs) {
+      router.replace('/(tabs)');
+    }
+    // Priority 2: If not completed onboarding, redirect to onboarding
+    else if (!hasCompletedOnboarding && !inOnboarding) {
       router.replace('/(onboarding)' as any);
     }
-    // If completed onboarding but not signed in, redirect to auth
+    // Priority 3: If completed onboarding but not signed in, redirect to auth
     else if (hasCompletedOnboarding && !isSignedIn && !inAuth) {
       router.replace('/(auth)/sign-in');
     }
-    // If signed in, redirect to tabs
-    else if (isSignedIn && !inTabs) {
-      router.replace('/(tabs)');
-    }
-  }, [isSignedIn, isLoaded, hasCompletedOnboarding, isLoading]);
+  }, [isSignedIn, isLoaded, hasCompletedOnboarding, isLoading, segments]);
 
   return <Slot />;
 }
