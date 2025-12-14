@@ -55,3 +55,13 @@ whenever the application is open we will be needed to check for all the pdfs
 
 UI :
 App notification bottomsheet & model -might make a custom model for it
+
+THINGS TO DO :
+
+- Game points logic and svg/png
+- a custom model
+- profile edit options
+- pdf and downlaod logic
+- main things home page
+
+TARGET [ 31 Dec 2025 ]
