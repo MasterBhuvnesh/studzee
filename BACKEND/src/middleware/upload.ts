@@ -67,11 +67,7 @@ const pdfUpload = multer({
  * Wrapper to handle multer errors
  */
 const handleMulterError = (
-  upload: (
-    req: Request,
-    res: Response,
-    callback: (error: any) => void
-  ) => void
+  upload: (req: Request, res: Response, callback: (error: any) => void) => void
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
     upload(req, res, (err: Error | null) => {

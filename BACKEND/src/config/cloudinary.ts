@@ -132,9 +132,7 @@ export const getPublicIdFromUrl = (url: string): string => {
     const pathWithExt = pathParts.join('/')
     const lastDotIndex = pathWithExt.lastIndexOf('.')
     const publicId =
-      lastDotIndex === -1
-        ? pathWithExt
-        : pathWithExt.substring(0, lastDotIndex)
+      lastDotIndex === -1 ? pathWithExt : pathWithExt.substring(0, lastDotIndex)
 
     logger.info('Extracted public ID from URL', { url, publicId })
     return publicId
