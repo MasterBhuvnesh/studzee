@@ -62,7 +62,9 @@
       "3": "Successful machine learning requires quality data, appropriate algorithms, and sufficient computational resources",
       "4": "Model generalization - performing well on new, unseen data - is a critical goal in machine learning",
       "5": "Machine learning applications span diverse fields including healthcare, finance, transportation, and entertainment"
-    }
+    },
+    "imageUrl": "https://res.cloudinary.com/dpspfdla6/image/upload/v1765833596/images/69407255284dcaaa93caa5f6.jpg",
+    "pdfUrl": null
   },
   {
     "title": "Introduction to Hyperparameter Tuning",
@@ -122,7 +124,9 @@
       "3": "In Scikit-Learn, parameters are found under 'Attributes' while hyperparameters are under 'Parameters' in documentation",
       "4": "Learning curves visualize model performance across different hyperparameter values",
       "5": "Use NumPy's linspace() to generate evenly spaced decimal values for hyperparameter ranges"
-    }
+    },
+    "imageUrl": null,
+    "pdfUrl": null
   },
   {
     "title": "Grid Search for Hyperparameter Optimization",
@@ -177,7 +181,9 @@
       "3": "GridSearchCV key parameters: estimator, param_grid, cv, scoring, refit, n_jobs",
       "4": "cv_results_ provides detailed information including timing, scores, and parameter values for all models",
       "5": "Grid search is guaranteed to find the best model in the grid but is computationally expensive and uninformed"
-    }
+    },
+    "imageUrl": null,
+    "pdfUrl": null
   },
   {
     "title": "Random Search for Hyperparameter Optimization",
@@ -232,7 +238,9 @@
       "3": "Only 59 random trials needed for 95% confidence of hitting a 5% target region",
       "4": "RandomizedSearchCV requires n_iter parameter to specify number of samples",
       "5": "Random search is faster at finding good models but not guaranteed to find the absolute best in the search space"
-    }
+    },
+    "imageUrl": null,
+    "pdfUrl": null
   },
   {
     "title": "Informed Search Methods: Advanced Hyperparameter Tuning",
@@ -297,6 +305,8 @@
       "3": "Bayesian optimization uses Bayes' rule (P(A|B) = P(B|A)P(A)/P(B)) to iteratively update hyperparameter beliefs",
       "4": "Genetic algorithms mimic evolution: selection, crossover, mutation, and iteration across generations",
       "5": "TPOT automates genetic optimization of entire ML pipelines, not just hyperparameters, and returns Python code"
-    }
+    },
+    "imageUrl": null,
+    "pdfUrl": null
   }
 ]

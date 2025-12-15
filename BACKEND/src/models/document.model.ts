@@ -28,6 +28,8 @@ const DocumentMongooseSchema = new Schema<IDocument>(
       type: Map,
       of: String,
     },
+    imageUrl: { type: String, required: false },
+    pdfUrl: { type: String, required: false },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt

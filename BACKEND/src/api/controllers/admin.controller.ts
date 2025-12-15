@@ -22,6 +22,8 @@ export const createDocument = async (req: Request, res: Response) => {
       facts: parsed.facts,
       summary: parsed.summary,
       key_notes: keyNotesMap,
+      imageUrl: parsed.imageUrl ?? null,
+      pdfUrl: parsed.pdfUrl ?? null,
     })
 
     return res

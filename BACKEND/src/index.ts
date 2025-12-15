@@ -17,7 +17,10 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler'
 import logger from './utils/logger'
 
 import healthcheckRoute from './api/routes/healthcheck' // For healthcheck route for Render
+import pdfRoutes from './api/routes/pdf'
 import { startHeartbeatJob } from './jobs/heartbeat' // Import the heartbeat job for scheduling Render pings
+import { ensureFoldersExist } from './config/cloudinary'
+
 const main = async () => {
   try {
     const app = express()
@@ -41,6 +44,9 @@ const main = async () => {
     await connectDB()
     await connectRedis()
 
+    // --- Cloudinary Setup ---
+    await ensureFoldersExist()
+
     // --- Welcome Route ---
     app.get('/', (req, res) => {
       res.json({
@@ -50,6 +56,7 @@ const main = async () => {
           health: '/health/liveness',
           content: '/content',
           admin: '/admin',
+          pdfs: '/pdfs',
         },
       })
     })
@@ -58,6 +65,7 @@ const main = async () => {
     app.use('/auth', authRoutes)
     app.use('/health', healthRoutes)
     app.use('/admin', adminRoutes)
+    app.use('/pdfs', pdfRoutes)
     app.use('/', healthcheckRoute) // For healthcheck route for Render
 
     // --- Error Handling ---

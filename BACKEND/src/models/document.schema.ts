@@ -20,6 +20,8 @@ export const DocumentSchema = z.object({
   facts: z.string().optional(),
   summary: z.string().optional(),
   key_notes: z.record(z.string(), z.string()).optional(),
+  imageUrl: z.string().url().optional(),
+  pdfUrl: z.string().url().optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 })

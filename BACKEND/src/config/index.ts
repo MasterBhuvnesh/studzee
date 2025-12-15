@@ -17,6 +17,10 @@ const configSchema = z.object({
   DOC_CACHE_TTL: z.coerce.number().default(86400),
   JOB_CRON: z.string().default('0 0 * * *'),
   LOG_LEVEL: z.string().default('info'),
+  CLOUDINARY_CLOUD_NAME: z.string().min(1, 'Cloudinary cloud name is required'),
+  CLOUDINARY_API_KEY: z.string().min(1, 'Cloudinary API key is required'),
+  CLOUDINARY_API_SECRET: z.string().min(1, 'Cloudinary API secret is required'),
+  DEV_TOKEN: z.string().optional(), // Optional token for development mode
 })
 
 const parsedConfig = configSchema.safeParse(process.env)

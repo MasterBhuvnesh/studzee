@@ -56,20 +56,23 @@ A production-ready backend service built with TypeScript that provides comprehen
 
 ### Environment Variables
 
-| Variable              | Description                           | Required | Default |
-| --------------------- | ------------------------------------- | -------- | ------- |
-| `NODE_ENV`            | Environment (development/production)  | Yes      | -       |
-| `PORT`                | Server port                           | No       | 4000    |
-| `MONGO_URI`           | MongoDB connection string             | Yes      | -       |
-| `MONGO_ROOT_USER`     | MongoDB root username                 | Yes      | -       |
-| `MONGO_ROOT_PASSWORD` | MongoDB root password                 | Yes      | -       |
-| `REDIS_HOST`          | Redis server host                     | No       | redis   |
-| `REDIS_PORT`          | Redis server port                     | No       | 6379    |
-| `CLERK_SECRET_KEY`    | Clerk authentication secret key       | Yes      | -       |
-| `CLERK_ADMIN_ROLE`    | Clerk role name for admin access      | Yes      | admin   |
-| `LIST_CACHE_TTL`      | List cache TTL in seconds             | No       | 300     |
-| `DOC_CACHE_TTL`       | Document cache TTL in seconds         | No       | 86400   |
-| `CRON_SCHEDULE`       | Cron expression for cache refresh job | No       | -       |
+| Variable                | Description                           | Required | Default |
+| ----------------------- | ------------------------------------- | -------- | ------- |
+| `NODE_ENV`              | Environment (development/production)  | Yes      | -       |
+| `PORT`                  | Server port                           | No       | 4000    |
+| `MONGO_URI`             | MongoDB connection string             | Yes      | -       |
+| `MONGO_ROOT_USER`       | MongoDB root username                 | Yes      | -       |
+| `MONGO_ROOT_PASSWORD`   | MongoDB root password                 | Yes      | -       |
+| `REDIS_HOST`            | Redis server host                     | No       | redis   |
+| `REDIS_PORT`            | Redis server port                     | No       | 6379    |
+| `CLERK_SECRET_KEY`      | Clerk authentication secret key       | Yes      | -       |
+| `CLERK_ADMIN_ROLE`      | Clerk role name for admin access      | Yes      | admin   |
+| `LIST_CACHE_TTL`        | List cache TTL in seconds             | No       | 300     |
+| `DOC_CACHE_TTL`         | Document cache TTL in seconds         | No       | 86400   |
+| `CRON_SCHEDULE`         | Cron expression for cache refresh job | No       | -       |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name                 | Yes      | -       |
+| `CLOUDINARY_API_KEY`    | Cloudinary API key                    | Yes      | -       |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret                 | Yes      | -       |
 
 ### Clerk Setup
 
@@ -310,6 +313,60 @@ Admin endpoints additionally require the user to have the admin role configured 
 
 ---
 
+#### PDF Endpoints
+
+##### List All PDFs
+
+- **GET** `/pdfs`
+- **Description**: Retrieve a paginated list of all documents with uploaded PDFs
+- **Access**: Public
+- **Query Parameters**:
+  - `page` (optional): Page number (default: 1, min: 1)
+  - `limit` (optional): Items per page (default: 20, min: 1, max: 100)
+- **Example Request**:
+  ```bash
+  curl "http://localhost:4000/pdfs?page=1&limit=10"
+  ```
+- **Success Response** (200 OK):
+  ```json
+  {
+    "data": [
+      {
+        "documentId": "507f1f77bcf86cd799439011",
+        "title": "Introduction to TypeScript",
+        "pdfUrl": "https://res.cloudinary.com/your-cloud/raw/upload/v1234567890/pdfs/introduction-to-typescript.pdf",
+        "uploadedAt": "2024-01-15T10:30:00.000Z"
+      },
+      {
+        "documentId": "507f1f77bcf86cd799439012",
+        "title": "Advanced Node.js",
+        "pdfUrl": "https://res.cloudinary.com/your-cloud/raw/upload/v1234567890/pdfs/advanced-nodejs.pdf",
+        "uploadedAt": "2024-01-16T14:20:00.000Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "total": 25
+    }
+  }
+  ```
+- **Error Responses**:
+  - `400 Bad Request`: Invalid query parameters
+    ```json
+    {
+      "message": "Invalid query parameters",
+      "errors": [
+        {
+          "path": ["page"],
+          "message": "Number must be greater than or equal to 1"
+        }
+      ]
+    }
+    ```
+
+---
+
 #### Admin Endpoints
 
 All admin endpoints require authentication AND admin role.
@@ -456,6 +513,74 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
   - `403 Forbidden`: User does not have admin role
   - `404 Not Found`: Document does not exist
 
+##### Upload Document Image
+
+- **POST** `/admin/documents/:id/upload-image`
+- **Description**: Upload an image for a document (replaces existing image if present)
+- **Access**: Admin only
+- **Content-Type**: `multipart/form-data`
+- **Request Body**:
+  - `file`: Image file (JPG, PNG, or WebP, max 10MB)
+- **Example Request**:
+  ```bash
+  curl -X POST http://localhost:4000/admin/documents/507f1f77bcf86cd799439011/upload-image \
+       -H "Authorization: Bearer eyJhbGc..." \
+       -F "file=@/path/to/image.png"
+  ```
+- **Success Response** (200 OK):
+  ```json
+  {
+    "message": "Image uploaded successfully",
+    "imageUrl": "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/images/507f1f77bcf86cd799439011.png",
+    "documentId": "507f1f77bcf86cd799439011"
+  }
+  ```
+- **Error Responses**:
+  - `400 Bad Request`: No file uploaded or invalid file type
+    ```json
+    {
+      "message": "Invalid file type. Only JPG, PNG, and WebP images are allowed."
+    }
+    ```
+  - `401 Unauthorized`: Missing or invalid authentication
+  - `403 Forbidden`: User does not have admin role
+  - `404 Not Found`: Document does not exist
+  - `500 Internal Server Error`: Cloudinary upload failure
+
+##### Upload Document PDF
+
+- **POST** `/admin/documents/:id/upload-pdf`
+- **Description**: Upload a PDF for a document (replaces existing PDF if present)
+- **Access**: Admin only
+- **Content-Type**: `multipart/form-data`
+- **Request Body**:
+  - `file`: PDF file (max 50MB)
+- **Example Request**:
+  ```bash
+  curl -X POST http://localhost:4000/admin/documents/507f1f77bcf86cd799439011/upload-pdf \
+       -H "Authorization: Bearer eyJhbGc..." \
+       -F "file=@/path/to/document.pdf"
+  ```
+- **Success Response** (200 OK):
+  ```json
+  {
+    "message": "PDF uploaded successfully",
+    "pdfUrl": "https://res.cloudinary.com/your-cloud/raw/upload/v1234567890/pdfs/introduction-to-typescript.pdf",
+    "documentId": "507f1f77bcf86cd799439011"
+  }
+  ```
+- **Error Responses**:
+  - `400 Bad Request`: No file uploaded, invalid file type, or file size exceeded
+    ```json
+    {
+      "message": "Invalid file type. Only PDF files are allowed."
+    }
+    ```
+  - `401 Unauthorized`: Missing or invalid authentication
+  - `403 Forbidden`: User does not have admin role
+  - `404 Not Found`: Document does not exist
+  - `500 Internal Server Error`: Cloudinary upload failure
+
 ## Caching Strategy
 
 The service implements a two-tier Redis caching strategy for optimal performance:
@@ -503,6 +628,8 @@ interface Document {
   facts?: string // Optional facts
   quiz: Record<string, QuizItem> // Quiz questions (required)
   key_notes?: Record<string, string> // Optional key notes
+  imageUrl?: string // Optional Cloudinary image URL
+  pdfUrl?: string // Optional Cloudinary PDF URL
   createdAt: Date // Auto-generated timestamp
   updatedAt: Date // Auto-updated timestamp
 }
@@ -513,6 +640,8 @@ interface QuizItem {
   options: string[] // Answer options (min 2)
 }
 ```
+
+> **Note**: The `imageUrl` and `pdfUrl` fields are optional and will be `null` or `undefined` if no files have been uploaded for the document.
 
 ## Development
 
