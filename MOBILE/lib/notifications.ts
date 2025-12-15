@@ -18,7 +18,6 @@ const API_AUTH_TOKEN = process.env.EXPO_PUBLIC_API_AUTH_TOKEN;
 export function setupNotificationHandler() {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: true,
       shouldShowBanner: true,

@@ -1,15 +1,14 @@
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { AppIcon } from '@/components/global/AppIcon';
-import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { Header } from '@/components/global/Header';
-import { NotificationPermissionSection } from '@/components/global/NotificationPermissionSection';
 import { colors } from '@/constants/colors';
+import { useNotification } from '@/contexts/NotificationContext';
 import { SettingCardProps } from '@/types';
 import logger from '@/utils/logger';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Bell,
+  BellOff,
   ChevronRight,
   FileText,
   HelpCircle,
@@ -19,8 +18,16 @@ import {
   Menu,
   MessageCircle,
 } from 'lucide-react-native';
-import { useRef } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Platform,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingCard = ({ title, items }: SettingCardProps) => (
@@ -42,12 +49,31 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
                 {item.label}
               </Text>
             </View>
-            <AppIcon
-              Icon={ChevronRight}
-              color={colors.zinc[500]}
-              size={16}
-              strokeWidth={1.5}
-            />
+            {item.hasToggle ? (
+              item.toggleLoading ? (
+                <ActivityIndicator color={colors.blue[500]} size="small" />
+              ) : (
+                <Switch
+                  value={item.toggleValue}
+                  onValueChange={item.onToggleChange}
+                  trackColor={{
+                    false: colors.zinc[300],
+                    true: colors.blue[200],
+                  }}
+                  thumbColor={
+                    item.toggleValue ? colors.blue[500] : colors.zinc[50]
+                  }
+                  ios_backgroundColor={colors.zinc[300]}
+                />
+              )
+            ) : (
+              <AppIcon
+                Icon={ChevronRight}
+                color={colors.zinc[500]}
+                size={16}
+                strokeWidth={1.5}
+              />
+            )}
           </TouchableOpacity>
           {index < items.length - 1 && (
             <View className="mx-4 h-px bg-zinc-100" />
@@ -59,96 +85,113 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
 );
 
 export default function SettingsPage() {
-  const notificationBottomSheetRef = useRef<BottomSheetModal>(null);
+  const { permissionGranted, permissionLoading, requestPermission } =
+    useNotification();
 
-  const handleOpenNotificationSettings = () => {
-    notificationBottomSheetRef.current?.present();
+  const handleOpenSettings = () => {
+    if (Platform.OS === 'ios') {
+      Linking.openURL('app-settings:');
+    } else {
+      Linking.openSettings();
+    }
+  };
+
+  const handleNotificationToggle = async (value: boolean) => {
+    if (value) {
+      // User wants to enable notifications
+      const granted = await requestPermission();
+
+      // If permission wasn't granted (denied status), open settings
+      if (!granted) {
+        handleOpenSettings();
+      }
+    } else {
+      // User wants to disable notifications - open settings
+      handleOpenSettings();
+    }
   };
 
   return (
-    <>
-      <LinearGradient
-        colors={[colors.zinc[50], colors.zinc[100]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        className="flex-1"
-      >
-        <SafeAreaView className="flex-1 bg-transparent">
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-            <Header title="Settings" />
-            <View className="px-6 pb-8 pt-6">
-              {/* Experience Settings */}
-              <SettingCard
-                title="Experience"
-                items={[
-                  {
-                    label: 'App Notifications',
-                    onPress: handleOpenNotificationSettings,
-                    icon: Bell,
-                  },
-                  {
-                    label: 'Language',
-                    onPress: () => logger.debug('Language pressed'),
-                    icon: Languages,
-                  },
-                  {
-                    label: 'Newsletters',
-                    onPress: () => logger.debug('Newsletters pressed'),
-                    icon: Mail,
-                  },
-                ]}
-              />
+    <LinearGradient
+      colors={[colors.zinc[50], colors.zinc[100]]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      className="flex-1"
+    >
+      <SafeAreaView className="flex-1 bg-transparent">
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          <Header title="Settings" />
+          <View className="px-6 pb-8 pt-6">
+            {/* Experience Settings */}
+            <SettingCard
+              title="Experience"
+              items={[
+                {
+                  label: 'App Notifications',
+                  onPress: handleOpenSettings,
+                  icon: permissionGranted ? Bell : BellOff,
+                  hasToggle: true,
+                  toggleValue: permissionGranted,
+                  onToggleChange: handleNotificationToggle,
+                  toggleLoading: permissionLoading,
+                },
+                {
+                  label: 'Language',
+                  onPress: () => logger.debug('Language pressed'),
+                  icon: Languages,
+                },
+                {
+                  label: 'Newsletters',
+                  onPress: () => logger.debug('Newsletters pressed'),
+                  icon: Mail,
+                },
+              ]}
+            />
 
-              {/* Support Settings */}
-              <SettingCard
-                title="Support"
-                items={[
-                  {
-                    label: 'Get Support',
-                    onPress: () => logger.debug('Get Support pressed'),
-                    icon: HelpCircle,
-                  },
-                  {
-                    label: 'Send Feedback',
-                    onPress: () => logger.debug('Send Feedback pressed'),
-                    icon: MessageCircle,
-                  },
-                  {
-                    label: 'Terms of Use',
-                    onPress: () => logger.debug('Terms of Use pressed'),
-                    icon: Menu,
-                  },
-                  {
-                    label: 'Privacy Policy',
-                    onPress: () => logger.debug('Privacy Policy pressed'),
-                    icon: FileText,
-                  },
-                ]}
-              />
+            {/* Support Settings */}
+            <SettingCard
+              title="Support"
+              items={[
+                {
+                  label: 'Get Support',
+                  onPress: () => logger.debug('Get Support pressed'),
+                  icon: HelpCircle,
+                },
+                {
+                  label: 'Send Feedback',
+                  onPress: () => logger.debug('Send Feedback pressed'),
+                  icon: MessageCircle,
+                },
+                {
+                  label: 'Terms of Use',
+                  onPress: () => logger.debug('Terms of Use pressed'),
+                  icon: Menu,
+                },
+                {
+                  label: 'Privacy Policy',
+                  onPress: () => logger.debug('Privacy Policy pressed'),
+                  icon: FileText,
+                },
+              ]}
+            />
 
-              {/* Account Settings */}
-              <SettingCard
-                title="Account"
-                items={[
-                  {
-                    label: 'Change Password',
-                    onPress: () => logger.debug('Change Password pressed'),
-                    icon: Lock,
-                  },
-                ]}
-              />
+            {/* Account Settings */}
+            <SettingCard
+              title="Account"
+              items={[
+                {
+                  label: 'Change Password',
+                  onPress: () => logger.debug('Change Password pressed'),
+                  icon: Lock,
+                },
+              ]}
+            />
 
-              {/* Sign Out Button */}
-              <SignOutButton />
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-
-        {/* Notification Settings Bottom Sheet */}
-        <CustomBottomSheetModal ref={notificationBottomSheetRef}>
-          <NotificationPermissionSection />
-        </CustomBottomSheetModal>
-      </LinearGradient>
-    </>
+            {/* Sign Out Button */}
+            <SignOutButton />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

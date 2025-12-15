@@ -39,6 +39,11 @@ export interface SettingItem {
   label: string;
   onPress?: () => void;
   icon: React.ComponentType<any>;
+  // Toggle-related properties
+  hasToggle?: boolean;
+  toggleValue?: boolean;
+  onToggleChange?: (value: boolean) => void;
+  toggleLoading?: boolean;
 }
 
 /**
