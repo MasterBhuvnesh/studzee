@@ -10,9 +10,9 @@ export const invalidateAllCache = async (): Promise<void> => {
     // Delete all keys matching content patterns
     const listKeys = await redisClient.keys('content:list:*')
     const docKeys = await redisClient.keys('content:doc:*')
-    
+
     const allKeys = [...listKeys, ...docKeys]
-    
+
     if (allKeys.length > 0) {
       await redisClient.del(allKeys)
       logger.info(`Cache invalidated: ${allKeys.length} keys deleted`, {
