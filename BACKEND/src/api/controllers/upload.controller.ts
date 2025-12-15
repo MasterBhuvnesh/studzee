@@ -11,6 +11,7 @@ import {
   getPublicIdFromUrl,
 } from '../../config/cloudinary'
 import logger from '../../utils/logger'
+import { invalidateAllCache } from '../../utils/cache'
 
 /**
  * Sanitize a string to be used as a filename
@@ -79,6 +80,9 @@ export const uploadDocumentImage = async (
     document.imageUrl = url
     await document.save()
 
+    // Invalidate cache after uploading image
+    await invalidateAllCache()
+
     logger.info(`Image uploaded for document ${id}: ${url}`)
 
     return res.status(200).json({
@@ -138,6 +142,9 @@ export const uploadDocumentPdf = async (req: MulterRequest, res: Response) => {
     // Update document with new PDF URL
     document.pdfUrl = url
     await document.save()
+
+    // Invalidate cache after uploading PDF
+    await invalidateAllCache()
 
     logger.info(`PDF uploaded for document ${id}: ${url}`)
 

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { DocumentModel } from '../../models/document.model'
 import { DocumentSchema, TDocument } from '../../models/document.schema'
+import { invalidateAllCache } from '../../utils/cache'
 
 import { z } from 'zod'
 
@@ -25,6 +26,9 @@ export const createDocument = async (req: Request, res: Response) => {
       imageUrl: parsed.imageUrl ?? null,
       pdfUrl: parsed.pdfUrl ?? null,
     })
+
+    // Invalidate cache after creating document
+    await invalidateAllCache()
 
     return res
       .status(201)
@@ -51,6 +55,10 @@ export const updateDocument = async (req: Request, res: Response) => {
     if (!document) {
       return res.status(404).json({ message: 'Document not found' })
     }
+
+    // Invalidate cache after updating document
+    await invalidateAllCache()
+
     res.status(200).json(document)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -69,6 +77,10 @@ export const deleteDocument = async (req: Request, res: Response) => {
     if (!document) {
       return res.status(404).json({ message: 'Document not found' })
     }
+
+    // Invalidate cache after deleting document
+    await invalidateAllCache()
+
     res.status(204).send()
   } catch (error) {
     res.status(500).json({ message: 'Error deleting document', error })

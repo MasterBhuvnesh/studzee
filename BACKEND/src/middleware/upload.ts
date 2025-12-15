@@ -67,6 +67,7 @@ const pdfUpload = multer({
  * Wrapper to handle multer errors
  */
 const handleMulterError = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   upload: (req: Request, res: Response, callback: (error: any) => void) => void
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
