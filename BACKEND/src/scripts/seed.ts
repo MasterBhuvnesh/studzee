@@ -15,7 +15,7 @@ const seedDatabase = async () => {
     await DocumentModel.deleteMany({})
 
     // 2. Read sample data from JSON file
-    const dataPath = path.join(__dirname, '..', 'data', 'sample.data.json')
+    const dataPath = path.join(__dirname, '..', 'data', 'data.json')
     const sampleData = JSON.parse(fs.readFileSync(dataPath, 'utf-8'))
 
     // 3. Validate and insert data
