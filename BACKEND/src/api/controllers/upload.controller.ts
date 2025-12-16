@@ -11,7 +11,7 @@ import {
   getPublicIdFromUrl,
 } from '../../config/cloudinary'
 import logger from '../../utils/logger'
-import { invalidateAllCache } from '../../utils/cache'
+import { invalidateAllCache, invalidateDocumentCache } from '../../utils/cache'
 
 /**
  * Sanitize a string to be used as a filename
@@ -81,7 +81,7 @@ export const uploadDocumentImage = async (
     await document.save()
 
     // Invalidate cache after uploading image
-    await invalidateAllCache()
+    await invalidateDocumentCache(id)
 
     logger.info(`Image uploaded for document ${id}: ${url}`)
 
