@@ -10,6 +10,16 @@ export const QuizItemSchema = z.object({
 })
 
 /**
+ * Zod schema for a PDF file with metadata.
+ */
+export const PdfFileSchema = z.object({
+  name: z.string({ required_error: 'PDF name is required' }),
+  url: z.string().url({ message: 'PDF URL must be a valid URL' }),
+  uploadedAt: z.date({ required_error: 'Upload date is required' }),
+  size: z.number().positive({ message: 'PDF size must be positive' }),
+})
+
+/**
  * Zod schema for the main document.
  * This is the single source of truth for document validation.
  */
@@ -21,11 +31,12 @@ export const DocumentSchema = z.object({
   summary: z.string().optional(),
   key_notes: z.record(z.string(), z.string()).optional(),
   imageUrl: z.string().url().nullable().optional(),
-  pdfUrl: z.string().url().nullable().optional(),
+  pdfUrl: z.array(PdfFileSchema).optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 })
 
 // Type inference for easy use in TypeScript
 export type TQuizItem = z.infer<typeof QuizItemSchema>
+export type TPdfFile = z.infer<typeof PdfFileSchema>
 export type TDocument = z.infer<typeof DocumentSchema>

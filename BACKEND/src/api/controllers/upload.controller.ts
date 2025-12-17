@@ -117,30 +117,34 @@ export const uploadDocumentPdf = async (req: MulterRequest, res: Response) => {
       return res.status(404).json({ message: 'Document not found' })
     }
 
-    // Delete old PDF if it exists
-    if (document.pdfUrl) {
-      try {
-        const publicId = getPublicIdFromUrl(document.pdfUrl)
-        await deleteFromCloudinary(publicId, 'raw')
-      } catch (error) {
-        logger.error(error, 'Failed to delete old PDF from Cloudinary')
-        // Continue with upload even if deletion fails
-      }
-    }
-
     // Sanitize document title for use as filename
     const sanitizedTitle = sanitizeFilename(document.title)
+    const originalFilename = req.file.originalname
 
     // Upload new PDF to Cloudinary (add .pdf extension to filename)
-    const { url } = await uploadToCloudinary(
+    const { url, uploadedAt, size } = await uploadToCloudinary(
       req.file.buffer,
       'pdfs',
       `${sanitizedTitle}.pdf`, // Include .pdf extension in filename
-      'raw' // PDFs are uploaded as 'raw' resource type
+      'raw', // PDFs are uploaded as 'raw' resource type
+      originalFilename
     )
 
-    // Update document with new PDF URL
-    document.pdfUrl = url
+    // Create PDF object with metadata
+    const pdfObject = {
+      name: originalFilename,
+      url,
+      uploadedAt,
+      size,
+    }
+
+    // Initialize pdfUrl as array if it doesn't exist or is not an array
+    if (!Array.isArray(document.pdfUrl)) {
+      document.pdfUrl = []
+    }
+
+    // Add new PDF to the array
+    document.pdfUrl.push(pdfObject)
     await document.save()
 
     // Invalidate cache after uploading PDF
@@ -150,10 +154,9 @@ export const uploadDocumentPdf = async (req: MulterRequest, res: Response) => {
 
     return res.status(200).json({
       message: 'PDF uploaded successfully',
-      pdfUrl: url,
+      pdf: pdfObject,
       documentId: id,
       title: document.title,
-      publicId: getPublicIdFromUrl(url),
     })
   } catch (error) {
     logger.error(error, 'Error uploading PDF')

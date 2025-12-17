@@ -64,7 +64,7 @@
       "5": "Treat preprocessing code as production critical and version it alongside models."
     },
     "imageUrl": null,
-    "pdfUrl": null
+    "pdfUrl": []
   },
   {
     "title": "Text Classification with Deep Learning",
@@ -131,7 +131,7 @@
       "5": "Align evaluation metrics and model choices with the real world objective."
     },
     "imageUrl": null,
-    "pdfUrl": null
+    "pdfUrl": []
   },
   {
     "title": "Text Generation with Deep Learning Models",
@@ -198,7 +198,7 @@
       "5": "Decoding strategies strongly influence the quality of generated text."
     },
     "imageUrl": null,
-    "pdfUrl": null
+    "pdfUrl": []
   },
 
   {
@@ -266,6 +266,6 @@
       "5": "Fine-tuning with small learning rates preserves pre-trained knowledge."
     },
     "imageUrl": null,
-    "pdfUrl": null
+    "pdfUrl": []
   }
 ]

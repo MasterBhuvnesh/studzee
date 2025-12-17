@@ -40,14 +40,22 @@ export const ensureFoldersExist = async (): Promise<void> => {
  * @param folder - The folder to upload to (e.g., 'images' or 'pdfs')
  * @param filename - The desired filename (without extension)
  * @param resourceType - The resource type ('image' or 'raw' for PDFs)
- * @returns Upload result with URL and public ID
+ * @param originalFilename - The original filename (optional)
+ * @returns Upload result with URL, public ID, upload timestamp, size, and original filename
  */
 export const uploadToCloudinary = async (
   fileBuffer: Buffer,
   folder: string,
   filename: string,
-  resourceType: 'image' | 'raw' = 'image'
-): Promise<{ url: string; publicId: string }> => {
+  resourceType: 'image' | 'raw' = 'image',
+  originalFilename?: string
+): Promise<{
+  url: string
+  publicId: string
+  uploadedAt: Date
+  size: number
+  originalFilename?: string
+}> => {
   return new Promise((resolve, reject) => {
     logger.info('Starting Cloudinary upload', {
       folder,
@@ -75,10 +83,15 @@ export const uploadToCloudinary = async (
           logger.info('Cloudinary upload successful', {
             url: result.secure_url,
             publicId: result.public_id,
+            uploadedAt: result.created_at,
+            size: result.bytes,
           })
           resolve({
             url: result.secure_url,
             publicId: result.public_id,
+            uploadedAt: new Date(result.created_at),
+            size: result.bytes,
+            originalFilename,
           })
         } else {
           const noResultError = new Error('No result from Cloudinary upload')

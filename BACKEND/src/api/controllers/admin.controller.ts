@@ -24,7 +24,7 @@ export const createDocument = async (req: Request, res: Response) => {
       summary: parsed.summary,
       key_notes: keyNotesMap,
       imageUrl: parsed.imageUrl ?? null,
-      pdfUrl: parsed.pdfUrl ?? null,
+      pdfUrl: parsed.pdfUrl ?? [],
     })
 
     // Invalidate cache after creating document

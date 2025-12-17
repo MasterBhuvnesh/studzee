@@ -17,25 +17,33 @@ export const listPdfs = async (req: Request, res: Response) => {
 
     const skip = (page - 1) * limit
 
-    // Find all documents that have a PDF URL
+    // Find all documents that have a PDF URL array with at least one item
     const [documents, total] = await Promise.all([
       DocumentModel.find(
-        { pdfUrl: { $ne: null } },
+        { pdfUrl: { $exists: true, $ne: [] } },
         '_id title pdfUrl updatedAt'
       )
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      DocumentModel.countDocuments({ pdfUrl: { $ne: null } }),
+      DocumentModel.countDocuments({ pdfUrl: { $exists: true, $ne: [] } }),
     ])
 
-    const data = documents.map((doc) => ({
-      documentId: doc._id.toString(),
-      title: doc.title,
-      pdfUrl: doc.pdfUrl,
-      uploadedAt: doc.updatedAt,
-    }))
+    // Flatten the PDFs from all documents
+    const data = documents.flatMap((doc) => {
+      if (!doc.pdfUrl || !Array.isArray(doc.pdfUrl)) {
+        return []
+      }
+      return doc.pdfUrl.map((pdf) => ({
+        documentId: doc._id.toString(),
+        title: doc.title,
+        pdfName: pdf.name,
+        pdfUrl: pdf.url,
+        uploadedAt: pdf.uploadedAt,
+        size: pdf.size,
+      }))
+    })
 
     return res.status(200).json({
       data,

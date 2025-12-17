@@ -13,6 +13,16 @@ const QuizItemMongooseSchema = new Schema(
   { _id: false }
 )
 
+const PdfFileMongooseSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    uploadedAt: { type: Date, required: true },
+    size: { type: Number, required: true },
+  },
+  { _id: false }
+)
+
 const DocumentMongooseSchema = new Schema<IDocument>(
   {
     title: { type: String, required: true, index: true },
@@ -29,7 +39,7 @@ const DocumentMongooseSchema = new Schema<IDocument>(
       of: String,
     },
     imageUrl: { type: String, required: false },
-    pdfUrl: { type: String, required: false },
+    pdfUrl: { type: [PdfFileMongooseSchema], required: false, default: [] },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt
