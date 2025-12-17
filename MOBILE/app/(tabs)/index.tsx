@@ -1,14 +1,49 @@
+import { AppIcon } from '@/components/global/AppIcon';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
+import { getContent } from '@/lib/api';
+import { ContentSummary } from '@/types';
+import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, Text } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-const data = {
-  title: 'Text Preprocessing Pipeline for Deep Learning',
-  content:
-    "INTRODUCTION\nTransfer learning for text classification leverages knowledge learned from large pre-trained language models and adapts it to specific downstream tasks such as sentiment analysis or topic classification. It matters because it drastically reduces training time, lowers data requirements, and enables production-grade performance even with limited labeled datasets.\n\nCORE CONCEPTS\nThe core idea of transfer learning is reuse. Instead of training a text model from scratch, we start from a model that has already learned rich linguistic representations from massive corpora. A helpful analogy is an experienced English teacher who can quickly start teaching history because core language understanding already exists.\n\nMechanically, transfer learning involves three stages. First, a model is pre-trained on a general task such as language modeling, where it learns grammar, syntax, and semantics. Second, the pre-trained weights are transferred to a new task. Third, the model is fine-tuned on task-specific data. During fine-tuning, some layers may be frozen while others are updated to specialize the model.\n\nBERT is one of the most influential pre-trained models for text classification. Unlike earlier unidirectional models, BERT is bidirectional, meaning it learns context from both left and right of a word simultaneously. This allows it to resolve ambiguity more effectively. Under the hood, BERT is a stack of transformer encoder layers trained using masked language modeling and next sentence prediction objectives. These objectives force the model to learn deep contextual representations.\n\nIn practice, fine-tuning BERT for classification involves adding a small classification head on top of the transformer. Input text is tokenized using subword tokenization, converted into token IDs, and passed through the model. The final hidden representation corresponding to the special classification token is fed into a linear layer that outputs class logits. Training optimizes cross entropy loss while updating most or all of the transformer weights.\n\nTransformers are central to this process. Unlike RNNs, transformers process entire sequences in parallel using self-attention. Self-attention assigns different importance weights to words depending on context. For example, resolving what the word 'it' refers to requires attending to relevant nouns earlier in the sentence. Multi-head attention extends this idea by allowing multiple attention mechanisms to operate in parallel, each focusing on different aspects of the sequence.\n\nMathematically, attention computes similarity scores between query, key, and value vectors derived from embeddings. These scores are normalized and used to compute weighted combinations of values. This allows the model to dynamically route information across the sequence regardless of distance. Positional encoding is added so the model still understands word order.\n\nBeyond performance, robustness becomes critical in real-world systems. Adversarial attacks intentionally perturb input text to deceive models while keeping meaning nearly unchanged. Techniques such as FGSM make minimal gradient-based changes, while PGD iteratively searches for stronger perturbations. The Carlini and Wagner attack goes further by explicitly optimizing for undetectable adversarial examples.\n\nDefensive strategies include model ensembling, robust data augmentation, and adversarial training. Adversarial training exposes the model to perturbed examples during training so it learns more stable decision boundaries. Regularization and robustness toolkits in PyTorch help mitigate vulnerability but cannot eliminate risk entirely.\n\nPRACTICAL APPLICATION\nIn production, transfer learning is the default approach for text classification. Fine-tuning BERT or similar models enables rapid deployment of sentiment analysis, toxicity detection, and intent classification systems. In PyTorch, this is commonly done using the Hugging Face Transformers library, which abstracts away most low-level details.\n\nDevelopers typically start with bert-base or distilled variants for efficiency. Learning rates are kept very small, often around 0.00001, to avoid catastrophic forgetting. Batch sizes are limited by GPU memory, and gradient accumulation is often used. Transformers provide strong accuracy but have higher latency, so smaller models may be preferred for real-time systems.\n\nBEST PRACTICES AND PITFALLS\nA common mistake is overfitting during fine-tuning, especially with small datasets. Monitoring validation loss and using early stopping is essential. Another pitfall is assuming pre-trained models are unbiased or robust. They inherit biases from training data and are vulnerable to adversarial manipulation.\n\nAvoid training transformers from scratch unless absolutely necessary. Be careful when freezing layers, as freezing too much can limit adaptation, while freezing too little can destabilize training. Always evaluate robustness and failure cases, not just average accuracy.\n\nCONNECTIONS\nTransfer learning builds on transformers, attention mechanisms, and text preprocessing. It connects naturally to large language models, prompt engineering, and instruction tuning. Prerequisites include understanding embeddings, neural networks, and optimization. A natural next step is exploring advanced fine-tuning methods such as adapters, parameter-efficient tuning, and robustness evaluation.\n\nTransfer learning transforms text classification from a data-hungry research problem into a practical engineering discipline.",
-};
+
 export default function HomePage() {
+  const [content, setContent] = useState<ContentSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch content from backend API
+  useEffect(() => {
+    async function fetchContent() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const contentResponse = await getContent({ page: 1, limit: 20 });
+        setContent(contentResponse.data);
+        logger.success('Content fetched successfully for home page');
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to fetch content';
+        setError(errorMessage);
+        logger.error(`Error fetching content: ${errorMessage}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchContent();
+  }, []);
+
   return (
     <LinearGradient
       colors={[colors.zinc[50], colors.zinc[100]]}
@@ -19,12 +54,79 @@ export default function HomePage() {
       <SafeAreaView className="flex-1">
         <Header title="Home" />
         <ScrollView className="flex-1 px-6 pt-6">
-          <Text className="text-center font-product text-xl text-zinc-800">
-            {data.title}
-          </Text>
-          <Text className="pb-10  font-sans text-base text-zinc-700">
-            {data.content}
-          </Text>
+          {/* Loading State */}
+          {loading && (
+            <View className="flex-1 items-center justify-center py-20">
+              <ActivityIndicator size="large" color={colors.zinc[600]} />
+              <Text className="mt-4 font-sans text-sm text-zinc-500">
+                Loading content...
+              </Text>
+            </View>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <View className="mb-6 overflow-hidden rounded-2xl border border-red-200 bg-red-50 p-6">
+              <Text className="font-product text-base text-red-800">
+                Error Loading Content
+              </Text>
+              <Text className="mt-2 font-sans text-sm text-red-600">
+                {error}
+              </Text>
+            </View>
+          )}
+
+          {/* Content from API */}
+          {!loading && !error && content.length > 0 && (
+            <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
+              <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
+                <Text className="font-product text-base text-zinc-800">
+                  Available Content
+                </Text>
+                <TouchableOpacity className="flex-row items-center gap-1">
+                  <Text className="font-sans text-sm text-zinc-500">
+                    View All
+                  </Text>
+                  <AppIcon
+                    Icon={ChevronRight}
+                    color={colors.zinc[500]}
+                    size={16}
+                    strokeWidth={1.5}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View className="p-2">
+                {content.slice(0, 3).map((item, index) => (
+                  <View key={item.id}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        logger.debug(`Content pressed: ${item.title}`);
+                        // TODO: Navigate to content detail page with item.id
+                      }}
+                      className="rounded-xl px-4 py-3 active:bg-zinc-50"
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        className="font-sans text-base text-zinc-700"
+                        numberOfLines={2}
+                      >
+                        {item.title}
+                      </Text>
+                      <Text
+                        className="mt-1 font-sans text-xs text-zinc-400"
+                        numberOfLines={2}
+                      >
+                        {item.summary}
+                      </Text>
+                    </TouchableOpacity>
+                    {index < content.slice(0, 3).length - 1 && (
+                      <View className="mx-4 h-px bg-zinc-100" />
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>

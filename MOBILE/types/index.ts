@@ -4,18 +4,18 @@
 
 // Component types
 export type {
-  ActionCardProps,
-  DownloadedCardProps,
-  DownloadedItem,
-  DownloadedPdfInfoProps,
-  OAuthButtonsProps,
-  OnboardingScreenProps,
-  PdfItem,
-  ProfileCardProps,
-  ResourceCardProps,
-  ResourceItem,
-  SettingCardProps,
-  SettingItem,
+    ActionCardProps,
+    DownloadedCardProps,
+    DownloadedItem,
+    DownloadedPdfInfoProps,
+    OAuthButtonsProps,
+    OnboardingScreenProps,
+    PdfItem,
+    ProfileCardProps,
+    ResourceCardProps,
+    ResourceItem,
+    SettingCardProps,
+    SettingItem
 } from './components';
 
 // Icon types
@@ -26,3 +26,20 @@ export type { ColorGroup, ColorShade, ColorValue } from './colors';
 
 // Auth types
 export type { AuthError, AuthState, OAuthProvider } from './auth';
+
+// API types
+export type {
+    ApiError,
+    ContentDetail,
+    ContentListResponse,
+    ContentSummary,
+    KeyNotes,
+    PaginatedResponse,
+    PaginationMeta,
+    PaginationParams,
+    PdfDocument,
+    PdfsResponse,
+    Quiz,
+    QuizQuestion
+} from './api';
+

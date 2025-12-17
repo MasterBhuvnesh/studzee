@@ -4,14 +4,27 @@ import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { DownloadedPdfInfo } from '@/components/global/DownloadedPdfInfo';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
-import { DownloadedCardProps, PdfItem, ResourceCardProps } from '@/types';
+import { getPdfs } from '@/lib/api';
+import {
+  DownloadedCardProps,
+  PdfDocument,
+  PdfItem,
+  ResourceCardProps,
+} from '@/types';
 import logger from '@/utils/logger';
+import { useAuth } from '@clerk/clerk-expo';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, Info } from 'lucide-react-native';
-import React, { useCallback, useRef, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ResourceCard = ({ title, items }: ResourceCardProps) => (
@@ -123,8 +136,39 @@ const DownloadedCard = ({ title, items }: DownloadedCardProps) => (
 );
 
 export default function ResourcesPage() {
+  const { getToken } = useAuth();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [selectedPdf, setSelectedPdf] = useState<PdfItem | null>(null);
+
+  // API data state
+  const [pdfs, setPdfs] = useState<PdfDocument[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data from backend API
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch PDFs only
+        const pdfsResponse = await getPdfs({ page: 1, limit: 20 });
+
+        setPdfs(pdfsResponse.data);
+        logger.success('PDFs data fetched successfully');
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to fetch PDFs';
+        setError(errorMessage);
+        logger.error(`Error fetching PDFs: ${errorMessage}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   const openDownloadedPdf = useCallback((item: PdfItem) => {
     setSelectedPdf(item);
@@ -149,36 +193,44 @@ export default function ResourcesPage() {
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
             <Header title="Resources" />
             <View className="px-6 pb-8 pt-6">
-              <ResourceCard
-                title="Top 3 PDFs"
-                items={[
-                  {
-                    label: 'Deep Learning for Images with pytorch',
-                    onPress: () =>
-                      logger.debug(
-                        'Deep Learning for Images with pytorch pressed'
-                      ),
-                    size: '5 mb',
-                  },
-                  {
-                    label: 'Natural language processing withSpacy',
-                    onPress: () =>
-                      logger.debug(
-                        'Natural language processing withSpacy pressed'
-                      ),
-                    size: '15 mb',
-                  },
-                  {
-                    label: 'Extreme Gradient Boosting with XGBoost',
-                    onPress: () =>
-                      logger.debug(
-                        'Extreme Gradient Boosting with XGBoost pressed'
-                      ),
-                    size: '7 mb',
-                  },
-                ]}
-              />
+              {/* Loading State */}
+              {loading && (
+                <View className="flex-1 items-center justify-center py-20">
+                  <ActivityIndicator size="large" color={colors.zinc[600]} />
+                  <Text className="mt-4 font-sans text-sm text-zinc-500">
+                    Loading resources...
+                  </Text>
+                </View>
+              )}
 
+              {/* Error State */}
+              {error && !loading && (
+                <View className="mb-6 overflow-hidden rounded-2xl border border-red-200 bg-red-50 p-6">
+                  <Text className="font-product text-base text-red-800">
+                    Error Loading Resources
+                  </Text>
+                  <Text className="mt-2 font-sans text-sm text-red-600">
+                    {error}
+                  </Text>
+                </View>
+              )}
+
+              {/* PDFs from API */}
+              {!loading && !error && pdfs.length > 0 && (
+                <ResourceCard
+                  title="Available PDFs"
+                  items={pdfs.slice(0, 3).map((pdf) => ({
+                    label: pdf.title,
+                    onPress: () => {
+                      logger.debug(`PDF pressed: ${pdf.title}`);
+                      // TODO: Handle PDF opening/downloading
+                    },
+                    size: 'N/A', // Size not provided in API response
+                  }))}
+                />
+              )}
+
+              {/* Downloaded PDFs (keeping as is for now - local storage feature) */}
               <DownloadedCard
                 title="Downloaded PDFs"
                 items={[
