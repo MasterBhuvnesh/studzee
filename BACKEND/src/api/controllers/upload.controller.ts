@@ -37,17 +37,38 @@ export const uploadDocumentImage = async (
   try {
     const { id } = req.params
 
-    // Debug logging
+    // Debug logging - More detailed
     logger.info('Upload image request received', {
       documentId: id,
       hasFile: !!req.file,
       contentType: req.headers['content-type'],
       body: req.body,
+      fileDetails: req.file
+        ? {
+            fieldname: req.file.fieldname,
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+          }
+        : null,
     })
+
+    // Validate document ID format
+    if (!id || id.length !== 24) {
+      logger.warn('Invalid document ID format', { id })
+      return res.status(400).json({
+        message: 'Invalid document ID format',
+        details: 'Document ID must be a valid 24-character MongoDB ObjectId',
+      })
+    }
 
     // Check if file was uploaded
     if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' })
+      logger.warn('No file uploaded in request')
+      return res.status(400).json({
+        message: 'No file uploaded',
+        details: 'Please include a file in the request with field name "file"',
+      })
     }
 
     // Find the document
