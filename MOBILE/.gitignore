@@ -45,3 +45,4 @@ nativewind-env.d.ts
 services/
 .easignore
 .expo/
+docs/

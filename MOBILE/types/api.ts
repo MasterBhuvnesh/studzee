@@ -26,14 +26,26 @@ export interface PaginatedResponse<T> {
 export interface PdfDocument {
   documentId: string;
   title: string;
+  pdfName: string;
   pdfUrl: string;
   uploadedAt: string;
+  size: number;
 }
 
 /**
  * Response type for /pdfs endpoint
  */
 export type PdfsResponse = PaginatedResponse<PdfDocument>;
+
+/**
+ * PDF URL object structure in content detail
+ */
+export interface PdfUrlObject {
+  name: string;
+  url: string;
+  uploadedAt: string;
+  size: number;
+}
 
 /**
  * Content summary item from /content endpoint
@@ -85,7 +97,7 @@ export interface ContentDetail {
   summary: string;
   key_notes: KeyNotes;
   imageUrl: string;
-  pdfUrl: string;
+  pdfUrl: PdfUrlObject[];
   createdAt: string;
   updatedAt: string;
   __v: number;

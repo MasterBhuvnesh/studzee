@@ -8,11 +8,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -54,13 +53,25 @@ export default function HomePage() {
       <SafeAreaView className="flex-1">
         <Header title="Home" />
         <ScrollView className="flex-1 px-6 pt-6">
-          {/* Loading State */}
+          {/* Loading State - Skeleton Placeholder */}
           {loading && (
-            <View className="flex-1 items-center justify-center py-20">
-              <ActivityIndicator size="large" color={colors.zinc[600]} />
-              <Text className="mt-4 font-sans text-sm text-zinc-500">
-                Loading content...
-              </Text>
+            <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
+              <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
+                <View className="h-5 w-40 rounded bg-zinc-200" />
+                <View className="h-4 w-20 rounded bg-zinc-200" />
+              </View>
+              <View className="p-2">
+                {[1, 2, 3].map((index) => (
+                  <View key={index}>
+                    <View className="rounded-xl px-4 py-3">
+                      <View className="mb-2 h-4 w-4/5 rounded bg-zinc-200" />
+                      <View className="mt-1 h-3 w-full rounded bg-zinc-200" />
+                      <View className="mt-1 h-3 w-3/4 rounded bg-zinc-200" />
+                    </View>
+                    {index < 3 && <View className="mx-4 h-px bg-zinc-100" />}
+                  </View>
+                ))}
+              </View>
             </View>
           )}
 

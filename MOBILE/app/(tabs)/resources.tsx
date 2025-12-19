@@ -16,15 +16,9 @@ import { useAuth } from '@clerk/clerk-expo';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight, Info } from 'lucide-react-native';
+import { ChevronRight, Download, Info } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ResourceCard = ({ title, items }: ResourceCardProps) => (
@@ -44,12 +38,12 @@ const ResourceCard = ({ title, items }: ResourceCardProps) => (
     <View className="p-2">
       {items.map((item, index) => (
         <View key={index}>
-          <TouchableOpacity
-            onPress={item.onPress}
-            className="flex-row items-center justify-between rounded-xl px-4 py-2 active:bg-zinc-50"
-            activeOpacity={0.7}
-          >
-            <View className="flex-1 flex-row items-center">
+          <View className="flex-row items-center justify-between rounded-xl px-4 py-2">
+            <TouchableOpacity
+              onPress={item.onPress}
+              className="flex-1 flex-row items-center active:bg-zinc-50"
+              activeOpacity={0.7}
+            >
               <Image
                 source={require('@/assets/images/pdf.svg')}
                 style={{ width: 26, height: 26 }}
@@ -66,8 +60,22 @@ const ResourceCard = ({ title, items }: ResourceCardProps) => (
                   {item.size}
                 </Text>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                logger.debug(`Download PDF: ${item.label}`);
+              }}
+              className="ml-2 rounded-lg p-2 active:bg-zinc-100"
+              activeOpacity={0.7}
+            >
+              <AppIcon
+                Icon={Download}
+                color={colors.zinc[500]}
+                size={20}
+                strokeWidth={1.5}
+              />
+            </TouchableOpacity>
+          </View>
           {index < items.length - 1 && (
             <View className="mx-4 h-px bg-zinc-100" />
           )}
@@ -193,14 +201,57 @@ export default function ResourcesPage() {
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
             <Header title="Resources" />
             <View className="px-6 pb-8 pt-6">
-              {/* Loading State */}
+              {/* Loading State - Skeleton Placeholders */}
               {loading && (
-                <View className="flex-1 items-center justify-center py-20">
-                  <ActivityIndicator size="large" color={colors.zinc[600]} />
-                  <Text className="mt-4 font-sans text-sm text-zinc-500">
-                    Loading resources...
-                  </Text>
-                </View>
+                <>
+                  {/* Skeleton for PDFs Card */}
+                  <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
+                    <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
+                      <View className="h-5 w-32 rounded bg-zinc-200" />
+                      <View className="h-4 w-24 rounded bg-zinc-200" />
+                    </View>
+                    <View className="p-2">
+                      {[1, 2, 3].map(index => (
+                        <View key={index}>
+                          <View className="flex-row items-center rounded-xl px-4 py-2">
+                            <View className="h-7 w-7 rounded-lg bg-zinc-100" />
+                            <View className="ml-3 flex-1">
+                              <View className="mb-2 h-4 w-3/4 rounded bg-zinc-100" />
+                              <View className="h-3 w-16 rounded bg-zinc-100" />
+                            </View>
+                          </View>
+                          {index < 3 && (
+                            <View className="mx-4 h-px bg-zinc-50" />
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Skeleton for Downloaded PDFs Card */}
+                  <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
+                    <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
+                      <View className="h-5 w-40 rounded bg-zinc-200" />
+                      <View className="h-4 w-24 rounded bg-zinc-200" />
+                    </View>
+                    <View className="p-2">
+                      {[1, 2].map(index => (
+                        <View key={index}>
+                          <View className="flex-row items-center rounded-xl px-4 py-2">
+                            <View className="h-7 w-7 rounded-lg bg-zinc-100" />
+                            <View className="ml-3 flex-1">
+                              <View className="mb-2 h-4 w-4/5 rounded bg-zinc-100" />
+                              <View className="h-3 w-16 rounded bg-zinc-100" />
+                            </View>
+                          </View>
+                          {index < 2 && (
+                            <View className="mx-4 h-px bg-zinc-50" />
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </>
               )}
 
               {/* Error State */}
@@ -219,13 +270,13 @@ export default function ResourcesPage() {
               {!loading && !error && pdfs.length > 0 && (
                 <ResourceCard
                   title="Available PDFs"
-                  items={pdfs.slice(0, 3).map((pdf) => ({
+                  items={pdfs.slice(0, 3).map(pdf => ({
                     label: pdf.title,
                     onPress: () => {
                       logger.debug(`PDF pressed: ${pdf.title}`);
                       // TODO: Handle PDF opening/downloading
                     },
-                    size: 'N/A', // Size not provided in API response
+                    size: `${(pdf.size / 1024).toFixed(0)} KB`,
                   }))}
                 />
               )}
