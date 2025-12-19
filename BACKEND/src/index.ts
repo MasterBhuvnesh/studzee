@@ -19,7 +19,6 @@ import logger from './utils/logger'
 import healthcheckRoute from './api/routes/healthcheck' // For healthcheck route for Render
 import pdfRoutes from './api/routes/pdf'
 import { startHeartbeatJob } from './jobs/heartbeat' // Import the heartbeat job for scheduling Render pings
-import { ensureFoldersExist } from './config/cloudinary'
 
 const main = async () => {
   try {
@@ -43,9 +42,6 @@ const main = async () => {
     // --- Database & Cache Connections ---
     await connectDB()
     await connectRedis()
-
-    // --- Cloudinary Setup ---
-    await ensureFoldersExist()
 
     // --- Welcome Route ---
     app.get('/', (req, res) => {

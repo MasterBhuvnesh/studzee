@@ -5,11 +5,7 @@ import { DocumentModel } from '../../models/document.model'
 interface MulterRequest extends Request {
   file?: Express.Multer.File
 }
-import {
-  uploadToCloudinary,
-  deleteFromCloudinary,
-  getPublicIdFromUrl,
-} from '../../config/cloudinary'
+import { uploadToS3, deleteFromS3, getKeyFromUrl } from '../../config/s3'
 import logger from '../../utils/logger'
 import { invalidateAllCache, invalidateDocumentCache } from '../../utils/cache'
 
@@ -80,21 +76,22 @@ export const uploadDocumentImage = async (
     // Delete old image if it exists
     if (document.imageUrl) {
       try {
-        const publicId = getPublicIdFromUrl(document.imageUrl)
-        await deleteFromCloudinary(publicId, 'image')
+        const key = getKeyFromUrl(document.imageUrl)
+        await deleteFromS3(key)
       } catch (error) {
-        logger.error(error, 'Failed to delete old image from Cloudinary')
+        logger.error(error, 'Failed to delete old image from S3')
         // Continue with upload even if deletion fails
       }
     }
 
-    // Upload new image to Cloudinary (include file extension)
-    // Extract file extension from mimetype
-    const { url } = await uploadToCloudinary(
+    // Upload new image to S3
+    // Determine file extension from mimetype
+    const ext = req.file.mimetype.split('/')[1] || 'jpg'
+    const { url } = await uploadToS3(
       req.file.buffer,
       'images',
-      id, // Use document ID with extension as filename
-      'image'
+      `${id}.${ext}`, // Use document ID with extension as filename
+      req.file.mimetype
     )
 
     // Update document with new image URL
@@ -142,12 +139,12 @@ export const uploadDocumentPdf = async (req: MulterRequest, res: Response) => {
     const sanitizedTitle = sanitizeFilename(document.title)
     const originalFilename = req.file.originalname
 
-    // Upload new PDF to Cloudinary (add .pdf extension to filename)
-    const { url, uploadedAt, size } = await uploadToCloudinary(
+    // Upload new PDF to S3 (add .pdf extension to filename)
+    const { url, uploadedAt, size } = await uploadToS3(
       req.file.buffer,
       'pdfs',
       `${sanitizedTitle}.pdf`, // Include .pdf extension in filename
-      'raw', // PDFs are uploaded as 'raw' resource type
+      'application/pdf',
       originalFilename
     )
 

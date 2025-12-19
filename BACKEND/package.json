@@ -28,10 +28,10 @@
   "author": "Bhuvnesh Verma",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.956.0",
     "@clerk/clerk-sdk-node": "^4.13.23",
     "@clerk/express": "^1.7.55",
     "axios": "^1.13.2",
-    "cloudinary": "^2.8.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

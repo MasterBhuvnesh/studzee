@@ -17,9 +17,10 @@ const configSchema = z.object({
   DOC_CACHE_TTL: z.coerce.number().default(86400),
   JOB_CRON: z.string().default('0 0 * * *'),
   LOG_LEVEL: z.string().default('info'),
-  CLOUDINARY_CLOUD_NAME: z.string().min(1, 'Cloudinary cloud name is required'),
-  CLOUDINARY_API_KEY: z.string().min(1, 'Cloudinary API key is required'),
-  CLOUDINARY_API_SECRET: z.string().min(1, 'Cloudinary API secret is required'),
+  AWS_REGION: z.string().min(1, 'AWS region is required'),
+  AWS_ACCESS_KEY_ID: z.string().min(1, 'AWS access key ID is required'),
+  AWS_SECRET_ACCESS_KEY: z.string().min(1, 'AWS secret access key is required'),
+  AWS_S3_BUCKET_NAME: z.string().min(1, 'AWS S3 bucket name is required'),
   DEV_TOKEN: z.string().optional(), // Optional token for development mode
 })
 
