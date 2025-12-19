@@ -1,16 +1,18 @@
 # Studzee API
 
-A production-ready backend service built with TypeScript that provides comprehensive document management. It exposes public content listing, authenticated document retrieval, and admin management endpoints. The service leverages MongoDB for persistent storage, Redis for high-performance caching, and Clerk for secure authentication.
+A production-ready backend service built with TypeScript that provides comprehensive document management. It exposes public content listing, authenticated document retrieval, and admin management endpoints. The service leverages MongoDB for persistent storage, Redis for high-performance caching, AWS S3 for file storage, and Clerk for secure authentication.
 
 ## Features
 
 - **Express.js**: Modern TypeScript-based web framework
 - **MongoDB**: Document storage with Mongoose ODM
 - **Redis Stack**: High-performance caching layer
+- **AWS S3**: Scalable cloud file storage for documents and PDFs
 - **Clerk**: Enterprise-grade authentication and user management
 - **Zod**: Runtime type validation and schema enforcement
 - **Scheduled Jobs**: Automated cache warming with `node-cron`
 - **Structured Logging**: Production-ready logging with `pino`
+- **File Uploads**: Multipart file upload support with `multer`
 - **Docker**: Fully containerized with Docker Compose
 - **Developer Tools**: ESLint, Prettier, and Makefile automation
 - **Testing**: Comprehensive test suite with `vitest`
@@ -22,6 +24,7 @@ A production-ready backend service built with TypeScript that provides comprehen
 - `make` (optional, for convenience commands)
 - Clerk account for authentication
 - MongoDB Atlas account (or local MongoDB instance)
+- AWS account with S3 bucket created
 
 ## Installation
 
@@ -56,36 +59,51 @@ A production-ready backend service built with TypeScript that provides comprehen
 
 ### Environment Variables
 
-| Variable                | Description                           | Required | Default |
-| ----------------------- | ------------------------------------- | -------- | ------- |
-| `NODE_ENV`              | Environment (development/production)  | Yes      | -       |
-| `PORT`                  | Server port                           | No       | 4000    |
-| `MONGO_URI`             | MongoDB connection string             | Yes      | -       |
-| `MONGO_ROOT_USER`       | MongoDB root username                 | Yes      | -       |
-| `MONGO_ROOT_PASSWORD`   | MongoDB root password                 | Yes      | -       |
-| `REDIS_HOST`            | Redis server host                     | No       | redis   |
-| `REDIS_PORT`            | Redis server port                     | No       | 6379    |
-| `CLERK_SECRET_KEY`      | Clerk authentication secret key       | Yes      | -       |
-| `CLERK_ADMIN_ROLE`      | Clerk role name for admin access      | Yes      | admin   |
-| `LIST_CACHE_TTL`        | List cache TTL in seconds             | No       | 300     |
-| `DOC_CACHE_TTL`         | Document cache TTL in seconds         | No       | 86400   |
-| `CRON_SCHEDULE`         | Cron expression for cache refresh job | No       | -       |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name                 | Yes      | -       |
-| `CLOUDINARY_API_KEY`    | Cloudinary API key                    | Yes      | -       |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret                 | Yes      | -       |
+| Variable                | Description                               | Required | Default      |
+| ----------------------- | ----------------------------------------- | -------- | ------------ |
+| `NODE_ENV`              | Environment (development/production/test) | Yes      | development  |
+| `PORT`                  | Server port                               | No       | 4000         |
+| `MONGO_URI`             | MongoDB connection string                 | Yes      | -            |
+| `MONGO_ROOT_USER`       | MongoDB root username (Docker only)       | Yes      | -            |
+| `MONGO_ROOT_PASSWORD`   | MongoDB root password (Docker only)       | Yes      | -            |
+| `REDIS_URL`             | Redis connection URL                      | Yes      | -            |
+| `CLERK_SECRET_KEY`      | Clerk authentication secret key           | Yes      | -            |
+| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key                     | Yes      | -            |
+| `LIST_CACHE_TTL`        | List cache TTL in seconds                 | No       | 300          |
+| `DOC_CACHE_TTL`         | Document cache TTL in seconds             | No       | 86400        |
+| `JOB_CRON`              | Cron expression for cache refresh job     | No       | 0 0 \* \* \* |
+| `LOG_LEVEL`             | Logging level (info/debug/error)          | No       | info         |
+| `AWS_REGION`            | AWS region for S3 (e.g., us-east-1)       | Yes      | -            |
+| `AWS_ACCESS_KEY_ID`     | AWS access key ID                         | Yes      | -            |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key                     | Yes      | -            |
+| `AWS_S3_BUCKET_NAME`    | S3 bucket name for file storage           | Yes      | -            |
+| `DEV_TOKEN`             | Optional development token                | No       | -            |
 
 ### Clerk Setup
 
 1. Create a Clerk application at [Clerk Dashboard](https://dashboard.clerk.com/)
-2. Navigate to API Keys and copy your Secret Key
-3. Add the key to your `.env` file as `CLERK_SECRET_KEY`
-4. Set up roles in Clerk and create an `admin` role (or customize `CLERK_ADMIN_ROLE`)
+2. Navigate to API Keys and copy your Secret Key and Publishable Key
+3. Add the keys to your `.env` file
+4. Set up roles in Clerk and create an `admin` role for admin access
 
 ### MongoDB Setup
 
 1. Create a MongoDB cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) or use a local instance
 2. Get your connection string
 3. Add connection details to your `.env` file
+
+### AWS S3 Setup
+
+1. Create an AWS account at [AWS Console](https://aws.amazon.com/)
+2. Create an S3 bucket for file storage
+3. Create an IAM user with `S3` permissions:
+   - `s3:PutObject` - Upload files
+   - `s3:DeleteObject` - Delete files
+   - `s3:GetObject` - Read files (if needed)
+4. Generate access credentials for the IAM user
+5. Add AWS credentials to your `.env` file
+
+> **Note**: Configure your S3 bucket policy or ACL settings to allow public read access to uploaded files if you want them to be publicly accessible. The application no longer sets ACL on individual objects by default.
 
 ## Usage
 
@@ -137,13 +155,15 @@ src/
 ├── api/                # HTTP layer
 │   ├── controllers/    # Request handlers
 │   └── routes/         # Route definitions
-├── config/             # Configuration (DB, Redis, env)
+├── config/             # Configuration (DB, Redis, S3, env)
 ├── core/               # Business logic
 │   └── services/       # Service layer
+├── data/               # Sample data files
 ├── jobs/               # Scheduled background jobs
 ├── middleware/         # Express middleware
 ├── models/             # Data models and schemas
 ├── scripts/            # Utility scripts
+├── types/              # TypeScript type definitions
 └── utils/              # Helper functions
 ```
 
@@ -151,6 +171,7 @@ src/
 
 - **Content Service**: Handles document listing and retrieval with caching
 - **Admin Service**: Manages document CRUD operations
+- **Upload Service**: Handles file uploads to AWS S3
 - **Cache Layer**: Redis-based caching with automatic invalidation
 - **Authentication**: Clerk middleware with role-based access control
 - **Error Handling**: Centralized error handling middleware
@@ -234,15 +255,9 @@ Admin endpoints additionally require the user to have the admin role configured 
         "_id": "507f1f77bcf86cd799439011",
         "title": "Introduction to TypeScript",
         "summary": "A comprehensive guide to TypeScript basics",
+        "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.jpg",
         "createdAt": "2024-01-15T10:30:00.000Z",
         "updatedAt": "2024-01-15T10:30:00.000Z"
-      },
-      {
-        "_id": "507f1f77bcf86cd799439012",
-        "title": "Advanced Node.js",
-        "summary": "Deep dive into Node.js internals",
-        "createdAt": "2024-01-16T14:20:00.000Z",
-        "updatedAt": "2024-01-16T14:20:00.000Z"
       }
     ],
     "pagination": {
@@ -276,27 +291,28 @@ Admin endpoints additionally require the user to have the admin role configured 
     "content": "TypeScript is a typed superset of JavaScript...",
     "summary": "A comprehensive guide to TypeScript basics",
     "facts": "TypeScript was developed by Microsoft",
+    "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.jpg",
+    "pdfUrl": [
+      {
+        "name": "typescript-guide.pdf",
+        "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
+        "uploadedAt": "2024-01-15T10:30:00.000Z",
+        "size": 1234567
+      }
+    ],
     "quiz": {
       "q1": {
         "que": "What is TypeScript?",
         "ans": "A typed superset of JavaScript",
         "options": [
           "A typed superset of JavaScript",
-          "A new programming language",
-          "A JavaScript framework",
-          "A database system"
+          "A new programming language"
         ]
-      },
-      "q2": {
-        "que": "Who developed TypeScript?",
-        "ans": "Microsoft",
-        "options": ["Google", "Facebook", "Microsoft", "Apple"]
       }
     },
     "key_notes": {
       "note1": "TypeScript adds static types to JavaScript",
-      "note2": "It compiles down to plain JavaScript",
-      "note3": "Provides better IDE support and autocomplete"
+      "note2": "It compiles down to plain JavaScript"
     },
     "createdAt": "2024-01-15T10:30:00.000Z",
     "updatedAt": "2024-01-15T10:30:00.000Z"
@@ -305,11 +321,6 @@ Admin endpoints additionally require the user to have the admin role configured 
 - **Error Responses**:
   - `401 Unauthorized`: Missing or invalid authentication token
   - `404 Not Found`: Document does not exist
-    ```json
-    {
-      "message": "Document not found"
-    }
-    ```
 
 ---
 
@@ -334,14 +345,14 @@ Admin endpoints additionally require the user to have the admin role configured 
       {
         "documentId": "507f1f77bcf86cd799439011",
         "title": "Introduction to TypeScript",
-        "pdfUrl": "https://res.cloudinary.com/your-cloud/raw/upload/v1234567890/pdfs/introduction-to-typescript.pdf",
-        "uploadedAt": "2024-01-15T10:30:00.000Z"
-      },
-      {
-        "documentId": "507f1f77bcf86cd799439012",
-        "title": "Advanced Node.js",
-        "pdfUrl": "https://res.cloudinary.com/your-cloud/raw/upload/v1234567890/pdfs/advanced-nodejs.pdf",
-        "uploadedAt": "2024-01-16T14:20:00.000Z"
+        "pdfs": [
+          {
+            "name": "typescript-guide.pdf",
+            "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
+            "uploadedAt": "2024-01-15T10:30:00.000Z",
+            "size": 1234567
+          }
+        ]
       }
     ],
     "meta": {
@@ -351,19 +362,6 @@ Admin endpoints additionally require the user to have the admin role configured 
     }
   }
   ```
-- **Error Responses**:
-  - `400 Bad Request`: Invalid query parameters
-    ```json
-    {
-      "message": "Invalid query parameters",
-      "errors": [
-        {
-          "path": ["page"],
-          "message": "Number must be greater than or equal to 1"
-        }
-      ]
-    }
-    ```
 
 ---
 
@@ -402,23 +400,6 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
     }
   }
   ```
-- **Example Request**:
-  ```bash
-  curl -X POST http://localhost:4000/admin/documents \
-       -H "Authorization: Bearer eyJhbGc..." \
-       -H "Content-Type: application/json" \
-       -d '{
-         "title": "New Tutorial",
-         "content": "Complete tutorial content...",
-         "quiz": {
-           "q1": {
-             "que": "Sample question?",
-             "ans": "Correct answer",
-             "options": ["Option 1", "Correct answer"]
-           }
-         }
-       }'
-  ```
 - **Success Response** (201 Created):
   ```json
   {
@@ -427,13 +408,6 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
       "_id": "507f1f77bcf86cd799439013",
       "title": "New Tutorial",
       "content": "Complete tutorial content...",
-      "quiz": {
-        "q1": {
-          "que": "Sample question?",
-          "ans": "Correct answer",
-          "options": ["Option 1", "Correct answer"]
-        }
-      },
       "createdAt": "2024-01-17T09:15:00.000Z",
       "updatedAt": "2024-01-17T09:15:00.000Z"
     }
@@ -441,17 +415,6 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
   ```
 - **Error Responses**:
   - `400 Bad Request`: Invalid document data
-    ```json
-    {
-      "message": "Invalid document data",
-      "errors": [
-        {
-          "path": ["title"],
-          "message": "Title must be at least 3 characters long"
-        }
-      ]
-    }
-    ```
   - `401 Unauthorized`: Missing or invalid authentication
   - `403 Forbidden`: User does not have admin role
 
@@ -460,34 +423,8 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
 - **PUT** `/admin/documents/:id`
 - **Description**: Update an existing document
 - **Access**: Admin only
-- **Request Body**:
-  ```json
-  {
-    "title": "Updated Title",
-    "content": "Updated content...",
-    "tags": ["typescript", "tutorial"]
-  }
-  ```
-- **Example Request**:
-  ```bash
-  curl -X PUT http://localhost:4000/admin/documents/507f1f77bcf86cd799439011 \
-       -H "Authorization: Bearer eyJhbGc..." \
-       -H "Content-Type: application/json" \
-       -d '{
-         "title": "Updated Title",
-         "content": "Updated content..."
-       }'
-  ```
-- **Success Response** (200 OK):
-  ```json
-  {
-    "_id": "507f1f77bcf86cd799439011",
-    "title": "Updated Title",
-    "content": "Updated content...",
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "updatedAt": "2024-01-17T10:45:00.000Z"
-  }
-  ```
+- **Request Body**: Partial document updates
+- **Success Response** (200 OK): Updated document
 - **Error Responses**:
   - `400 Bad Request`: Invalid update data
   - `401 Unauthorized`: Missing or invalid authentication
@@ -499,15 +436,7 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
 - **DELETE** `/admin/documents/:id`
 - **Description**: Delete a document by its ID
 - **Access**: Admin only
-- **Example Request**:
-  ```bash
-  curl -X DELETE http://localhost:4000/admin/documents/507f1f77bcf86cd799439011 \
-       -H "Authorization: Bearer eyJhbGc..."
-  ```
-- **Success Response** (204 No Content):
-  ```
-  (Empty response body)
-  ```
+- **Success Response** (204 No Content): Empty response
 - **Error Responses**:
   - `401 Unauthorized`: Missing or invalid authentication
   - `403 Forbidden`: User does not have admin role
@@ -531,26 +460,21 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
   ```json
   {
     "message": "Image uploaded successfully",
-    "imageUrl": "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/images/507f1f77bcf86cd799439011.png",
+    "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.png",
     "documentId": "507f1f77bcf86cd799439011"
   }
   ```
 - **Error Responses**:
   - `400 Bad Request`: No file uploaded or invalid file type
-    ```json
-    {
-      "message": "Invalid file type. Only JPG, PNG, and WebP images are allowed."
-    }
-    ```
   - `401 Unauthorized`: Missing or invalid authentication
   - `403 Forbidden`: User does not have admin role
   - `404 Not Found`: Document does not exist
-  - `500 Internal Server Error`: Cloudinary upload failure
+  - `500 Internal Server Error`: S3 upload failure
 
 ##### Upload Document PDF
 
 - **POST** `/admin/documents/:id/upload-pdf`
-- **Description**: Upload a PDF for a document (replaces existing PDF if present)
+- **Description**: Upload a PDF for a document (adds to PDF array)
 - **Access**: Admin only
 - **Content-Type**: `multipart/form-data`
 - **Request Body**:
@@ -565,21 +489,24 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
   ```json
   {
     "message": "PDF uploaded successfully",
-    "pdfUrl": "https://res.cloudinary.com/your-cloud/raw/upload/v1234567890/pdfs/introduction-to-typescript.pdf",
-    "documentId": "507f1f77bcf86cd799439011"
+    "pdf": {
+      "name": "document.pdf",
+      "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
+      "uploadedAt": "2024-01-15T10:30:00.000Z",
+      "size": 1234567
+    },
+    "documentId": "507f1f77bcf86cd799439011",
+    "title": "Introduction to TypeScript"
   }
   ```
 - **Error Responses**:
   - `400 Bad Request`: No file uploaded, invalid file type, or file size exceeded
-    ```json
-    {
-      "message": "Invalid file type. Only PDF files are allowed."
-    }
-    ```
   - `401 Unauthorized`: Missing or invalid authentication
   - `403 Forbidden`: User does not have admin role
   - `404 Not Found`: Document does not exist
-  - `500 Internal Server Error`: Cloudinary upload failure
+  - `500 Internal Server Error`: S3 upload failure
+
+---
 
 ## Caching Strategy
 
@@ -591,7 +518,7 @@ The service implements a two-tier Redis caching strategy for optimal performance
 - **Cache Key Pattern**: `content:list:page:<page>:limit:<limit>`
 - **TTL**: 5 minutes (300 seconds)
 - **Strategy**: Cache the paginated list response
-- **Invalidation**: Automatic expiry after TTL
+- **Invalidation**: Automatic expiry after TTL + manual invalidation on admin operations
 
 ### 2. Document Cache
 
@@ -599,11 +526,11 @@ The service implements a two-tier Redis caching strategy for optimal performance
 - **Cache Key Pattern**: `content:doc:<id>`
 - **TTL**: 24 hours (86400 seconds)
 - **Strategy**: Cache individual document responses
-- **Invalidation**: Automatic expiry + manual refresh job
+- **Invalidation**: Automatic expiry + manual refresh job + admin updates
 
 ### Cache Warming
 
-A scheduled background job (configurable via `CRON_SCHEDULE`) automatically:
+A scheduled background job (configurable via `JOB_CRON`) automatically:
 
 - Discovers new documents in the database
 - Pre-warms the cache with frequently accessed documents
@@ -612,7 +539,7 @@ A scheduled background job (configurable via `CRON_SCHEDULE`) automatically:
 **Manual cache refresh**:
 
 ```bash
-make refresh-cache
+npm run job:refresh-cache
 ```
 
 ## Database Schema
@@ -628,8 +555,8 @@ interface Document {
   facts?: string // Optional facts
   quiz: Record<string, QuizItem> // Quiz questions (required)
   key_notes?: Record<string, string> // Optional key notes
-  imageUrl?: string // Optional Cloudinary image URL
-  pdfUrl?: string // Optional Cloudinary PDF URL
+  imageUrl?: string // Optional S3 image URL
+  pdfUrl?: PdfObject[] // Optional array of PDF objects
   createdAt: Date // Auto-generated timestamp
   updatedAt: Date // Auto-updated timestamp
 }
@@ -639,9 +566,16 @@ interface QuizItem {
   ans: string // Correct answer
   options: string[] // Answer options (min 2)
 }
+
+interface PdfObject {
+  name: string // Original filename
+  url: string // S3 URL
+  uploadedAt: Date // Upload timestamp
+  size: number // File size in bytes
+}
 ```
 
-> **Note**: The `imageUrl` and `pdfUrl` fields are optional and will be `null` or `undefined` if no files have been uploaded for the document.
+> **Note**: The `imageUrl` and `pdfUrl` fields are optional. Images are replaced on new uploads, while PDFs are stored as an array allowing multiple files per document.
 
 ## Development
 
@@ -653,30 +587,44 @@ interface QuizItem {
 │   ├── api/                # HTTP layer
 │   │   ├── controllers/    # Request handlers
 │   │   │   ├── admin.controller.ts
-│   │   │   └── content.controller.ts
+│   │   │   ├── content.controller.ts
+│   │   │   ├── pdf.controller.ts
+│   │   │   └── upload.controller.ts
 │   │   └── routes/         # Route definitions
 │   │       ├── admin.ts
 │   │       ├── auth.ts
 │   │       ├── content.ts
-│   │       └── health.ts
+│   │       ├── health.ts
+│   │       ├── healthcheck.ts
+│   │       └── pdf.ts
 │   ├── config/             # App configuration
-│   │   ├── db.ts           # MongoDB connection
-│   │   ├── env.ts          # Environment variables
-│   │   └── redis.ts        # Redis connection
+│   │   ├── index.ts        # Environment variables
+│   │   ├── mongo.ts        # MongoDB connection
+│   │   ├── redis.ts        # Redis connection
+│   │   └── s3.ts           # AWS S3 configuration
 │   ├── core/               # Business logic
 │   │   └── services/       # Service layer
 │   │       └── content.service.ts
+│   ├── data/               # Sample data
+│   │   ├── data.json
+│   │   └── sample.data.json
 │   ├── jobs/               # Scheduled jobs
-│   │   └── cacheRefresh.ts
+│   │   ├── cache-refresh.ts
+│   │   └── heartbeat.ts
 │   ├── middleware/         # Express middleware
 │   │   ├── auth.ts         # Clerk authentication
-│   │   └── errorHandler.ts
+│   │   ├── errorHandler.ts
+│   │   └── upload.ts       # Multer file upload
 │   ├── models/             # Data models
 │   │   ├── document.model.ts    # Mongoose model
 │   │   └── document.schema.ts   # Zod schema
 │   ├── scripts/            # Utility scripts
+│   │   ├── run-job.ts
 │   │   └── seed.ts         # Database seeding
+│   ├── types/              # TypeScript types
+│   │   └── express.d.ts
 │   ├── utils/              # Helper functions
+│   │   ├── cache.ts        # Cache utilities
 │   │   └── logger.ts       # Pino logger
 │   └── index.ts            # Application entry point
 ├── .env.example            # Environment variables template
@@ -731,14 +679,32 @@ npm test
 # Run tests in watch mode
 npm run test:watch
 
-# Run tests with coverage
-npm run test:coverage
-
 # Run specific test file
 npm test -- document.test.ts
 ```
 
 ## Deployment
+
+### Environment Setup
+
+Ensure all required environment variables are set in production:
+
+```env
+NODE_ENV=production
+PORT=4000
+MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/studzee
+REDIS_URL=redis://localhost:6379
+CLERK_SECRET_KEY=sk_live_...
+CLERK_PUBLISHABLE_KEY=pk_live_...
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=AKIA...
+AWS_SECRET_ACCESS_KEY=...
+AWS_S3_BUCKET_NAME=studzee-production
+LIST_CACHE_TTL=300
+DOC_CACHE_TTL=86400
+JOB_CRON=0 0 * * *
+LOG_LEVEL=info
+```
 
 ### Docker Production Build
 
@@ -795,6 +761,19 @@ docker-compose ps redis
 
 # Test Redis connection
 docker-compose exec redis redis-cli ping
+```
+
+**S3 Upload Failures**
+
+```bash
+# Verify AWS credentials
+cat .env | grep AWS
+
+# Check IAM user permissions in AWS Console
+# Ensure bucket exists and is in the correct region
+
+# Review application logs for detailed error messages
+make logs
 ```
 
 **Authentication Errors**
