@@ -35,8 +35,3 @@ export const DocumentSchema = z.object({
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 })
-
-// Type inference for easy use in TypeScript
-export type TQuizItem = z.infer<typeof QuizItemSchema>
-export type TPdfFile = z.infer<typeof PdfFileSchema>
-export type TDocument = z.infer<typeof DocumentSchema>

@@ -1,8 +1,5 @@
-import { Schema, model, Document } from 'mongoose'
-import { TDocument } from './document.schema'
-
-// Mongoose document type
-export interface IDocument extends TDocument, Document {}
+import { Schema, model } from 'mongoose'
+import { IDocument } from '../types/document'
 
 const QuizItemMongooseSchema = new Schema(
   {

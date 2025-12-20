@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
+import { AppError } from '../types/errors'
 import logger from '../utils/logger'
-
-interface AppError extends Error {
-  statusCode?: number
-}
 
 /**
  * 404 Not Found handler.

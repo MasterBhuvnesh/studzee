@@ -1,10 +1,6 @@
-import { Request, Response } from 'express'
+import { Response } from 'express'
+import { MulterRequest } from '../../types/request'
 import { DocumentModel } from '../../models/document.model'
-
-// Extend Express Request to include multer file property
-interface MulterRequest extends Request {
-  file?: Express.Multer.File
-}
 import { uploadToS3, deleteFromS3, getKeyFromUrl } from '../../config/s3'
 import logger from '../../utils/logger'
 import { invalidateAllCache, invalidateDocumentCache } from '../../utils/cache'

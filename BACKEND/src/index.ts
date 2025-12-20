@@ -2,7 +2,6 @@ import compression from 'compression'
 import cors from 'cors'
 import express from 'express'
 import rateLimit from 'express-rate-limit'
-import helmet from 'helmet'
 import morgan from 'morgan'
 
 import adminRoutes from './api/routes/admin'
@@ -14,6 +13,7 @@ import { connectDB } from './config/mongo'
 import { connectRedis } from './config/redis'
 import { scheduleJobs } from './jobs/cache-refresh'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
+import { helmetConfig } from './middleware/helmet'
 import logger from './utils/logger'
 
 import healthcheckRoute from './api/routes/healthcheck' // For healthcheck route for Render
@@ -25,7 +25,7 @@ const main = async () => {
     const app = express()
 
     // --- Middleware ---
-    app.use(helmet())
+    app.use(helmetConfig)
     app.use(cors())
     app.use(compression())
     app.use(express.json())

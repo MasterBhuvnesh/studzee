@@ -2,7 +2,7 @@ import { DocumentModel } from '../../models/document.model'
 import { redisClient } from '../../config/redis'
 import { config } from '../../config'
 import logger from '../../utils/logger'
-import { TDocument } from '../../models/document.schema'
+import { TDocument } from '../../types/document'
 
 const getPaginatedContentFromDB = async (page: number, limit: number) => {
   const skip = (page - 1) * limit

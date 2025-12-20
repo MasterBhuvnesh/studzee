@@ -54,7 +54,7 @@ export const requireAdmin = async (
 ) => {
   try {
     const userId = req.auth().userId
-    console.log('Here is the UserId : ', req.auth().userId)
+    logger.debug({ userId: req.auth().userId }, 'User ID retrieved')
     if (!userId) return res.status(401).json({ message: 'Unauthenticated' })
 
     // In development mode with DEV_TOKEN, automatically grant admin access
@@ -79,7 +79,7 @@ export const requireAdmin = async (
     ;(req as any).userRole = role
     next()
   } catch (err) {
-    console.error('requireAdmin error', err)
+    logger.error({ error: err }, 'Error in requireAdmin middleware')
     return res.status(500).json({ message: 'Internal server error' })
   }
 }
