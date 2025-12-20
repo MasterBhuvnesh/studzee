@@ -38,8 +38,11 @@ export type {
   PaginationMeta,
   PaginationParams,
   PdfDocument,
-  PdfsResponse,
   PdfUrlObject,
+  PdfsResponse,
   Quiz,
   QuizQuestion,
 } from './api';
+
+// Storage types
+export type { DownloadedPdfMetadata } from './storage';

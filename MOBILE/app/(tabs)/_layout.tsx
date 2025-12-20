@@ -18,6 +18,7 @@ export default function TabLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
+
       <Tabs
         screenOptions={{
           headerShown: false,

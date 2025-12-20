@@ -61,6 +61,11 @@ export interface ResourceItem {
   label: string;
   onPress?: () => void;
   size?: string;
+  // Download-related fields
+  documentId?: string;
+  pdfUrl?: string;
+  isDownloading?: boolean;
+  isDownloaded?: boolean;
 }
 
 /**

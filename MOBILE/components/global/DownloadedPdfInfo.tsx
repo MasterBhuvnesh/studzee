@@ -24,7 +24,7 @@ export const DownloadedPdfInfo = ({
         />
         <View className="flex-1">
           <Text
-            className="mb-2 font-product text-lg text-zinc-800"
+            className="mb-2 font-product text-base text-zinc-800"
             numberOfLines={2}
           >
             {title}
@@ -32,7 +32,7 @@ export const DownloadedPdfInfo = ({
 
           {/* META INFO WRAPPER */}
           <View className="gap-2">
-            {/* LOCATION */}
+            {/* SIZE */}
             <View className="flex-row items-center gap-2">
               <AppIcon
                 Icon={FolderOpen}
@@ -41,7 +41,7 @@ export const DownloadedPdfInfo = ({
                 strokeWidth={1.5}
               />
               <Text className="font-sans text-sm text-zinc-400">
-                {location}
+                Size : {size}
               </Text>
             </View>
 
@@ -64,7 +64,9 @@ export const DownloadedPdfInfo = ({
                 size={16}
                 strokeWidth={1.5}
               />
-              <Text className="font-sans text-sm text-zinc-400">{date}</Text>
+              <Text className="font-sans text-sm text-zinc-400">
+                Date : {date}
+              </Text>
             </View>
             {/* </View> */}
           </View>
