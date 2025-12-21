@@ -42,7 +42,7 @@ fi
 
 # --- Confirmation Prompt ---
 echo -e "${YELLOW}WARNING: This script will update version for the '${SERVICE_NAME}' service.${NC}"
-read -p "Are you sure you want to proceed? (y/N): " -n 1 -r
+read -p "Are you sure you want to proceed? (y/n): " -n 1 -r
 echo # Add a newline for cleaner output
 if [[ ! "$REPLY" =~ ^[yY]$ ]]; then
     echo -e "${RED}Operation cancelled by user.${NC}"
