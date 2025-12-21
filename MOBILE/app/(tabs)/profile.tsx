@@ -67,7 +67,10 @@ export default function ProfilePage() {
               name={user?.fullName || 'User'}
               email={user?.emailAddresses[0]?.emailAddress || 'User'}
               buttonText="View Token"
-              image={user?.imageUrl || require('@/assets/images/sample/1.png')}
+              image={
+                user?.imageUrl ||
+                require('@/assets/images/onboarding/AI-Powered Concept Mastery.png')
+              }
               onPress={() => getTokenAndLog()}
             />
           </ScrollView>

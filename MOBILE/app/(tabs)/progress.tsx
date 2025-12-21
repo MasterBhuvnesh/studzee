@@ -57,7 +57,7 @@ export default function ProgressPage() {
             title="Rapid Content Access"
             description="Redis caching ensures instant access to educational content, always available."
             buttonText="Explore Content"
-            image={require('@/assets/images/sample/1.png')}
+            image={require('@/assets/images/onboarding/Welcome to Studzee.png')}
             onPress={() => logger.debug('Explore Content pressed')}
           />
 
@@ -65,7 +65,7 @@ export default function ProgressPage() {
             title="Smart Quiz System"
             description="Interactive quizzes with performance tracking and AI-generated learning assessments."
             buttonText="Test Knowledge"
-            image={require('@/assets/images/sample/2.jpeg')}
+            image={require('@/assets/images/onboarding/AI-Powered Concept Mastery.png')}
             onPress={() => logger.debug('Test Knowledge pressed')}
           />
 
@@ -73,7 +73,7 @@ export default function ProgressPage() {
             title="Gamified Learning"
             description="Earn XP, unlock achievements, and compete on leaderboards while studying."
             buttonText="Start Earning"
-            image={require('@/assets/images/sample/3.jpeg')}
+            image={require('@/assets/images/onboarding/Smart Study Reminders.png')}
             onPress={() => logger.debug('Start Earning pressed')}
           />
         </ScrollView>

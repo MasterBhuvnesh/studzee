@@ -55,6 +55,7 @@ export interface ContentSummary {
   id: string;
   title: string;
   summary: string;
+  createdAt: string;
 }
 
 /**
