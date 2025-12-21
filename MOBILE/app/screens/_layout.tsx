@@ -7,6 +7,8 @@ export default function ScreensLayout() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="pdfs" />
+        <Stack.Screen name="content" />
+        <Stack.Screen name="[id]" />
       </Stack>
     </>
   );
