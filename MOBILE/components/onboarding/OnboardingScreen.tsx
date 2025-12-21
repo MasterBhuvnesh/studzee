@@ -4,6 +4,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 
 import { OnboardingScreenProps } from '@/types';
+import { StatusBar } from 'expo-status-bar';
 
 export default function OnboardingScreen({
   title,
@@ -12,27 +13,33 @@ export default function OnboardingScreen({
   imageSource,
 }: OnboardingScreenProps) {
   return (
-    <LinearGradient
-      colors={gradientColors as any}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      className="flex-1 items-center justify-center px-8"
-    >
-      <View className="w-full max-w-md items-center">
-        {imageSource && (
+    <>
+      <StatusBar style="dark" />
+      <LinearGradient
+        colors={gradientColors as any}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        className="flex-1 items-center justify-center px-8 "
+      >
+        <View className="w-full max-w-md items-center ">
           <Image
             source={imageSource}
-            className="mb-8 h-48 w-48"
+            className="mb-8"
             contentFit="contain"
+            blurRadius={0.5}
+            style={{
+              width: 300,
+              height: 300,
+            }}
           />
-        )}
-        <Text className="mb-6 text-center font-product-bold text-4xl text-white">
-          {title}
-        </Text>
-        <Text className="text-center font-product text-lg leading-7 text-white/90">
-          {description}
-        </Text>
-      </View>
-    </LinearGradient>
+          <Text className="m-8 pb-2 text-center font-sans text-3xl text-zinc-900">
+            {title}
+          </Text>
+          <Text className="mb-4 py-2 text-center font-sans text-base leading-7 text-zinc-700">
+            {description}
+          </Text>
+        </View>
+      </LinearGradient>
+    </>
   );
 }
