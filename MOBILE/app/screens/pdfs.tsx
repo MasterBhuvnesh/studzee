@@ -18,9 +18,9 @@ import {
   CheckCircle2,
   Download,
   Info,
+  Loader,
   Loader2,
-  RefreshCw,
-  X,
+  X
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -325,7 +325,7 @@ export default function PdfsPage() {
               {loading && (
                 <View className="items-center justify-center py-12">
                   <AppIcon
-                    Icon={RefreshCw}
+                    Icon={Loader}
                     color={colors.zinc[400]}
                     size={32}
                     strokeWidth={1.5}

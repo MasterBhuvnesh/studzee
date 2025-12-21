@@ -7,6 +7,7 @@ import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Slot, SplashScreen, useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -27,26 +28,30 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
 
-  // useEffect(() => {
-  //   if (!isLoaded || isLoading) return;
+  useEffect(() => {
+    if (!isLoaded || isLoading) return;
 
-  //   const inOnboarding = segments[0] === '(onboarding)';
-  //   const inAuth = segments[0] === '(auth)';
-  //   const inTabs = segments[0] === '(tabs)';
+    const inOnboarding = segments[0] === '(onboarding)';
+    const inAuth = segments[0] === '(auth)';
+    const inTabs = segments[0] === '(tabs)';
+    const inScreens = segments[0] === 'screens';
 
-  //   // Priority 1: If signed in, go to tabs (highest priority to prevent onboarding loop)
-  //   if (isSignedIn && !inTabs) {
-  //     router.replace('/(tabs)');
-  //   }
-  //   // Priority 2: If not completed onboarding, redirect to onboarding
-  //   else if (!hasCompletedOnboarding && !inOnboarding) {
-  //     router.replace('/(onboarding)' as any);
-  //   }
-  //   // Priority 3: If completed onboarding but not signed in, redirect to auth
-  //   else if (hasCompletedOnboarding && !isSignedIn && !inAuth) {
-  //     router.replace('/(auth)/sign-in');
-  //   }
-  // }, [isSignedIn, isLoaded, hasCompletedOnboarding, isLoading, segments]);
+    // Skip navigation logic for standalone screens (like PDF screen)
+    if (inScreens) return;
+
+    // Priority 1: If signed in, go to tabs (highest priority to prevent onboarding loop)
+    if (isSignedIn && !inTabs) {
+      router.replace('/(tabs)');
+    }
+    // Priority 2: If not completed onboarding, redirect to onboarding
+    else if (!hasCompletedOnboarding && !inOnboarding) {
+      router.replace('/(onboarding)' as any);
+    }
+    // Priority 3: If completed onboarding but not signed in, redirect to auth
+    else if (hasCompletedOnboarding && !isSignedIn && !inAuth) {
+      router.replace('/(auth)/sign-in');
+    }
+  }, [isSignedIn, isLoaded, hasCompletedOnboarding, isLoading, segments]);
 
   return <Slot />;
 }
