@@ -7,7 +7,7 @@ import { TDocument } from '../../types/document'
 const getPaginatedContentFromDB = async (page: number, limit: number) => {
   const skip = (page - 1) * limit
   const [documents, total] = await Promise.all([
-    DocumentModel.find({}, 'title summary')
+    DocumentModel.find({}, 'title summary createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
