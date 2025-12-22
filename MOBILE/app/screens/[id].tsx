@@ -1,26 +1,28 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
+import { FactModal } from '@/components/global/FactModal';
 import { colors } from '@/constants/colors';
 import { getContentById } from '@/lib/api';
+import { downloadPdf } from '@/lib/download';
 import { ContentDetail } from '@/types';
 import logger from '@/utils/logger';
 import { useAuth } from '@clerk/clerk-expo';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, BookOpen, Calendar, FileText } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
 import {
-  Dimensions,
-  FlatList,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+  ArrowLeft,
+  BookOpen,
+  Calendar,
+  Download,
+  Eye,
+  Lightbulb,
+} from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 // ============ COMPONENTS ============
 
 /**
@@ -40,7 +42,7 @@ const ContentDetailSkeleton = () => {
       <View className="mb-6 h-4 w-32 rounded bg-zinc-200" />
 
       {/* Content skeleton */}
-      <View className="space-y-2">
+      <View className="gap-2 space-x-1">
         <View className="h-16 w-full rounded bg-zinc-200" />
         <View className="h-8 w-1/2 rounded bg-zinc-200" />
         <View className="h-8 w-2/3 rounded bg-zinc-200" />
@@ -121,11 +123,14 @@ export default function ContentDetailPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getToken } = useAuth();
   const keyNotesSheetRef = useRef<BottomSheetModal>(null);
-  const [keyNotesIndex, setKeyNotesIndex] = useState(0);
 
   const [content, setContent] = useState<ContentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [factsModalVisible, setFactsModalVisible] = useState(false);
+  const [downloadingPdfIndex, setDownloadingPdfIndex] = useState<number | null>(
+    null
+  );
 
   const fetchContent = async () => {
     try {
@@ -171,6 +176,53 @@ export default function ContentDetailPage() {
     }
   };
 
+  const handleViewPdf = async (pdfUrl: string, pdfName: string) => {
+    try {
+      logger.info(`Opening PDF in browser: ${pdfName}`);
+      await WebBrowser.openBrowserAsync(pdfUrl, {
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+        controlsColor: colors.zinc[700],
+        toolbarColor: colors.zinc[50],
+      });
+    } catch (error) {
+      logger.error(`Failed to open PDF: ${error}`);
+    }
+  };
+
+  const handleDownloadPdf = async (
+    pdfUrl: string,
+    pdfName: string,
+    pdfSize: number,
+    index: number
+  ) => {
+    if (!content) return;
+
+    try {
+      setDownloadingPdfIndex(index);
+      logger.info(`Downloading PDF: ${pdfName}`);
+
+      const result = await downloadPdf(
+        content._id,
+        content.title,
+        pdfName,
+        pdfUrl,
+        pdfSize
+      );
+
+      if (result.success) {
+        logger.success('PDF downloaded successfully');
+        // You could show a success toast here
+      } else {
+        logger.error(`Download failed: ${result.error}`);
+        // You could show an error toast here
+      }
+    } catch (error) {
+      logger.error(`Failed to download PDF: ${error}`);
+    } finally {
+      setDownloadingPdfIndex(null);
+    }
+  };
+
   return (
     <LinearGradient
       colors={[colors.zinc[50], colors.zinc[100]]}
@@ -196,6 +248,21 @@ export default function ContentDetailPage() {
           <Text className="flex-1 font-product text-xl text-zinc-800">
             Content Detail
           </Text>
+          {/* Facts Icon Button */}
+          {content?.facts && (
+            <TouchableOpacity
+              onPress={() => setFactsModalVisible(true)}
+              className="rounded-full p-2 active:bg-zinc-100"
+              activeOpacity={0.7}
+            >
+              <AppIcon
+                Icon={Lightbulb}
+                color={colors.zinc[500]}
+                size={24}
+                strokeWidth={1.5}
+              />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Content */}
@@ -210,8 +277,14 @@ export default function ContentDetailPage() {
               {content.imageUrl && (
                 <Image
                   source={{ uri: content.imageUrl }}
-                  className="mb-6 h-48 w-full rounded-2xl"
-                  resizeMode="cover"
+                  className="mb-6 w-full rounded-2xl"
+                  contentFit="cover"
+                  style={{
+                    width: '100%',
+                    height: 200,
+                    borderRadius: 12,
+                    marginBottom: 12,
+                  }}
                 />
               )}
 
@@ -264,20 +337,6 @@ export default function ContentDetailPage() {
                   />
                 )}
 
-              {/* Facts */}
-              {content.facts && (
-                <View className="mb-6">
-                  <Text className="mb-3 font-product text-xl text-zinc-800">
-                    Interesting Facts
-                  </Text>
-                  <View className="overflow-hidden rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                    <Text className="font-sans text-sm text-amber-800">
-                      {content.facts}
-                    </Text>
-                  </View>
-                </View>
-              )}
-
               {/* PDFs */}
               {content.pdfUrl && content.pdfUrl.length > 0 && (
                 <View className="mb-6">
@@ -287,35 +346,74 @@ export default function ContentDetailPage() {
                   {content.pdfUrl.map((pdf, index) => (
                     <View
                       key={index}
-                      className="mb-3 flex-row items-center justify-between overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4"
+                      className="mb-3 flex-row items-center overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4"
                     >
+                      {/* PDF Icon and Info */}
                       <View className="flex-1 flex-row items-center gap-3">
-                        <AppIcon
-                          Icon={FileText}
-                          color={colors.zinc[500]}
-                          size={24}
-                          strokeWidth={1.5}
+                        <Image
+                          source={require('@/assets/images/pdf.svg')}
+                          style={{ width: 28, height: 28 }}
+                          contentFit="contain"
                         />
                         <View className="flex-1">
-                          <Text className="font-sans text-sm text-zinc-800">
+                          <Text className="font-sans text-sm font-medium text-zinc-800">
                             {pdf.name}
                           </Text>
-                          <Text className="mt-1 font-sans text-xs text-zinc-500">
+                          <Text className="mt-0.5 font-sans text-xs text-zinc-500">
                             {(pdf.size / 1024).toFixed(2)} KB
                           </Text>
                         </View>
                       </View>
-                      <TouchableOpacity
-                        onPress={() => {
-                          logger.debug(`PDF pressed: ${pdf.name}`);
-                        }}
-                        className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2 active:bg-zinc-100"
-                        activeOpacity={0.7}
-                      >
-                        <Text className="font-product text-sm text-zinc-700">
-                          View
-                        </Text>
-                      </TouchableOpacity>
+
+                      {/* Action Buttons */}
+                      <View className="ml-2 flex-row gap-2">
+                        {/* View Button */}
+                        <TouchableOpacity
+                          onPress={() => handleViewPdf(pdf.url, pdf.name)}
+                          className="rounded-lg border border-zinc-200 bg-zinc-50 p-2 active:bg-zinc-100"
+                          activeOpacity={0.7}
+                        >
+                          <AppIcon
+                            Icon={Eye}
+                            color={colors.zinc[600]}
+                            size={18}
+                            strokeWidth={1.5}
+                          />
+                        </TouchableOpacity>
+
+                        {/* Download Button */}
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleDownloadPdf(
+                              pdf.url,
+                              pdf.name,
+                              pdf.size,
+                              index
+                            )
+                          }
+                          disabled={downloadingPdfIndex === index}
+                          className="rounded-lg border border-zinc-200 bg-zinc-50 p-2 active:bg-zinc-100"
+                          activeOpacity={0.7}
+                        >
+                          {downloadingPdfIndex === index ? (
+                            <View
+                              style={{ width: 18, height: 18 }}
+                              className="items-center justify-center"
+                            >
+                              <Text className="font-sans text-xs text-zinc-500">
+                                ...
+                              </Text>
+                            </View>
+                          ) : (
+                            <AppIcon
+                              Icon={Download}
+                              color={colors.zinc[600]}
+                              size={18}
+                              strokeWidth={1.5}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -350,65 +448,30 @@ export default function ContentDetailPage() {
           <Text className="mb-4 font-product text-xl text-zinc-800">
             Key Notes
           </Text>
-          {content?.key_notes &&
-            (() => {
-              const notes = Object.entries(content.key_notes);
-              const { width: screenWidth } = Dimensions.get('window');
-              const slideWidth = screenWidth - 80; // Account for padding
-
-              return (
-                <>
-                  <FlatList
-                    data={notes}
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    snapToInterval={slideWidth}
-                    decelerationRate="fast"
-                    onMomentumScrollEnd={(event: any) => {
-                      const index = Math.round(
-                        event.nativeEvent.contentOffset.x / slideWidth
-                      );
-                      setKeyNotesIndex(index);
-                    }}
-                    renderItem={({ item }: { item: [string, string] }) => {
-                      const [key, value] = item;
-                      return (
-                        <View style={{ width: slideWidth }} className="px-2">
-                          <View className="h-full justify-center rounded-2xl border border-zinc-200 bg-white p-6">
-                            <Text className="text-center font-sans text-base leading-7 text-zinc-700">
-                              {value}
-                            </Text>
-                          </View>
-                        </View>
-                      );
-                    }}
-                    keyExtractor={([key]: [string, string]) => key}
-                  />
-
-                  {/* Pagination Dots */}
-                  <View className="mt-4 flex-row justify-center gap-2">
-                    {notes.map((_, index) => (
-                      <View
-                        key={index}
-                        className={`h-2 rounded-full ${
-                          index === keyNotesIndex
-                            ? 'w-6 bg-purple-600'
-                            : 'w-2 bg-zinc-300'
-                        }`}
-                      />
-                    ))}
-                  </View>
-
-                  {/* Slide Counter */}
-                  <Text className="mt-3 text-center font-sans text-sm text-zinc-500">
-                    {keyNotesIndex + 1} of {notes.length}
+          {content?.key_notes && (
+            <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+              {Object.entries(content.key_notes).map(([key, value], index) => (
+                <View
+                  key={key}
+                  className="mb-3 rounded-2xl border border-zinc-200 bg-white p-6"
+                >
+                  <Text className="font-sans text-base leading-7 text-zinc-700">
+                    {value}
                   </Text>
-                </>
-              );
-            })()}
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </View>
       </CustomBottomSheetModal>
+
+      {/* Facts Modal */}
+      <FactModal
+        visible={factsModalVisible}
+        title="Interesting Facts"
+        message={content?.facts || ''}
+        onDismiss={() => setFactsModalVisible(false)}
+      />
     </LinearGradient>
   );
 }

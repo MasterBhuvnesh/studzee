@@ -1,10 +1,10 @@
 import axios, { type AxiosError } from 'axios';
 
 import type {
-    ContentDetail,
-    ContentListResponse,
-    PaginationParams,
-    PdfsResponse,
+  ContentDetail,
+  ContentListResponse,
+  PaginationParams,
+  PdfsResponse,
 } from '@/types/api';
 import logger from '@/utils/logger';
 
@@ -26,7 +26,12 @@ export async function getPdfs(
     logger.info(`Fetching PDFs - page: ${page}, limit: ${limit}`);
 
     const response = await axios.get<PdfsResponse>(`${API_BASE_URL}/pdfs`, {
-      params: { page, limit },
+      params: {
+        page,
+        limit,
+        sort: 'uploadedAt',
+        order: 'desc',
+      },
       timeout: 10000, // 10 second timeout
     });
 
