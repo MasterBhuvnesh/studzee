@@ -47,7 +47,9 @@ const main = async () => {
         message: 'Studzee Backend API',
         status: 'running',
         endpoints: {
-          health: '/health/liveness',
+          health: '/healthcheck',
+          liveness: '/health/liveness',
+          readiness: '/health/readiness',
           content: '/content',
           admin: '/admin',
           pdfs: '/pdfs',
