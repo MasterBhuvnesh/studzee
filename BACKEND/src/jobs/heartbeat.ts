@@ -1,8 +1,7 @@
 import axios from 'axios'
 import cron from 'node-cron'
 
-// Update the import path to a relative path based on your project structure
-import logger from '../utils/logger'
+import logger from '@/utils/logger'
 
 export const startHeartbeatJob = () => {
   if (process.env.NODE_ENV !== 'production') {

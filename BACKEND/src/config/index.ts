@@ -36,3 +36,8 @@ if (!parsedConfig.success) {
 }
 
 export const config = parsedConfig.data
+
+// Re-export all configuration modules from single entry point
+export { connectDB, disconnectDB } from './mongo'
+export { connectRedis, disconnectRedis, redisClient } from './redis'
+export { s3Client, uploadToS3, deleteFromS3, getKeyFromUrl } from './s3'

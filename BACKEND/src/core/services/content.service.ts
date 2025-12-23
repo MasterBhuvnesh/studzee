@@ -1,5 +1,4 @@
-import { config } from '@/config'
-import { redisClient } from '@/config/redis'
+import { config, redisClient } from '@/config'
 import { DocumentModel } from '@/models/document.model'
 import { TDocument } from '@/types/document'
 import logger from '@/utils/logger'

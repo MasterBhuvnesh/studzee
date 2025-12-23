@@ -4,20 +4,18 @@ import express from 'express'
 import rateLimit from 'express-rate-limit'
 import morgan from 'morgan'
 
-import adminRoutes from '@/api/routes/admin'
-import authRoutes from '@/api/routes/auth'
-import contentRoutes from '@/api/routes/content'
-import healthRoutes from '@/api/routes/health'
-import { config } from '@/config'
-import { connectDB } from '@/config/mongo'
-import { connectRedis } from '@/config/redis'
+import adminRoutes from '@/api/routes/admin.route'
+import authRoutes from '@/api/routes/auth.route'
+import contentRoutes from '@/api/routes/content.route'
+import healthRoutes from '@/api/routes/health.route'
+import { config, connectDB, connectRedis } from '@/config'
 import { scheduleJobs } from '@/jobs/cache-refresh'
 import { errorHandler, notFoundHandler } from '@/middleware/errorHandler'
 import { helmetConfig } from '@/middleware/helmet'
 import logger from '@/utils/logger'
 
-import healthcheckRoute from '@/api/routes/healthcheck' // For healthcheck route for Render
-import pdfRoutes from '@/api/routes/pdf'
+import healthcheckRoute from '@/api/routes/healthcheck.route' // For healthcheck route for Render
+import pdfRoutes from '@/api/routes/pdf.route'
 import { startHeartbeatJob } from '@/jobs/heartbeat' // Import the heartbeat job for scheduling Render pings
 
 const main = async () => {

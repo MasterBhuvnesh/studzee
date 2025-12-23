@@ -1,8 +1,8 @@
 import cron from 'node-cron'
-import logger from '../utils/logger'
-import { config } from '../config'
-import { DocumentModel } from '../models/document.model'
-import { redisClient } from '../config/redis'
+import logger from '@/utils/logger'
+import { config } from '@/config'
+import { DocumentModel } from '@/models/document.model'
+import { redisClient } from '@/config/redis'
 
 let lastRun: Date | null = null
 
