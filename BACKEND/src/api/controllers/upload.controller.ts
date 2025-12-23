@@ -1,6 +1,6 @@
 import { Response } from 'express'
 import { MulterRequest } from '@/types/request'
-import { uploadService } from '@/core/services/upload.service'
+import { uploadService } from '@/services/upload.service'
 import logger from '@/utils/logger'
 
 /**

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { adminService } from '@/core/services/admin.service'
+import { adminService } from '@/services/admin.service'
 import { z } from 'zod'
 
 /**

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { z } from 'zod'
-import { pdfService } from '@/core/services/pdf.service'
+import { pdfService } from '@/services/pdf.service'
 
 /**
  * List all PDFs with pagination
