@@ -15,6 +15,7 @@ const configSchema = z.object({
   REDIS_URL: z.string().url(),
   LIST_CACHE_TTL: z.coerce.number().default(300),
   DOC_CACHE_TTL: z.coerce.number().default(86400),
+  TODAY_CACHE_TTL: z.coerce.number().default(3600), // 1 hour
   JOB_CRON: z.string().default('0 0 * * *'),
   LOG_LEVEL: z.string().default('info'),
   AWS_REGION: z.string().min(1, 'AWS region is required'),

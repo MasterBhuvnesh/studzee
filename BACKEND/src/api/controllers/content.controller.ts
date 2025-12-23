@@ -44,3 +44,16 @@ export const getDocumentById = async (
     next(error)
   }
 }
+
+export const getTodayContent = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const result = await ContentService.getTodayContent()
+    res.json(result)
+  } catch (error) {
+    next(error)
+  }
+}

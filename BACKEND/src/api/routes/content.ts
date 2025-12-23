@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import * as ContentController from '../controllers/content.controller'
 import { clerkAuthMiddleware, requireAuth } from '../../middleware/auth'
+import * as ContentController from '../controllers/content.controller'
 
 const router = Router()
 
@@ -10,6 +10,13 @@ const router = Router()
  * @access Public
  */
 router.get('/', ContentController.getPaginatedContent)
+
+/**
+ * @route GET /content/today
+ * @description Get documents created today (IST timezone).
+ * @access Public
+ */
+router.get('/today', ContentController.getTodayContent)
 
 /**
  * @route GET /content/:id
