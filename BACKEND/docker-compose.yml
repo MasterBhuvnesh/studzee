@@ -13,12 +13,12 @@ services:
     networks:
       - studzee-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
-    
+
   redis:
     image: redis/redis-stack:latest
     container_name: studzee_redis
@@ -31,20 +31,20 @@ services:
     networks:
       - studzee-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
-      
+
   minio:
     image: minio/minio:latest
     container_name: studzee_minio
     restart: unless-stopped
     command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}"
     ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"   
+      - '${MINIO_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
     volumes:
       - minio-data:/data
     environment:
@@ -53,12 +53,18 @@ services:
     networks:
       - studzee-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_CONSOLE_PORT:-9001}/health"]
+      test:
+        [
+          'CMD',
+          'curl',
+          '-f',
+          'http://localhost:${MINIO_CONSOLE_PORT:-9001}/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
-  
+
   mongo-express:
     image: mongo-express:latest
     container_name: studzee_mongo_express
