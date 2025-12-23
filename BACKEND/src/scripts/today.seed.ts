@@ -1,12 +1,12 @@
 import fs from 'fs'
 import path from 'path'
-import { connectDB, disconnectDB } from '../config/mongo'
-import { connectRedis, disconnectRedis } from '../config/redis'
-import { uploadToS3 } from '../config/s3'
-import { DocumentModel } from '../models/document.model'
-import { DocumentSchema } from '../models/document.schema'
-import { invalidateAllCache } from '../utils/cache'
-import logger from '../utils/logger'
+import { connectDB, disconnectDB } from '@/config/mongo'
+import { connectRedis, disconnectRedis } from '@/config/redis'
+import { uploadToS3 } from '@/config/s3'
+import { DocumentModel } from '@/models/document.model'
+import { DocumentSchema } from '@/models/document.schema'
+import { invalidateAllCache } from '@/utils/cache'
+import logger from '@/utils/logger'
 
 /**
  * Sanitize a string to be used as a filename

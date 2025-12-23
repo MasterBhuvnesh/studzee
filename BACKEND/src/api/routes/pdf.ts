@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import * as PdfController from '../controllers/pdf.controller'
+import * as PdfController from '@/api/controllers/pdf.controller'
 
 const router = Router()
 

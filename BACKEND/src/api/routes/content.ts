@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { clerkAuthMiddleware, requireAuth } from '../../middleware/auth'
-import * as ContentController from '../controllers/content.controller'
+import { clerkAuthMiddleware, requireAuth } from '@/middleware/auth'
+import * as ContentController from '@/api/controllers/content.controller'
 
 const router = Router()
 

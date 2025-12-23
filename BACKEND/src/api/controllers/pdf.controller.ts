@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { z } from 'zod'
-import { DocumentModel } from '../../models/document.model'
+import { DocumentModel } from '@/models/document.model'
 
 const listPdfsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

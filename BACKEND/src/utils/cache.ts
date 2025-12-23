@@ -1,5 +1,5 @@
-import { redisClient } from '../config/redis'
-import logger from '../utils/logger'
+import { redisClient } from '@/config/redis'
+import logger from '@/utils/logger'
 
 /**
  * Invalidate all cache entries

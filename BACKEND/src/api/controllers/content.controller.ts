@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { z } from 'zod'
-import * as ContentService from '../../core/services/content.service'
+import * as ContentService from '@/core/services/content.service'
 
 const listContentQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

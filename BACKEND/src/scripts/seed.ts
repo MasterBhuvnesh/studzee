@@ -1,9 +1,9 @@
 import fs from 'fs'
 import path from 'path'
-import logger from '../utils/logger'
-import { connectDB, disconnectDB } from '../config/mongo'
-import { DocumentModel } from '../models/document.model'
-import { DocumentSchema } from '../models/document.schema'
+import logger from '@/utils/logger'
+import { connectDB, disconnectDB } from '@/config/mongo'
+import { DocumentModel } from '@/models/document.model'
+import { DocumentSchema } from '@/models/document.schema'
 
 const seedDatabase = async () => {
   logger.info('Connecting to database for seeding...')

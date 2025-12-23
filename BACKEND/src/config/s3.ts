@@ -4,8 +4,8 @@ import {
   DeleteObjectCommand,
   PutObjectCommandInput,
 } from '@aws-sdk/client-s3'
-import { config } from './index'
-import logger from '../utils/logger'
+import { config } from '@/config/index'
+import logger from '@/utils/logger'
 
 // Initialize S3 client
 const s3Client = new S3Client({

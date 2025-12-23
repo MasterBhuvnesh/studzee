@@ -1,5 +1,5 @@
 import pino from 'pino'
-import { config } from '../config'
+import { config } from '@/config'
 
 // Create logger based on environment
 const logger =

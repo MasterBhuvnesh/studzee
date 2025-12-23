@@ -1,12 +1,12 @@
 import { Router } from 'express'
-import * as AdminController from '../controllers/admin.controller'
-import * as UploadController from '../controllers/upload.controller'
+import * as AdminController from '@/api/controllers/admin.controller'
+import * as UploadController from '@/api/controllers/upload.controller'
 import {
   clerkAuthMiddleware,
   requireAuth,
   requireAdmin,
-} from '../../middleware/auth'
-import { uploadImage, uploadPdf } from '../../middleware/upload'
+} from '@/middleware/auth'
+import { uploadImage, uploadPdf } from '@/middleware/upload'
 
 const router = Router()
 

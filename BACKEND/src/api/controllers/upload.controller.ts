@@ -1,9 +1,9 @@
 import { Response } from 'express'
-import { MulterRequest } from '../../types/request'
-import { DocumentModel } from '../../models/document.model'
-import { uploadToS3, deleteFromS3, getKeyFromUrl } from '../../config/s3'
-import logger from '../../utils/logger'
-import { invalidateAllCache, invalidateDocumentCache } from '../../utils/cache'
+import { MulterRequest } from '@/types/request'
+import { DocumentModel } from '@/models/document.model'
+import { uploadToS3, deleteFromS3, getKeyFromUrl } from '@/config/s3'
+import logger from '@/utils/logger'
+import { invalidateAllCache, invalidateDocumentCache } from '@/utils/cache'
 
 /**
  * Sanitize a string to be used as a filename

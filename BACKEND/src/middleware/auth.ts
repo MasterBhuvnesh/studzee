@@ -1,8 +1,8 @@
 import { clerkClient } from '@clerk/clerk-sdk-node'
 import { clerkMiddleware } from '@clerk/express'
 import { NextFunction, Request, Response } from 'express'
-import { config } from '../config'
-import logger from '../utils/logger'
+import { config } from '@/config'
+import logger from '@/utils/logger'
 
 /**
  * Development mode authentication bypass

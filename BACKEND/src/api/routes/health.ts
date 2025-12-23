@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import mongoose from 'mongoose'
-import { redisClient } from '../../config/redis'
+import { redisClient } from '@/config/redis'
 
 const router = Router()
 

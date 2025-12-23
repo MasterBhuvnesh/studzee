@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
-import { AppError } from '../types/errors'
-import logger from '../utils/logger'
+import { AppError } from '@/types/errors'
+import logger from '@/utils/logger'
 
 /**
  * 404 Not Found handler.

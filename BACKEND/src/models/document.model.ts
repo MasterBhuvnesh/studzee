@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose'
-import { IDocument } from '../types/document'
+import { IDocument } from '@/types/document'
 
 const QuizItemMongooseSchema = new Schema(
   {
