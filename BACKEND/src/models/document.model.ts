@@ -1,6 +1,9 @@
 import { Schema, model } from 'mongoose'
 import { IDocument } from '@/types/document'
 
+/**
+ * @description Quiz item schema for documents
+ */
 const QuizItemMongooseSchema = new Schema(
   {
     que: { type: String, required: true },
@@ -10,6 +13,9 @@ const QuizItemMongooseSchema = new Schema(
   { _id: false }
 )
 
+/**
+ * @description PDF file schema for documents
+ */
 const PdfFileMongooseSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -20,6 +26,9 @@ const PdfFileMongooseSchema = new Schema(
   { _id: false }
 )
 
+/**
+ * @description Document schema
+ */
 const DocumentMongooseSchema = new Schema<IDocument>(
   {
     title: { type: String, required: true, index: true },
@@ -39,13 +48,18 @@ const DocumentMongooseSchema = new Schema<IDocument>(
     pdfUrl: { type: [PdfFileMongooseSchema], required: false, default: [] },
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt
+    timestamps: true,
   }
 )
 
-// Add a text index for searching on the title
+/**
+ * @description Add a text index for searching on the title
+ */
 DocumentMongooseSchema.index({ title: 'text', summary: 'text' })
 
+/**
+ * @description Document model
+ */
 export const DocumentModel = model<IDocument>(
   'Document',
   DocumentMongooseSchema

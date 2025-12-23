@@ -3,6 +3,9 @@ import { DocumentModel } from '@/models/document.model'
 import { TDocument } from '@/types/document'
 import logger from '@/utils/logger'
 
+/**
+ * Query MongoDB for paginated documents (parallel fetch + count)
+ */
 const getPaginatedContentFromDB = async (page: number, limit: number) => {
   const skip = (page - 1) * limit
   const [documents, total] = await Promise.all([
@@ -16,6 +19,9 @@ const getPaginatedContentFromDB = async (page: number, limit: number) => {
   return { documents, total }
 }
 
+/**
+ * Fetch paginated documents with Redis caching (cache-aside pattern)
+ */
 export const listContent = async (page: number, limit: number) => {
   const cacheKey = `content:list:page:${page}:limit:${limit}`
 
@@ -48,6 +54,9 @@ export const listContent = async (page: number, limit: number) => {
   return response
 }
 
+/**
+ * Get document by ID with Redis caching
+ */
 export const getContentById = async (id: string): Promise<TDocument | null> => {
   const cacheKey = `content:doc:${id}`
 
@@ -79,6 +88,9 @@ export const getContentById = async (id: string): Promise<TDocument | null> => {
   return document
 }
 
+/**
+ * Get today's documents in IST timezone with caching
+ */
 export const getTodayContent = async () => {
   const cacheKey = `content:today`
 

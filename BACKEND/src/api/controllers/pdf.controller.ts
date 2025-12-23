@@ -4,7 +4,6 @@ import { pdfService } from '@/core/services/pdf.service'
 
 /**
  * List all PDFs with pagination
- * GET /pdfs
  */
 export const listPdfs = async (req: Request, res: Response) => {
   try {

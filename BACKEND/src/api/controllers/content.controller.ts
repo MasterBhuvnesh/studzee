@@ -7,6 +7,9 @@ const listContentQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
 
+/**
+ * Get paginated list of documents with query validation
+ */
 export const getPaginatedContent = async (
   req: Request,
   res: Response,
@@ -21,14 +24,15 @@ export const getPaginatedContent = async (
   }
 }
 
+/**
+ * Fetch document by ID, requires authentication
+ */
 export const getDocumentById = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    // The user ID is available on req.auth.userId
-    // TypeScript now understands this because of the new express.d.ts file.
     const userId = req.auth().userId
     console.log(`User ${userId} is requesting document ${req.params.id}`)
 
@@ -45,6 +49,9 @@ export const getDocumentById = async (
   }
 }
 
+/**
+ * Get documents created today in IST timezone
+ */
 export const getTodayContent = async (
   req: Request,
   res: Response,

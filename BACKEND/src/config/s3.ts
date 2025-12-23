@@ -4,7 +4,7 @@ import {
   DeleteObjectCommand,
   PutObjectCommandInput,
 } from '@aws-sdk/client-s3'
-import { config } from '@/config/index'
+import { config } from '@/config'
 import logger from '@/utils/logger'
 
 // Initialize S3 client
@@ -63,7 +63,6 @@ export const uploadToS3 = async (
       Key: key,
       Body: fileBuffer,
       ContentType: contentType,
-      // ACL: 'public-read', // Make the file publicly accessible
     }
 
     // Upload to S3
@@ -85,7 +84,7 @@ export const uploadToS3 = async (
 
     return {
       url,
-      publicId: key, // Use S3 key as publicId for consistency with Cloudinary
+      publicId: key,
       uploadedAt,
       size,
       originalFilename,

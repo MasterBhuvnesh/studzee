@@ -21,7 +21,7 @@ export const PdfFileSchema = z.object({
 
 /**
  * Zod schema for the main document.
- * This is the single source of truth for document validation.
+ * @description This is the single source of truth for document validation.
  */
 export const DocumentSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters long'),

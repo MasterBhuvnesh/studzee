@@ -2,6 +2,9 @@ import { Request, Response } from 'express'
 import { adminService } from '@/core/services/admin.service'
 import { z } from 'zod'
 
+/**
+ * Create new document with validation
+ */
 export const createDocument = async (req: Request, res: Response) => {
   try {
     const doc = await adminService.createDocument(req.body)
@@ -18,6 +21,9 @@ export const createDocument = async (req: Request, res: Response) => {
   }
 }
 
+/**
+ * Update existing document by ID
+ */
 export const updateDocument = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
@@ -36,6 +42,9 @@ export const updateDocument = async (req: Request, res: Response) => {
   }
 }
 
+/**
+ * Delete document by ID
+ */
 export const deleteDocument = async (req: Request, res: Response) => {
   try {
     const { id } = req.params

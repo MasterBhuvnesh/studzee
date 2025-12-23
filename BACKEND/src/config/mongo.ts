@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import logger from '@/utils/logger'
-import { config } from '@/config/index'
+import { config } from '@/config'
 
 let isConnected = false
 

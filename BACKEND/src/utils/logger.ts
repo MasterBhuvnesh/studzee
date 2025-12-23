@@ -1,7 +1,9 @@
 import pino from 'pino'
 import { config } from '@/config'
 
-// Create logger based on environment
+/**
+ * Pino logger with pretty printing in dev, JSON in production
+ */
 const logger =
   config.NODE_ENV === 'development'
     ? pino({

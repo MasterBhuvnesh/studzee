@@ -4,12 +4,11 @@ import { NextFunction, Request, Response } from 'express'
 import { config } from '@/config'
 import logger from '@/utils/logger'
 
-/**
- * Development mode authentication bypass
- * If NODE_ENV is development and DEV_TOKEN is set, bypass Clerk authentication
- */
 const isDevelopmentMode = config.NODE_ENV === 'development'
 
+/**
+ * Clerk authentication with dev mode bypass (DEV_TOKEN support)
+ */
 export const clerkAuthMiddleware = (
   req: Request,
   res: Response,
@@ -35,6 +34,9 @@ export const clerkAuthMiddleware = (
   return clerkMiddleware()(req, res, next)
 }
 
+/**
+ * Require authenticated user, returns 401 if not logged in
+ */
 export const requireAuth = (
   req: Request,
   res: Response,
@@ -46,7 +48,9 @@ export const requireAuth = (
   next()
 }
 
-// Async admin check that fetches the user from Clerk
+/**
+ * Require admin role from Clerk metadata, returns 403 if not admin
+ */
 export const requireAdmin = async (
   req: Request,
   res: Response,

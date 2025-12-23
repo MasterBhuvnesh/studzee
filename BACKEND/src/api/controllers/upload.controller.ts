@@ -4,8 +4,7 @@ import { uploadService } from '@/core/services/upload.service'
 import logger from '@/utils/logger'
 
 /**
- * Upload an image for a document
- * POST /admin/documents/:id/upload-image
+ * Upload image file to S3 and attach to document
  */
 export const uploadDocumentImage = async (
   req: MulterRequest,
@@ -71,8 +70,7 @@ export const uploadDocumentImage = async (
 }
 
 /**
- * Upload a PDF for a document
- * POST /admin/documents/:id/upload-pdf
+ * Upload PDF file to S3 and attach to document
  */
 export const uploadDocumentPdf = async (req: MulterRequest, res: Response) => {
   try {
