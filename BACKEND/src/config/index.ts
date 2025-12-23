@@ -22,6 +22,7 @@ const configSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().min(1, 'AWS access key ID is required'),
   AWS_SECRET_ACCESS_KEY: z.string().min(1, 'AWS secret access key is required'),
   AWS_S3_BUCKET_NAME: z.string().min(1, 'AWS S3 bucket name is required'),
+  AWS_S3_BUCKET_URL: z.string().optional(),
   DEV_TOKEN: z.string().optional(), // Optional token for development mode
 })
 

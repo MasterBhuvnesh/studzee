@@ -10,6 +10,10 @@ import logger from '@/utils/logger'
 // Initialize S3 client
 const s3Client = new S3Client({
   region: config.AWS_REGION,
+  ...(config.NODE_ENV === 'development' && {
+    endpoint: config.AWS_S3_BUCKET_URL,
+    forcePathStyle: true,
+  }),
   credentials: {
     accessKeyId: config.AWS_ACCESS_KEY_ID,
     secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
