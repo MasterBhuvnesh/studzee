@@ -16,16 +16,16 @@ export const startHeartbeatJob = () => {
     return
   }
 
-  logger.info('✅  Scheduling heartbeat job every 14 minutes')
+  logger.info('SUCCESS: Scheduling heartbeat job every 14 minutes')
 
   cron.schedule('*/14 * * * *', async () => {
     logger.info('🫀  - Running heartbeat check...')
     try {
       const response = await axios.get(healthUrl)
-      logger.info(`✅  - Healthcheck successful: ${response.status}`)
+      logger.info(`SUCCESS: Healthcheck successful: ${response.status}`)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      logger.error('❌  - Healthcheck failed:', err.message)
+      logger.error('ERROR: Healthcheck failed:', err.message)
     }
   })
 }

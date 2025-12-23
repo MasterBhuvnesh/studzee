@@ -75,7 +75,7 @@ const main = async () => {
       scheduleJobs()
     })
   } catch (err) {
-    logger.error('❌ Failed to start server:', err)
+    logger.error('ERROR: Failed to start server:', err)
     process.exit(1)
   }
 }

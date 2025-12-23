@@ -150,7 +150,7 @@ const seedDatabaseWithFiles = async () => {
     }
 
     logger.info(
-      `\n✅ Successfully seeded ${successCount}/${sampleData.length} documents`
+      `\nSUCCESS: Successfully seeded ${successCount}/${sampleData.length} documents`
     )
 
     // 5. Invalidate Redis cache
