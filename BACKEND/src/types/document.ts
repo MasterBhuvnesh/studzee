@@ -4,7 +4,7 @@ import {
   QuizItemSchema,
   PdfFileSchema,
   DocumentSchema,
-} from '@/models/document.schema'
+} from '@/models/document.validation'
 
 /**
  * Document-related type definitions

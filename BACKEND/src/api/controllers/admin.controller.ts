@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { DocumentModel } from '@/models/document.model'
-import { DocumentSchema } from '@/models/document.schema'
+import { DocumentSchema } from '@/models/document.validation'
 import { TDocument } from '@/types/document'
 import { invalidateAllCache } from '@/utils/cache'
 

@@ -3,7 +3,7 @@ import path from 'path'
 import logger from '@/utils/logger'
 import { connectDB, disconnectDB } from '@/config/mongo'
 import { DocumentModel } from '@/models/document.model'
-import { DocumentSchema } from '@/models/document.schema'
+import { DocumentSchema } from '@/models/document.validation'
 
 const seedDatabase = async () => {
   logger.info('Connecting to database for seeding...')
