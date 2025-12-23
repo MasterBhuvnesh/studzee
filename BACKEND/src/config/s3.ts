@@ -11,7 +11,7 @@ import logger from '@/utils/logger'
 const s3Client = new S3Client({
   region: config.AWS_REGION,
   ...(config.NODE_ENV === 'development' && {
-    endpoint: config.AWS_S3_BUCKET_URL,
+    endpoint: config.AWS_S3_BUCKET_ENDPOINT,
     forcePathStyle: true,
   }),
   credentials: {
