@@ -6,16 +6,18 @@ A production-ready backend service built with TypeScript that provides comprehen
 
 - **Express.js**: Modern TypeScript-based web framework
 - **MongoDB**: Document storage with Mongoose ODM
-- **Redis Stack**: High-performance caching layer
+- **Redis Stack**: High-performance caching layer with RedisInsight dashboard
 - **AWS S3**: Scalable cloud file storage for documents and PDFs
 - **Clerk**: Enterprise-grade authentication and user management
 - **Zod**: Runtime type validation and schema enforcement
-- **Scheduled Jobs**: Automated cache warming with `node-cron`
+- **Scheduled Jobs**: Automated cache warming and health monitoring with `node-cron`
 - **Structured Logging**: Production-ready logging with `pino`
 - **File Uploads**: Multipart file upload support with `multer`
-- **Docker**: Fully containerized with Docker Compose
-- **Developer Tools**: ESLint, Prettier, and Makefile automation
+- **Security**: Helmet security headers, CORS, compression, and rate limiting
+- **Docker**: Fully containerized development environment with Docker Compose
+- **Developer Tools**: ESLint, Prettier, Makefile automation, and development auth bypass
 - **Testing**: Comprehensive test suite with `vitest`
+- **Production Ready**: Health checks, heartbeat monitoring for Render deployment
 
 ## Prerequisites
 
@@ -59,25 +61,27 @@ A production-ready backend service built with TypeScript that provides comprehen
 
 ### Environment Variables
 
-| Variable                | Description                               | Required | Default      |
-| ----------------------- | ----------------------------------------- | -------- | ------------ |
-| `NODE_ENV`              | Environment (development/production/test) | Yes      | development  |
-| `PORT`                  | Server port                               | No       | 4000         |
-| `MONGO_URI`             | MongoDB connection string                 | Yes      | -            |
-| `MONGO_ROOT_USER`       | MongoDB root username (Docker only)       | Yes      | -            |
-| `MONGO_ROOT_PASSWORD`   | MongoDB root password (Docker only)       | Yes      | -            |
-| `REDIS_URL`             | Redis connection URL                      | Yes      | -            |
-| `CLERK_SECRET_KEY`      | Clerk authentication secret key           | Yes      | -            |
-| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key                     | Yes      | -            |
-| `LIST_CACHE_TTL`        | List cache TTL in seconds                 | No       | 300          |
-| `DOC_CACHE_TTL`         | Document cache TTL in seconds             | No       | 86400        |
-| `JOB_CRON`              | Cron expression for cache refresh job     | No       | 0 0 \* \* \* |
-| `LOG_LEVEL`             | Logging level (info/debug/error)          | No       | info         |
-| `AWS_REGION`            | AWS region for S3 (e.g., us-east-1)       | Yes      | -            |
-| `AWS_ACCESS_KEY_ID`     | AWS access key ID                         | Yes      | -            |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret access key                     | Yes      | -            |
-| `AWS_S3_BUCKET_NAME`    | S3 bucket name for file storage           | Yes      | -            |
-| `DEV_TOKEN`             | Optional development token                | No       | -            |
+| Variable                | Description                                                      | Required | Default      |
+| ----------------------- | ---------------------------------------------------------------- | -------- | ------------ |
+| `NODE_ENV`              | Environment (development/production/test)                        | Yes      | development  |
+| `PORT`                  | Server port                                                      | No       | 4000         |
+| `MONGO_URI`             | MongoDB connection string                                        | Yes      | -            |
+| `MONGO_ROOT_USER`       | MongoDB root username (Docker only)                              | Yes      | -            |
+| `MONGO_ROOT_PASSWORD`   | MongoDB root password (Docker only)                              | Yes      | -            |
+| `REDIS_URL`             | Redis connection URL                                             | Yes      | -            |
+| `CLERK_SECRET_KEY`      | Clerk authentication secret key                                  | Yes      | -            |
+| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key                                            | Yes      | -            |
+| `LIST_CACHE_TTL`        | List cache TTL in seconds                                        | No       | 300          |
+| `DOC_CACHE_TTL`         | Document cache TTL in seconds                                    | No       | 86400        |
+| `TODAY_CACHE_TTL`       | Today's content cache TTL in seconds                             | No       | 3600         |
+| `JOB_CRON`              | Cron expression for cache refresh job (currently unused)         | No       | 0 0 \* \* \* |
+| `LOG_LEVEL`             | Logging level (info/debug/error)                                 | No       | info         |
+| `AWS_REGION`            | AWS region for S3 (e.g., us-east-1)                              | Yes      | -            |
+| `AWS_ACCESS_KEY_ID`     | AWS access key ID                                                | Yes      | -            |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key                                            | Yes      | -            |
+| `AWS_S3_BUCKET_NAME`    | S3 bucket name for file storage                                  | Yes      | -            |
+| `DEV_TOKEN`             | Development auth bypass token (bypasses Clerk authentication)    | No       | -            |
+| `HEALTHCHECK_URL`       | URL for heartbeat job to ping (production only, for Render etc.) | No       | -            |
 
 ### Clerk Setup
 
@@ -109,9 +113,30 @@ A production-ready backend service built with TypeScript that provides comprehen
 
 ### Development
 
+> **Note**: The current `docker-compose.yml` only runs MongoDB and Redis services. The API must be run separately for local development.
+
+**Start infrastructure services:**
+
+```bash
+# Start MongoDB and Redis
+make up
+# Or manually:
+docker-compose up -d
+```
+
+**Run the API:**
+
 ```bash
 npm run dev
 ```
+
+This setup allows you to:
+
+- Modify code and see changes with hot-reload
+- Use your local Node.js environment
+- Easily debug the application
+
+> **Tip**: To run the entire stack (API + MongoDB + Redis) in Docker, uncomment the `api` service section in `docker-compose.yml`.
 
 ### Production
 
@@ -170,10 +195,12 @@ src/
 ### Key Components
 
 - **Content Service**: Handles document listing and retrieval with caching
-- **Admin Service**: Manages document CRUD operations
+- **Admin Service**: Manages document CRUD operations with cache invalidation
 - **Upload Service**: Handles file uploads to AWS S3
 - **Cache Layer**: Redis-based caching with automatic invalidation
-- **Authentication**: Clerk middleware with role-based access control
+- **Authentication**: Clerk middleware with role-based access control and development bypass
+- **Security Middleware**: Helmet, CORS, compression, and rate limiting (100 req/15min)
+- **Scheduled Jobs**: Daily cache refresh and production heartbeat monitoring
 - **Error Handling**: Centralized error handling middleware
 - **Validation**: Zod schemas for request/response validation
 
@@ -202,6 +229,19 @@ Admin endpoints additionally require the user to have the admin role configured 
   ```json
   {
     "status": "ok"
+  }
+  ```
+
+##### Healthcheck (Render/Production)
+
+- **GET** `/healthcheck`
+- **Description**: Simple health check endpoint for Render or other hosting platforms
+- **Access**: Public
+- **Response**:
+  ```json
+  {
+    "status": "ok",
+    "timestamp": "2024-01-15T10:30:00.000Z"
   }
   ```
 
@@ -234,6 +274,34 @@ Admin endpoints additionally require the user to have the admin role configured 
 ---
 
 #### Content Endpoints
+
+##### Get Today's Content
+
+- **GET** `/content/today`
+- **Description**: Retrieve documents created today (India Standard Time / IST timezone)
+- **Access**: Public
+- **Cache**: Uses `TODAY_CACHE_TTL` (default: 1 hour)
+- **Example Request**:
+  ```bash
+  curl "http://localhost:4000/content/today"
+  ```
+- **Success Response** (200 OK):
+  ```json
+  {
+    "data": [
+      {
+        "_id": "507f1f77bcf86cd799439011",
+        "title": "Introduction to TypeScript",
+        "summary": "A comprehensive guide to TypeScript basics",
+        "createdAt": "2024-01-15T10:30:00.000Z"
+      }
+    ],
+    "meta": {
+      "date": "2024-01-15",
+      "total": 1
+    }
+  }
+  ```
 
 ##### Get Paginated Content
 
@@ -530,17 +598,31 @@ The service implements a two-tier Redis caching strategy for optimal performance
 
 ### Cache Warming
 
-A scheduled background job (configurable via `JOB_CRON`) automatically:
+A scheduled background job runs daily at midnight UTC (hardcoded as `'0 0 * * *'`) to automatically:
 
-- Discovers new documents in the database
-- Pre-warms the cache with frequently accessed documents
+- Discovers new documents created since the last run
+- Pre-warms the cache with new documents
+- Invalidates the first page of the list cache
+- Runs on application startup (`runOnInit: true`)
 - Logs cache statistics for monitoring
+
+> **Note**: The `JOB_CRON` environment variable is currently unused; the cron schedule is hardcoded in `jobs/cache-refresh.ts`.
 
 **Manual cache refresh**:
 
 ```bash
 npm run job:refresh-cache
 ```
+
+### Heartbeat Job (Production)
+
+In production environments, an automated heartbeat job runs every 14 minutes to:
+
+- Ping the configured `HEALTHCHECK_URL`
+- Prevent services from spinning down due to inactivity (e.g., Render free tier)
+- Log health check results
+
+> **Note**: This job only runs when `NODE_ENV=production`. It is automatically skipped in development mode.
 
 ## Database Schema
 
@@ -595,7 +677,7 @@ interface PdfObject {
 │   │       ├── auth.ts
 │   │       ├── content.ts
 │   │       ├── health.ts
-│   │       ├── healthcheck.ts
+│   │       ├── healthcheck.ts   # Render/production healthcheck
 │   │       └── pdf.ts
 │   ├── config/             # App configuration
 │   │   ├── index.ts        # Environment variables
@@ -607,20 +689,25 @@ interface PdfObject {
 │   │       └── content.service.ts
 │   ├── data/               # Sample data
 │   │   ├── data.json
-│   │   └── sample.data.json
+│   │   ├── sample.data.json
+│   │   ├── today.data.json
+│   │   ├── today.pdf
+│   │   └── today.png
 │   ├── jobs/               # Scheduled jobs
-│   │   ├── cache-refresh.ts
-│   │   └── heartbeat.ts
+│   │   ├── cache-refresh.ts    # Daily cache warming
+│   │   └── heartbeat.ts        # Production health pings
 │   ├── middleware/         # Express middleware
-│   │   ├── auth.ts         # Clerk authentication
+│   │   ├── auth.ts         # Clerk authentication + dev bypass
 │   │   ├── errorHandler.ts
+│   │   ├── helmet.ts       # Security headers
 │   │   └── upload.ts       # Multer file upload
 │   ├── models/             # Data models
 │   │   ├── document.model.ts    # Mongoose model
 │   │   └── document.schema.ts   # Zod schema
 │   ├── scripts/            # Utility scripts
 │   │   ├── run-job.ts
-│   │   └── seed.ts         # Database seeding
+│   │   ├── seed.ts         # Database seeding
+│   │   └── today.seed.ts   # Seed today's content
 │   ├── types/              # TypeScript types
 │   │   └── express.d.ts
 │   ├── utils/              # Helper functions
@@ -637,17 +724,42 @@ interface PdfObject {
 
 ### Available Commands (Makefile)
 
-| Command              | Description                              |
-| -------------------- | ---------------------------------------- |
-| `make up`            | Start all services (API, MongoDB, Redis) |
-| `make down`          | Stop all services                        |
-| `make logs`          | View API container logs                  |
-| `make test`          | Run test suite with vitest               |
-| `make lint`          | Lint codebase with ESLint                |
-| `make fmt`           | Format code with Prettier                |
-| `make seed`          | Populate database with sample data       |
-| `make refresh-cache` | Manually trigger cache warming job       |
-| `make build`         | Build TypeScript project                 |
+| Command              | Description                          |
+| -------------------- | ------------------------------------ |
+| `make up`            | Start MongoDB and Redis containers   |
+| `make down`          | Stop all services                    |
+| `make logs`          | View API container logs (if running) |
+| `make test`          | Run test suite with vitest           |
+| `make lint`          | Lint codebase with ESLint            |
+| `make fmt`           | Format code with Prettier            |
+| `make seed`          | Populate database with sample data   |
+| `make refresh-cache` | Manually trigger cache warming job   |
+| `make build`         | Build TypeScript project             |
+
+### Additional npm Scripts
+
+```bash
+# Seeding
+npm run seed              # Seed with data.json
+npm run seed:today        # Seed today's content with today.data.json
+
+# Cache management
+npm run job:refresh-cache # Manually refresh cache
+
+# Release management
+npm run do-release        # Patch version bump
+npm run do-release:minor  # Minor version bump
+npm run do-release:major  # Major version bump
+
+# Testing
+npm test                  # Run tests once
+npm run test:watch        # Run tests in watch mode
+
+# Code quality
+npm run lint              # Check for linting errors
+npm run fmt               # Format all files
+npm run fmt:check         # Check formatting without changes
+```
 
 ### Accessing Dashboards
 
@@ -667,6 +779,28 @@ The development environment includes web-based admin dashboards:
   - Port: `6379`
   - Name: Any descriptive name
 - **Features**: View cache keys, monitor performance, debug queries
+
+### Development Authentication Bypass
+
+For easier local development, you can bypass Clerk authentication:
+
+1. **Set DEV_TOKEN** in your `.env` file:
+
+   ```env
+   NODE_ENV=development
+   DEV_TOKEN=my-super-secret-dev-token
+   ```
+
+2. **Use the token** in your requests:
+
+   ```bash
+   curl -H "Authorization: Bearer my-super-secret-dev-token" \
+        http://localhost:4000/content/507f1f77bcf86cd799439011
+   ```
+
+3. **Admin access** is automatically granted in development mode when using DEV_TOKEN
+
+> **Warning**: This bypass only works when `NODE_ENV=development`. Never use DEV_TOKEN in production!
 
 ## Testing
 
@@ -728,6 +862,25 @@ docker-compose logs -f api
 # Stop services
 docker-compose down
 ```
+
+### Render Deployment
+
+For hosting on Render (or similar platforms with automatic spin-down):
+
+1. **Set environment variables** in Render dashboard:
+   - All required variables from the Configuration section
+   - `HEALTHCHECK_URL` - Set to your deployed app's healthcheck endpoint (e.g., `https://your-app.onrender.com/healthcheck`)
+
+2. **Heartbeat job** will automatically:
+   - Start when `NODE_ENV=production`
+   - Ping `HEALTHCHECK_URL` every 14 minutes
+   - Keep your service alive (prevents Render free tier spin-down)
+   - Log health check status
+
+3. **Health check endpoints**:
+   - `/health/liveness` - For container orchestration
+   - `/health/readiness` - For load balancers
+   - `/healthcheck` - For simple pings (used by heartbeat job)
 
 ## Monitoring
 
