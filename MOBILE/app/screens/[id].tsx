@@ -299,16 +299,7 @@ export default function ContentDetailPage() {
                 </Text>
               </View>
 
-              {/* Summary */}
-              {/* <View className="mb-6 overflow-hidden rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                <Text className="mb-2 font-product text-base text-zinc-800">
-                  Summary
-                </Text>
-                <Text className="font-sans text-base text-zinc-500">
-                  {content.summary}
-                </Text>
-              </View> */}
-              <View className="mb-6">
+              <View className="mb-6 border-t border-zinc-200 pb-6 pt-4">
                 <Text className="mb-3 font-product text-xl text-zinc-800">
                   Summary
                 </Text>
@@ -322,7 +313,7 @@ export default function ContentDetailPage() {
               </View>
               {/* PDFs */}
               {content.pdfUrl && content.pdfUrl.length > 0 && (
-                <View className="mb-6">
+                <View className="mb-6 border-t border-zinc-200 pt-4">
                   <Text className="mb-3 font-product text-xl text-zinc-800">
                     Resources
                   </Text>
