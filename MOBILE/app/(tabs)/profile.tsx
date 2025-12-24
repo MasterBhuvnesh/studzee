@@ -4,7 +4,14 @@ import { ProfileCardProps } from '@/types';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import {
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ProfileCard = ({
@@ -48,10 +55,24 @@ export default function ProfilePage() {
   const { user } = useUser();
   const { getToken } = useAuth();
 
+  const [refreshing, setRefreshing] = useState(false);
+
   const getTokenAndLog = async () => {
     const token = await getToken();
     console.log('User Token:', token);
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // The user object will automatically refresh from Clerk
+      // You can add any additional refresh logic here if needed
+      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for better UX
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   return (
     <>
       <LinearGradient
@@ -62,7 +83,17 @@ export default function ProfilePage() {
       >
         <SafeAreaView className="flex-1">
           <Header title="Profile" />
-          <ScrollView className="flex-1 px-6 pt-6">
+          <ScrollView
+            className="flex-1 px-6 pt-6"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.zinc[800]]}
+                tintColor={colors.zinc[800]}
+              />
+            }
+          >
             <ProfileCard
               name={user?.fullName || 'User'}
               email={user?.emailAddresses[0]?.emailAddress || 'User'}

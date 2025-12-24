@@ -109,7 +109,7 @@ const KeyNotesButton = ({
       <AppIcon
         Icon={BookOpen}
         color={colors.zinc[500]}
-        size={24}
+        size={20}
         strokeWidth={1.5}
       />
     </TouchableOpacity>
@@ -246,7 +246,7 @@ export default function ContentDetailPage() {
             />
           </TouchableOpacity>
           <Text className="flex-1 font-product text-xl text-zinc-800">
-            Content Detail
+            Overview
           </Text>
           {/* Facts Icon Button */}
           {content?.facts && (
@@ -453,7 +453,7 @@ export default function ContentDetailPage() {
               {Object.entries(content.key_notes).map(([key, value], index) => (
                 <View
                   key={key}
-                  className="mb-3 rounded-2xl border border-zinc-200 bg-white p-6"
+                  className="mb-3 rounded-2xl border border-zinc-200 bg-white px-6 py-4"
                 >
                   <Text className="font-sans text-base leading-7 text-zinc-700">
                     {value}

@@ -5,6 +5,7 @@ import type {
   ContentListResponse,
   PaginationParams,
   PdfsResponse,
+  TodayContentResponse,
 } from '@/types/api';
 import logger from '@/utils/logger';
 
@@ -145,6 +146,43 @@ export async function getContentById(
     }
 
     logger.error(`Unexpected error fetching content detail: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Fetches today's featured content (public endpoint)
+ * @returns Promise with today's content response
+ */
+export async function getTodayContent(): Promise<TodayContentResponse> {
+  try {
+    logger.info(`Fetching today's content`);
+
+    const response = await axios.get<TodayContentResponse>(
+      `${API_BASE_URL}/content/today`,
+      {
+        timeout: 10000, // 10 second timeout
+      }
+    );
+
+    logger.success(
+      `Today's content fetched successfully - ${response.data.data.length} item(s)`
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.message;
+
+      logger.error(
+        `Failed to fetch today's content - Status: ${axiosError.response?.status}, Message: ${errorMessage}`
+      );
+
+      throw new Error(errorMessage || "Failed to fetch today's content");
+    }
+
+    logger.error(`Unexpected error fetching today's content: ${error}`);
     throw error;
   }
 }

@@ -29,7 +29,13 @@ import {
   Loader2,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ResourceCardWithDownloadProps extends ResourceCardProps {
@@ -293,6 +299,30 @@ export default function ResourcesPage() {
     }
   }, []);
 
+  // Refresh state and function
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // Fetch PDFs from API
+      const pdfsResponse = await getPdfs({ page: 1, limit: 20 });
+      setPdfs(pdfsResponse.data);
+
+      // Load downloaded PDFs from storage
+      await refreshDownloadedPdfs();
+
+      logger.success('Resources refreshed successfully');
+      setError(null);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to refresh resources';
+      logger.error(`Error refreshing resources: ${errorMessage}`);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshDownloadedPdfs]);
+
   // View PDF in browser
   const viewResourcePdf = useCallback(async (pdfUrl: string, title: string) => {
     try {
@@ -452,7 +482,18 @@ export default function ResourcesPage() {
         className="flex-1"
       >
         <SafeAreaView className="flex-1 bg-transparent">
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.zinc[800]]}
+                tintColor={colors.zinc[800]}
+              />
+            }
+          >
             <Header title="Resources" />
             <View className="px-6 pb-8 pt-6">
               {/* Loading State - Skeleton Placeholders */}

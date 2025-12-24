@@ -64,6 +64,22 @@ export interface ContentSummary {
 export type ContentListResponse = PaginatedResponse<ContentSummary>;
 
 /**
+ * Metadata for today's content endpoint
+ */
+export interface TodayContentMeta {
+  date: string;
+  total: number;
+}
+
+/**
+ * Response type for /content/today endpoint
+ */
+export interface TodayContentResponse {
+  data: ContentSummary[];
+  meta: TodayContentMeta;
+}
+
+/**
  * Quiz question structure in content detail
  */
 export interface QuizQuestion {
