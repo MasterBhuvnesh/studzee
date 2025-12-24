@@ -1,9 +1,12 @@
+import { AppIcon } from '@/components/global/AppIcon';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { ProfileCardProps } from '@/types';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { TriangleAlertIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   RefreshControl,
@@ -22,31 +25,39 @@ const ProfileCard = ({
   onPress,
 }: ProfileCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
-    <View className="flex-row items-center  p-6">
-      <View className="flex-1 pr-2">
-        <Text className="mb-2 font-product text-base text-zinc-800">
-          {name}
+    <View className="flex-row justify-between pl-4 pr-4 pt-4">
+      <Image
+        source={image}
+        className="h-24 w-24 rounded-full "
+        style={{ width: 100, height: 100, borderRadius: 50 }}
+      />
+
+      <Image
+        source="https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/verified.png"
+        className="h-24 w-24 rounded-full"
+        style={{
+          width: 120,
+          height: 120,
+          marginRight: 40,
+        }}
+        alt="Verified"
+      />
+    </View>
+
+    <View className="p-6">
+      <Text className="mb-2 font-product text-base text-zinc-800">{name}</Text>
+      <Text className="mb-4 font-sans text-base leading-5 text-zinc-500">
+        {email}
+      </Text>
+      <TouchableOpacity
+        onPress={onPress}
+        className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5 shadow-sm"
+        activeOpacity={0.7}
+      >
+        <Text className="font-product text-base text-zinc-700">
+          {buttonText}
         </Text>
-        <Text className="mb-4 font-sans text-base leading-5 text-zinc-500">
-          {email}
-        </Text>
-        <TouchableOpacity
-          onPress={onPress}
-          className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5 shadow-sm"
-          activeOpacity={0.7}
-        >
-          <Text className="font-product text-base text-zinc-700">
-            {buttonText}
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <View className="items-center justify-center">
-        <Image
-          source={image}
-          style={{ width: 80, height: 80, borderRadius: 50 }}
-          className="rounded-lg"
-        />
-      </View>
+      </TouchableOpacity>
     </View>
   </View>
 );
@@ -54,6 +65,7 @@ const ProfileCard = ({
 export default function ProfilePage() {
   const { user } = useUser();
   const { getToken } = useAuth();
+  const router = useRouter();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -94,15 +106,45 @@ export default function ProfilePage() {
               />
             }
           >
+            {!user?.fullName && (
+              <View className="mb-6 overflow-hidden rounded-2xl border border-orange-200 bg-orange-50 shadow-lg">
+                <View className="p-6">
+                  <View className="mb-2 flex-row items-center">
+                    <AppIcon
+                      Icon={TriangleAlertIcon}
+                      size={24}
+                      color={colors.orange[800]}
+                    />
+                    <Text className="font-product text-base text-orange-800">
+                      Complete Your Profile
+                    </Text>
+                  </View>
+                  <Text className="mb-3 font-sans text-sm leading-5 text-orange-700">
+                    Please edit your profile to add your full name and complete
+                    your account setup.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => router.push('/screens/edit-profile')}
+                    className="self-start rounded-lg bg-orange-500 px-4 py-2 shadow-sm"
+                    activeOpacity={0.7}
+                  >
+                    <Text className="font-product text-sm text-white">
+                      Edit Profile Now
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
             <ProfileCard
               name={user?.fullName || 'User'}
               email={user?.emailAddresses[0]?.emailAddress || 'User'}
-              buttonText="View Token"
+              buttonText="Edit Profile"
               image={
                 user?.imageUrl ||
                 require('@/assets/images/onboarding/AI-Powered Concept Mastery.png')
               }
-              onPress={() => getTokenAndLog()}
+              onPress={() => router.push('/screens/edit-profile')}
             />
           </ScrollView>
         </SafeAreaView>
