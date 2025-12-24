@@ -81,11 +81,11 @@ const seedDatabaseWithFiles = async () => {
         const document = await DocumentModel.create(validation.data)
         const documentId = document._id.toString()
 
-        logger.info(`  ├─ Document created with ID: ${documentId}`)
+        logger.info(`Document created with ID: ${documentId}`)
 
         // Upload image to S3
         try {
-          logger.info(`  ├─ Uploading image (today.png)...`)
+          logger.info(`Uploading image (today.png)...`)
           const imageBuffer = fs.readFileSync(imagePath)
 
           // Use document ID for unique filename
@@ -96,18 +96,18 @@ const seedDatabaseWithFiles = async () => {
             'image/png'
           )
 
-          logger.info(`  ├─ Image uploaded: ${imageUrl}`)
+          logger.info(`Image uploaded: ${imageUrl}`)
 
           // Update document with image URL
           document.imageUrl = imageUrl
         } catch (error) {
-          logger.error(`  ├─ Failed to upload image:`, error)
+          logger.error(`Failed to upload image:`, error)
           // Continue without image
         }
 
         // Upload PDF to S3
         try {
-          logger.info(`  ├─ Uploading PDF (today.pdf)...`)
+          logger.info(`Uploading PDF (today.pdf)...`)
           const pdfBuffer = fs.readFileSync(pdfPath)
 
           const sanitizedTitle = sanitizeFilename(document.title)
@@ -123,7 +123,7 @@ const seedDatabaseWithFiles = async () => {
             'today.pdf'
           )
 
-          logger.info(`  ├─ PDF uploaded: ${pdfUrl}`)
+          logger.info(`PDF uploaded: ${pdfUrl}`)
 
           // Update document with PDF metadata
           document.pdfUrl = [
@@ -135,13 +135,13 @@ const seedDatabaseWithFiles = async () => {
             },
           ]
         } catch (error) {
-          logger.error(`  ├─ Failed to upload PDF:`, error)
+          logger.error(`Failed to upload PDF:`, error)
           // Continue without PDF
         }
 
         // Save document with file URLs
         await document.save()
-        logger.info(`  └─ Document saved successfully with file URLs`)
+        logger.info(`Document saved successfully with file URLs`)
 
         successCount++
       } catch (error) {
