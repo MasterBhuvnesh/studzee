@@ -4,8 +4,8 @@ import cron from 'node-cron'
 import logger from '@/utils/logger'
 
 export const startHeartbeatJob = () => {
-  if (process.env.NODE_ENV !== 'production') {
-    logger.info('⏱️  - Skipping heartbeat cron: Not in production.')
+  if (process.env.NODE_ENV !== 'test') {
+    logger.info('⏱️  - Skipping heartbeat cron: Not in test.')
     return
   }
 

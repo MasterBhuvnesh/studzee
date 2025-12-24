@@ -1072,7 +1072,6 @@ interface PdfObject {
 │   │   ├── mongo.ts        # MongoDB connection
 │   │   ├── redis.ts        # Redis connection
 │   │   └── s3.ts           # AWS S3 configuration
-│   ├── core/               # Deprecated - use services/
 │   ├── data/               # Sample data
 │   │   ├── data.json
 │   │   ├── sample.data.json
