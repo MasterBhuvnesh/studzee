@@ -17,9 +17,6 @@ RUN npm run build
 FROM node:18-alpine AS production
 WORKDIR /usr/src/app
 
-# Set NODE_ENV to production
-ENV NODE_ENV=production
-
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
 COPY package*.json ./
