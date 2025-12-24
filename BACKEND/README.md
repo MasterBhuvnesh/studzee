@@ -1178,6 +1178,12 @@ The development environment includes web-based admin dashboards:
   - Name: Any descriptive name
 - **Features**: View cache keys, monitor performance, debug queries
 
+#### MinIO Dashboard (MinIO Console)
+
+- **URL**: [http://localhost:9001](http://localhost:9001)
+- **Setup**: Login with `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from `.env.docker`
+- **Features**: View files, manage buckets, monitor performance, debug queries
+
 ### Development Authentication Bypass
 
 For easier local development, you can bypass Clerk authentication:
