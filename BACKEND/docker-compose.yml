@@ -93,5 +93,5 @@ volumes:
 
 networks:
   studzee-network:
-    name: studzee-network
+    name: studzee_network
     driver: bridge

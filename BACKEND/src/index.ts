@@ -63,6 +63,7 @@ const main = async () => {
     app.use('/admin', adminRoutes)
     app.use('/pdfs', pdfRoutes)
     app.use('/', healthcheckRoute) // For healthcheck route for Render
+    app.get('/favicon.ico', (req, res) => res.status(204).end())
 
     // --- Error Handling ---
     app.use(notFoundHandler)
