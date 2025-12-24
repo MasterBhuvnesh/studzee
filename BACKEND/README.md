@@ -257,15 +257,14 @@ The `docker-compose.yml` defines **5 services** that work together to provide a 
 - **Features**: Browse collections, run queries, manage documents
 - **Depends On**: MongoDB service must be healthy before starting
 
-#### 5. **API Service** (Currently Commented Out)
+#### 5. **API (`api`)**
 
-The `docker-compose.yml` includes a commented-out API service configuration. To run the full stack in Docker:
-
-1. Uncomment the `api` service section in `docker-compose.yml`
-2. Build and start: `make env-up`
-3. The API will be available at `http://localhost:4000`
-
-**Current Development Workflow**: Run infrastructure (MongoDB, Redis, MinIO) in Docker and the API locally with `npm run dev` for hot-reload and easier debugging.
+- **Purpose**: Core backend application service
+- **Development Workflow**: Usually run locally via `npm run dev` to enable hot-reloading and easier debugging, while connecting to the containerized infrastructure.
+- **Management Dashboards**:
+  - **Mongo Express**: [http://localhost:8081](http://localhost:8081) — Web UI for MongoDB management.
+  - **RedisInsight**: [http://localhost:8001](http://localhost:8001) — GUI for monitoring and interacting with Redis.
+  - **MinIO Console**: [http://localhost:9001](http://localhost:9001) — Interface for managing S3-compatible object storage.
 
 ### Volumes & Data Persistence
 
