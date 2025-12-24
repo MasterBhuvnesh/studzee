@@ -1,5 +1,5 @@
 # ---- Base Stage ----
-FROM node:18-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /usr/src/app
 COPY package*.json ./
 
@@ -14,7 +14,7 @@ RUN npm install
 RUN npm run build
 
 # ---- Production Stage ----
-FROM node:18-alpine AS production
+FROM node:22-alpine AS production
 WORKDIR /usr/src/app
 
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
