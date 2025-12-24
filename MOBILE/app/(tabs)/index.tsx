@@ -17,7 +17,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ============ COMPONENTS ============
-
+const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return dateString;
+  }
+};
 /**
  * Loading skeleton component displayed while content is being fetched
  */
@@ -212,7 +223,9 @@ const TodayContentSection = ({
           Today's Content
         </Text>
         <View className="flex-row items-center gap-1">
-          <Text className="font-sans text-sm text-zinc-500">Featured</Text>
+          <Text className="font-sans text-sm text-zinc-500">
+            {formatDate(content.createdAt)}
+          </Text>
         </View>
       </View>
 

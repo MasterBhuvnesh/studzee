@@ -82,40 +82,6 @@ const ErrorState = ({
   );
 };
 
-/**
- * Key notes button component - Opens bottom sheet modal
- */
-const KeyNotesButton = ({
-  onClick,
-  count,
-}: {
-  onClick: () => void;
-  count: number;
-}) => {
-  return (
-    <TouchableOpacity
-      onPress={onClick}
-      className="mb-6 flex-row items-center justify-between overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-4 active:bg-zinc-100"
-      activeOpacity={0.7}
-    >
-      <View className="flex-1">
-        <Text className="mb-1 font-product text-base text-zinc-800">
-          Key Notes
-        </Text>
-        <Text className="font-sans text-sm text-zinc-500">
-          {count} important {count === 1 ? 'note' : 'notes'} available
-        </Text>
-      </View>
-      <AppIcon
-        Icon={BookOpen}
-        color={colors.zinc[500]}
-        size={20}
-        strokeWidth={1.5}
-      />
-    </TouchableOpacity>
-  );
-};
-
 // ============ MAIN COMPONENT ============
 
 export default function ContentDetailPage() {
@@ -248,6 +214,21 @@ export default function ContentDetailPage() {
           <Text className="flex-1 font-product text-xl text-zinc-800">
             Overview
           </Text>
+          {/* Key Notes Icon Button */}
+          {content?.key_notes && Object.keys(content.key_notes).length > 0 && (
+            <TouchableOpacity
+              onPress={() => keyNotesSheetRef.current?.present()}
+              className="rounded-full p-2 active:bg-zinc-100"
+              activeOpacity={0.7}
+            >
+              <AppIcon
+                Icon={BookOpen}
+                color={colors.zinc[500]}
+                size={20}
+                strokeWidth={1.5}
+              />
+            </TouchableOpacity>
+          )}
           {/* Facts Icon Button */}
           {content?.facts && (
             <TouchableOpacity
@@ -258,7 +239,7 @@ export default function ContentDetailPage() {
               <AppIcon
                 Icon={Lightbulb}
                 color={colors.zinc[500]}
-                size={24}
+                size={20}
                 strokeWidth={1.5}
               />
             </TouchableOpacity>
@@ -319,24 +300,26 @@ export default function ContentDetailPage() {
               </View>
 
               {/* Summary */}
-              <View className="mb-6 overflow-hidden rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                <Text className="mb-2 font-product text-base text-blue-600">
+              {/* <View className="mb-6 overflow-hidden rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                <Text className="mb-2 font-product text-base text-zinc-800">
                   Summary
                 </Text>
-                <Text className="font-sans text-sm text-blue-500">
+                <Text className="font-sans text-base text-zinc-500">
                   {content.summary}
                 </Text>
+              </View> */}
+              <View className="mb-6">
+                <Text className="mb-3 font-product text-xl text-zinc-800">
+                  Summary
+                </Text>
+                <View className="overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6">
+                  <View className="items-center">
+                    <Text className="font-sans text-base text-zinc-500">
+                      {content.summary}
+                    </Text>
+                  </View>
+                </View>
               </View>
-
-              {/* Key Notes Button */}
-              {content.key_notes &&
-                Object.keys(content.key_notes).length > 0 && (
-                  <KeyNotesButton
-                    onClick={() => keyNotesSheetRef.current?.present()}
-                    count={Object.keys(content.key_notes).length}
-                  />
-                )}
-
               {/* PDFs */}
               {content.pdfUrl && content.pdfUrl.length > 0 && (
                 <View className="mb-6">

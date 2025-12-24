@@ -25,7 +25,7 @@ export function useOnboarding() {
       try {
         logger.info('Loading onboarding status...');
         const value = await SecureStore.getItemAsync(ONBOARDING_KEY);
-        
+
         if (isMounted) {
           const completed = value === 'true';
           setState({
@@ -59,13 +59,13 @@ export function useOnboarding() {
     try {
       logger.info('Marking onboarding as completed...');
       await SecureStore.setItemAsync(ONBOARDING_KEY, 'true');
-      
+
       setState(prev => ({
         ...prev,
         hasCompletedOnboarding: true,
         error: null,
       }));
-      
+
       logger.success('Onboarding marked as completed');
     } catch (error) {
       logger.error(`Error saving onboarding status: ${error}`);
@@ -82,13 +82,13 @@ export function useOnboarding() {
     try {
       logger.info('Resetting onboarding status...');
       await SecureStore.deleteItemAsync(ONBOARDING_KEY);
-      
+
       setState({
         hasCompletedOnboarding: false,
         isLoading: false,
         error: null,
       });
-      
+
       logger.success('Onboarding reset successfully');
     } catch (error) {
       logger.error(`Error resetting onboarding: ${error}`);

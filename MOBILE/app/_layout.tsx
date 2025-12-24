@@ -25,10 +25,11 @@ if (!publishableKey) {
 
 function RootLayoutNav() {
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
-  const { hasCompletedOnboarding, isLoading: onboardingLoading } = useOnboarding();
+  const { hasCompletedOnboarding, isLoading: onboardingLoading } =
+    useOnboarding();
   const segments = useSegments();
   const router = useRouter();
-  
+
   // Track if we've already navigated to prevent loops
   const navigationAttempted = useRef(false);
 
@@ -91,12 +92,12 @@ function RootLayoutNav() {
     // Perform navigation if needed and not already attempted
     if (targetRoute && !navigationAttempted.current) {
       navigationAttempted.current = true;
-      
+
       // Use setTimeout to avoid navigation during render
       const timeoutId = setTimeout(() => {
         logger.success(`Navigating to: ${targetRoute}`);
         router.replace(targetRoute as any);
-        
+
         // Reset flag after navigation completes
         setTimeout(() => {
           navigationAttempted.current = false;
@@ -105,7 +106,14 @@ function RootLayoutNav() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [isSignedIn, authLoaded, hasCompletedOnboarding, onboardingLoading, segments, router]);
+  }, [
+    isSignedIn,
+    authLoaded,
+    hasCompletedOnboarding,
+    onboardingLoading,
+    segments,
+    router,
+  ]);
 
   // Show loading screen while initializing
   if (!authLoaded || onboardingLoading || hasCompletedOnboarding === null) {

@@ -20,7 +20,7 @@ import {
   Info,
   Loader,
   Loader2,
-  X
+  X,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
