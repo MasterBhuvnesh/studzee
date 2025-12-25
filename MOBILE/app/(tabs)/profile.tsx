@@ -25,7 +25,7 @@ const ProfileCard = ({
   onPress,
 }: ProfileCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
-    <View className="flex-row justify-between pl-4 pr-4 pt-4">
+    <View className="flex-row items-center justify-between pl-4 pr-4 pt-4">
       <Image
         source={image}
         className="h-24 w-24 rounded-full "
@@ -34,11 +34,11 @@ const ProfileCard = ({
 
       <Image
         source="https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/verified.png"
-        className="h-24 w-24 rounded-full"
+        className="rounded-full"
         style={{
-          width: 120,
-          height: 120,
-          marginRight: 40,
+          width: 140,
+          height: 80,
+          marginRight: 20,
         }}
         alt="Verified"
       />
