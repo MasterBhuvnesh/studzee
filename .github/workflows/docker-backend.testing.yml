@@ -44,6 +44,6 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/studzee-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/studzee-backend:${{ steps.version.outputs.VERSION }}
 
-      # Trigger Render deploy hook
-      - name: Trigger Render deploy hook
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
+      # # Trigger Render deploy hook
+      # - name: Trigger Render deploy hook
+      #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
