@@ -51,5 +51,5 @@ jobs:
           echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-backend:${{ steps.version.outputs.VERSION }}"
 
       # # Trigger Render deploy hook ( uncomment when using Render.com )
-      # - name: Trigger Render deploy hook
-      #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
+      - name: Trigger Render deploy hook
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
