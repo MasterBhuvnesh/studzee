@@ -12,7 +12,6 @@ import {
   ChevronRight,
   FileText,
   HelpCircle,
-  Languages,
   Lock,
   Mail,
   Menu,
@@ -125,11 +124,7 @@ export default function SettingsPage() {
                   onToggleChange: handleNotificationToggle,
                   toggleLoading: isLoading,
                 },
-                {
-                  label: 'Language',
-                  onPress: () => logger.debug('Language pressed'),
-                  icon: Languages,
-                },
+
                 {
                   label: 'Newsletters',
                   onPress: () => logger.debug('Newsletters pressed'),

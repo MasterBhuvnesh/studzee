@@ -334,7 +334,7 @@ export default function QuizScreen() {
 
         {/* Quiz Card */}
         <View className="flex-1 px-6">
-          <View className="flex-1 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
+          <View className="flex-1  mb-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
               {/* Question Number */}
               <Text className="mb-2 font-sans text-xs font-medium uppercase tracking-wide text-zinc-400">
@@ -370,13 +370,13 @@ export default function QuizScreen() {
                 className={`flex-1 rounded-xl border px-6 py-3 ${
                   currentQuestionIndex === 0
                     ? 'border-zinc-200 bg-zinc-100'
-                    : 'border-zinc-700 bg-white active:bg-zinc-50'
+                    : 'border-zinc-400 bg-white active:bg-zinc-50'
                 }`}
                 activeOpacity={0.7}
               >
                 <Text
                   className={`text-center font-product text-base ${
-                    currentQuestionIndex === 0 ? 'text-zinc-400' : 'text-zinc-700'
+                    currentQuestionIndex === 0 ? 'text-zinc-400' : 'text-zinc-600'
                   }`}
                 >
                   Back
@@ -385,7 +385,7 @@ export default function QuizScreen() {
 
               <TouchableOpacity
                 onPress={handleNext}
-                className="flex-1 rounded-xl bg-lime-500 px-6 py-3 active:bg-lime-600"
+                className="flex-1 rounded-xl bg-blue-500 px-6 py-3 active:bg-blue-600"
                 activeOpacity={0.8}
               >
                 <Text className="text-center font-product text-base text-white">

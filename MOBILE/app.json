@@ -29,8 +29,8 @@
           "data": [
             {
               "scheme": "https",
-              "host": "*.gdgrbu.tech",
-              "pathPrefix": "/(tabs)/"
+              "host": "studzee.in",
+              "pathPrefix": "/pages/"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
