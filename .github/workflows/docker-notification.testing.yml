@@ -1,3 +1,6 @@
+#  Docker Notification Service CI/CD Pipeline
+#  It will build, test, and deploy the Docker image for the Notification service
+#  To deploy it u can use Render.com or any other service by uncommenting the relevant section
 name: Build, Test, and Deploy Docker Image - Notification
 
 on:
@@ -58,6 +61,6 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/studzee-notification:latest
             ${{ secrets.DOCKER_USERNAME }}/studzee-notification:${{ steps.version.outputs.VERSION }}
 
-      # Trigger Render deploy hook
+      # Trigger Render deploy hook ( uncomment when using Render.com )
       # - name: Trigger Render deploy hook
       #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_NOTIFICATION }}

@@ -1,4 +1,4 @@
-# Testing GitHub Actions Workflow for Docker Backend Deployment
+# GitHub Actions Workflow for Docker Backend Deployment
 name: Build, Tag, and Deploy Docker Image - Backend
 
 on:
@@ -44,6 +44,12 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/studzee-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/studzee-backend:${{ steps.version.outputs.VERSION }}
 
-      # # Trigger Render deploy hook
+      - name: Print Docker image information
+        run: |
+          echo "Docker image successfully built and pushed:"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-backend:latest"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-backend:${{ steps.version.outputs.VERSION }}"
+
+      # # Trigger Render deploy hook ( uncomment when using Render.com )
       # - name: Trigger Render deploy hook
       #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
