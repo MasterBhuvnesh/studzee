@@ -54,7 +54,7 @@ export function FactModal({
                     {title}
                   </Text>
                 )}
-                <Text className="text-center font-sans text-sm leading-6 text-zinc-500">
+                <Text className="text-center font-sans text-base leading-6 text-zinc-500">
                   {message}
                 </Text>
               </View>

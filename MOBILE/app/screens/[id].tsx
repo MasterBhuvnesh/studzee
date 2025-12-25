@@ -18,7 +18,7 @@ import {
   Calendar,
   Download,
   Eye,
-  Lightbulb,
+  Lightbulb
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -393,24 +393,43 @@ export default function ContentDetailPage() {
                 </View>
               )}
 
-              {/* Quiz Section - Coming Soon */}
+              {/* Quiz Section */}
               {content.quiz && Object.keys(content.quiz).length > 0 && (
                 <View className="mb-6">
                   <Text className="mb-3 font-product text-xl text-zinc-800">
                     Quiz
                   </Text>
-                  <View className="overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6">
-                    <View className="items-center">
-                      <Text className="font-sans text-sm text-zinc-500">
-                        Quiz feature coming soon!
-                      </Text>
-                      <Text className="mt-1 font-sans text-xs text-zinc-400">
-                        {Object.keys(content.quiz).length} questions available
-                      </Text>
-                    </View>
-                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      logger.info('Starting quiz');
+                      router.push({
+                        pathname: '/screens/quiz',
+                        params: {
+                          quiz: JSON.stringify(content.quiz),
+                          contentTitle: content.title,
+                          contentId: content._id,
+                        },
+                      });
+                    }}
+                   className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-4 shadow-sm"
+      activeOpacity={0.8}
+    >
+      <View className="flex-row items-center justify-between">
+        <View className="flex-1">
+          <Text className="font-product text-base  text-zinc-800">
+            Test Your Knowledge
+          </Text>
+        </View>
+        <View className="rounded-xl bg-zinc-800 px-8 py-3.5 shadow-md">
+          <Text className="font-product text-sm font-medium text-white">
+            Start Quiz
+          </Text>
+        </View>
+      </View>
+                  </TouchableOpacity>
                 </View>
               )}
+
             </View>
           ) : null}
         </ScrollView>

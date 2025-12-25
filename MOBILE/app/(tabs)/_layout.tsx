@@ -4,11 +4,10 @@ import { useAuth } from '@clerk/clerk-expo';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
-  ChartColumnIncreasing,
   Home,
   Package,
   Settings,
-  User,
+  User
 } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -48,20 +47,6 @@ export default function TabLayout() {
               tabBarIcon: ({ color, size }) => (
                 <AppIcon
                   Icon={Home}
-                  color={color}
-                  size={size}
-                  strokeWidth={1.5}
-                />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="progress"
-            options={{
-              tabBarLabel: 'Progress',
-              tabBarIcon: ({ color, size }) => (
-                <AppIcon
-                  Icon={ChartColumnIncreasing}
                   color={color}
                   size={size}
                   strokeWidth={1.5}
