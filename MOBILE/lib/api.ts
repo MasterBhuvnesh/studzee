@@ -12,7 +12,7 @@ import logger from '@/utils/logger';
 // Backend API configuration
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_BACKEND_API_URL ||
-  'https://studzee-backend.onrender.com';
+  'https://studzee-backend-drz3.onrender.com';
 
 /**
  * Fetches the list of PDF documents with pagination support

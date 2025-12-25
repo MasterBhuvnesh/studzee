@@ -8,7 +8,7 @@ import type { BackendTokenResponse } from '@/types/notification';
 import logger from '@/utils/logger';
 
 // Backend API configuration
-const NOTIFICATION_API_URL = `${process.env.EXPO_PUBLIC_BACKEND_API}/register-token`;
+const NOTIFICATION_API_URL = `${process.env.EXPO_PUBLIC_BACKEND_API_URL}/register-token`;
 const API_AUTH_TOKEN = process.env.EXPO_PUBLIC_API_AUTH_TOKEN;
 
 /**

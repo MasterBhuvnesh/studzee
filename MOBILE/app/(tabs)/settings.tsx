@@ -85,8 +85,7 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
 );
 
 export default function SettingsPage() {
-  const { permissionGranted, permissionLoading, requestPermission } =
-    useNotification();
+  const { expoPushToken, isLoading } = useNotification();
 
   const handleOpenSettings = () => {
     if (Platform.OS === 'ios') {
@@ -96,19 +95,10 @@ export default function SettingsPage() {
     }
   };
 
-  const handleNotificationToggle = async (value: boolean) => {
-    if (value) {
-      // User wants to enable notifications
-      const granted = await requestPermission();
-
-      // If permission wasn't granted (denied status), open settings
-      if (!granted) {
-        handleOpenSettings();
-      }
-    } else {
-      // User wants to disable notifications - open settings
-      handleOpenSettings();
-    }
+  const handleNotificationToggle = async () => {
+    // Since permissions are handled automatically on app start,
+    // we can only direct users to system settings to change them
+    handleOpenSettings();
   };
 
   return (
@@ -129,11 +119,11 @@ export default function SettingsPage() {
                 {
                   label: 'App Notifications',
                   onPress: handleOpenSettings,
-                  icon: permissionGranted ? Bell : BellOff,
+                  icon: expoPushToken ? Bell : BellOff,
                   hasToggle: true,
-                  toggleValue: permissionGranted,
+                  toggleValue: !!expoPushToken,
                   onToggleChange: handleNotificationToggle,
-                  toggleLoading: permissionLoading,
+                  toggleLoading: isLoading,
                 },
                 {
                   label: 'Language',
