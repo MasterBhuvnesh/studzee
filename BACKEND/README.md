@@ -1206,6 +1206,9 @@ For easier local development, you can bypass Clerk authentication:
 
 ## Testing
 
+> [!IMPORTANT]
+> For accurate testing that mirrors the production environment, it is strongly recommended to use Docker for running tests. Start the Docker services (`make up` or `docker-compose up -d`) before running your tests to ensure MongoDB and Redis are available. This provides a consistent testing environment and prevents issues related to local database configurations.
+
 The project uses **vitest** for comprehensive testing:
 
 ```bash

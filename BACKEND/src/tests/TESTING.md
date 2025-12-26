@@ -414,35 +414,6 @@ it('should ...', () => {
 })
 ```
 
-## CI/CD Integration
-
-For GitHub Actions, use mocked tests:
-
-```yaml
-# .github/workflows/test.yml
-test:
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-    - run: npm ci
-    - run: npm test tests/mocked -- --run
-    - run: npm test tests/unit -- --run
-```
-
-For pre-deployment, use integration tests:
-
-```yaml
-pre-deploy:
-  services:
-    mongodb:
-      image: mongo:latest
-    redis:
-      image: redis:latest
-  steps:
-    - run: npm test -- --run --coverage
-```
-
 ## Further Reading
 
 - [Vitest Documentation](https://vitest.dev/)
