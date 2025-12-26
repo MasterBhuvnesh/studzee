@@ -1,0 +1,62 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  clerkId       String   @unique
+  email         String   @unique
+  expoTokens    String[] // Array of Expo push tokens
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  title       String
+  message     String
+  imageUrl    String?
+  sentBy      String   // Clerk ID of admin who sent
+  sentTo      String[] // Array of emails (empty if sent to all)
+  sentToAll   Boolean  @default(false)
+  status      String   @default("sent") // sent, failed, delivered
+  createdAt   DateTime @default(now())
+
+  @@index([sentBy])
+  @@index([createdAt])
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  subject     String
+  message     String   @db.Text
+  pdfUrls     String[] // Array of PDF URLs (optional attachments)
+  sentBy      String   // Clerk ID of admin
+  sentTo      String[] // Array of recipient emails
+  status      String   @default("sent") // sent, failed
+  createdAt   DateTime @default(now())
+
+  @@index([sentBy])
+  @@index([createdAt])
+}
+
+model SystemLog {
+  id          String   @id @default(cuid())
+  event       String
+  description String   @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([event])
+  @@index([createdAt])
+}

@@ -1,0 +1,42 @@
+{
+  "name": "notification-service",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index. ts",
+    "prisma:generate": "bunx prisma generate",
+    "prisma:migrate": "bunx prisma migrate dev",
+    "prisma:push": "bunx prisma db push",
+    "prisma:studio": "bunx prisma studio",
+    "prisma:seed": "bun prisma/seed.ts",
+    "docker:build": "docker-compose build",
+    "docker: up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.0.0",
+    "@clerk/express": "^1.0.0",
+    "@prisma/client": "^6.0.0",
+    "axios": "^1.7.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.0.0",
+    "helmet": "^8.0.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.0",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0",
+    "zod": "^3.23.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.17",
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^5.0.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.15",
+    "prisma": "^6.0.0"
+  }
+}
