@@ -109,11 +109,11 @@ export default function ProfilePage() {
             {!user?.fullName && (
               <View className="mb-6 overflow-hidden rounded-2xl border border-orange-200 bg-orange-50 shadow-lg">
                 <View className="p-6">
-                  <View className="mb-2 flex-row items-center">
+                  <View className="mb-2 flex-row items-center gap-3">
                     <AppIcon
                       Icon={TriangleAlertIcon}
-                      size={24}
-                      color={colors.orange[800]}
+                      size={20}
+                      color={colors.orange[500]}
                     />
                     <Text className="font-product text-base text-orange-800">
                       Complete Your Profile
@@ -146,6 +146,16 @@ export default function ProfilePage() {
               }
               onPress={() => router.push('/screens/edit-profile')}
             />
+
+            <TouchableOpacity
+              onPress={getTokenAndLog}
+              className="mb-6 rounded-lg bg-zinc-800 px-5 py-3 shadow-lg"
+              activeOpacity={0.7}
+            >
+              <Text className="text-center font-product text-base text-white">
+                Log Token to Console
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>

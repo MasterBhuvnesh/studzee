@@ -91,19 +91,19 @@ const ErrorState = ({ error }: { error: string }) => {
  */
 const LockedContentSection = ({ title }: { title: string }) => {
   return (
-    <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
+    <View className="mb-4 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
       <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
         <Text className="font-product text-base text-zinc-800">{title}</Text>
         <View className="rounded-full bg-zinc-100 px-3 py-1">
           <Text className="font-sans text-xs text-zinc-600">Coming Soon</Text>
         </View>
       </View>
-      <View className="flex items-center justify-center py-8">
-        <View className="rounded-full bg-zinc-100 p-6">
+      <View className="flex items-center justify-center py-4">
+        <View className="rounded-full bg-zinc-100 p-3">
           <AppIcon
             Icon={Lock}
             color={colors.zinc[400]}
-            size={28}
+            size={20}
             strokeWidth={1.5}
           />
         </View>
