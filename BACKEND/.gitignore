@@ -2,3 +2,4 @@
 .env.production
 dist
 node_modules
+coverage

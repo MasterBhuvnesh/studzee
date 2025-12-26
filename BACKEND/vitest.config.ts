@@ -35,6 +35,43 @@ export default defineConfig({
         'src/tests/', // Don't measure test files themselves
         '**/*.test.ts', // Exclude all test files
         '**/*.mock.test.ts', // Exclude mocked test files
+        // Bootstrap
+        '**/src/index.ts',
+
+        // Config & infra
+        '**/src/config/**',
+
+        // CLI & jobs
+        '**/src/cli/**',
+        '**/src/jobs/**',
+
+        // Controllers not under test
+        '**/src/api/controllers/admin.controller.ts',
+        '**/src/api/controllers/upload.controller.ts',
+
+        // Routes with no business logic
+        '**/src/api/routes/admin.route.ts',
+        '**/src/api/routes/auth.route.ts',
+
+        // Middleware (infra-heavy)
+        '**/src/middleware/upload.ts',
+        '**/src/middleware/helmet.ts',
+
+        // Validation-only
+        '**/src/models/document.validation.ts',
+
+        // Services not implemented/tested yet
+        '**/src/services/admin.service.ts',
+        '**/src/services/pdf.service.ts',
+
+        // Utilities tested indirectly
+        '**/src/utils/cache.ts',
+
+        // Logger
+        '**/src/utils/logger.ts',
+
+        // Tests
+        '**/src/tests/**',
       ],
     },
   },

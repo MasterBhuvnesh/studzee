@@ -1,6 +1,6 @@
 # Testing Guide
 
-## 📚 Overview
+## Overview
 
 This document explains how to write and run tests for the Studzee backend. We have three types of tests:
 
@@ -8,7 +8,7 @@ This document explains how to write and run tests for the Studzee backend. We ha
 2. **Integration Tests** - Complete flows with real databases
 3. **Mocked Integration Tests** - Complete flows with fake databases
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Run all tests
@@ -30,7 +30,7 @@ npm test tests/mocked
 npm test -- --coverage
 ```
 
-## 📁 Test Structure
+## Test Structure
 
 ```
 src/tests/
@@ -50,7 +50,7 @@ src/tests/
 
 ```
 
-## 🎯 When to Use Which Test Type
+## When to Use Which Test Type
 
 ### Unit Tests (`tests/unit/`)
 
@@ -112,7 +112,7 @@ it('should return paginated documents', async () => {
 })
 ```
 
-## 📝 Writing Tests
+## Writing Tests
 
 ### The AAA Pattern
 
@@ -174,7 +174,7 @@ const mockFind = vi.fn().mockReturnValue({ sort: mockSort })
 vi.mocked(DocumentModel.find).mockImplementation(mockFind)
 ```
 
-## 🧪 Test Examples
+## Test Examples
 
 ### Testing a Service (Unit Test)
 
@@ -279,7 +279,7 @@ describe('GET /content', () => {
 })
 ```
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Tests Failing with "Cannot find module"
 
@@ -314,16 +314,16 @@ afterAll(async () => {
 **Solution:** Always mock BEFORE importing the module:
 
 ```typescript
-// ✅ Correct order
+// Correct order
 vi.mock('@/models/document.model')
 import * as contentService from '@/core/services/content.service'
 
-// ❌ Wrong order
+// Incorrect order
 import * as contentService from '@/core/services/content.service'
 vi.mock('@/models/document.model') // Too late!
 ```
 
-## 📊 Coverage Reports
+## Coverage Reports
 
 We use **Istanbul** for code coverage, which provides detailed HTML reports with branch visualization.
 
@@ -341,10 +341,10 @@ This creates:
 
 **What Istanbul shows:**
 
-- ✅ **Statement coverage**: % of code statements executed
-- ✅ **Branch coverage**: % of if/else branches tested
-- ✅ **Function coverage**: % of functions called
-- ✅ **Line coverage**: % of lines executed
+- **Statement coverage**: % of code statements executed
+- **Branch coverage**: % of if/else branches tested
+- **Function coverage**: % of functions called
+- **Line coverage**: % of lines executed
 
 **Coverage goals:**
 
@@ -352,19 +352,19 @@ This creates:
 - Controllers: 85%+
 - Routes: 80%+
 
-## 🎓 Best Practices
+## Best Practices
 
 ### 1. One Assertion Per Test?
 
-**No!** Multiple related assertions are fine:
+**No.** Multiple related assertions are acceptable:
 
 ```typescript
 it('should return paginated data', async () => {
   const response = await request(app).get('/content')
 
-  expect(response.status).toBe(200) // ✅ Good
-  expect(response.body).toHaveProperty('data') // ✅ Good
-  expect(response.body.data).toBeArray() // ✅ Good
+  expect(response.status).toBe(200) // Good
+  expect(response.body).toHaveProperty('data') // Good
+  expect(response.body.data).toBeArray() // Good
 })
 ```
 
@@ -373,10 +373,10 @@ it('should return paginated data', async () => {
 Use descriptive names that explain the scenario:
 
 ```typescript
-// ✅ Good
+// Good
 it('should return 404 when document not found', ...)
 
-// ❌ Bad
+// Bad
 it('test document', ...)
 ```
 
@@ -400,13 +400,13 @@ beforeEach(() => {
 Always use async/await for database operations:
 
 ```typescript
-// ✅ Good
+// Correct
 it('should ...', async () => {
   const result = await someAsyncFunction()
   expect(result).toBe(...)
 })
 
-// ❌ Bad (test will pass even if assertion fails!)
+// Incorrect (test will pass even if assertion fails!)
 it('should ...', () => {
   someAsyncFunction().then(result => {
     expect(result).toBe(...)
@@ -414,7 +414,7 @@ it('should ...', () => {
 })
 ```
 
-## 🚀 CI/CD Integration
+## CI/CD Integration
 
 For GitHub Actions, use mocked tests:
 
@@ -443,7 +443,7 @@ pre-deploy:
     - run: npm test -- --run --coverage
 ```
 
-## 📚 Further Reading
+## Further Reading
 
 - [Vitest Documentation](https://vitest.dev/)
 - [Testing Library Best Practices](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
