@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "start": "bun src/index. ts",
+    "start": "bun src/index.ts",
     "prisma:generate": "bunx prisma generate",
     "prisma:migrate": "bunx prisma migrate dev",
     "prisma:push": "bunx prisma db push",
