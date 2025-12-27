@@ -1,6 +1,7 @@
-import { Request, Response } from "express";
-import { getUsers, getUserEmails } from "@/services/user.service";
-import logger from "@/utils/logger";
+import { Request, Response } from 'express';
+
+import { getUsers, getUserEmails } from '@/services/user.service';
+import logger from '@/utils/logger';
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -14,10 +15,10 @@ export const getAllUsers = async (req: Request, res: Response) => {
       data: users,
     });
   } catch (error: any) {
-    logger.error({ error: error.message }, "Failed to fetch users");
+    logger.error({ error: error.message }, 'Failed to fetch users');
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch users",
+      message: 'Failed to fetch users',
       error: error.message,
     });
   }
@@ -32,10 +33,10 @@ export const getAllEmails = async (_req: Request, res: Response) => {
       data: emails,
     });
   } catch (error: any) {
-    logger.error({ error: error.message }, "Failed to fetch emails");
+    logger.error({ error: error.message }, 'Failed to fetch emails');
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch emails",
+      message: 'Failed to fetch emails',
       error: error.message,
     });
   }

@@ -1,5 +1,5 @@
-import { prisma } from "@/utils/prisma";
-import logger from "@/utils/logger";
+import logger from '@/utils/logger';
+import { prisma } from '@/utils/prisma';
 
 export const saveNotification = async (data: {
   title: string;
@@ -15,7 +15,7 @@ export const saveNotification = async (data: {
       data,
     });
   } catch (error: any) {
-    logger.error({ error: error.message }, "Failed to save notification");
+    logger.error({ error: error.message }, 'Failed to save notification');
     throw error;
   }
 };
@@ -24,7 +24,7 @@ export const getNotifications = async (
   page: number,
   limit: number,
   sortBy: string,
-  order: "asc" | "desc"
+  order: 'asc' | 'desc',
 ) => {
   const skip = (page - 1) * limit;
 
@@ -61,7 +61,7 @@ export const saveEmailLog = async (data: {
       data,
     });
   } catch (error: any) {
-    logger.error({ error: error.message }, "Failed to save email log");
+    logger.error({ error: error.message }, 'Failed to save email log');
     throw error;
   }
 };
@@ -70,7 +70,7 @@ export const getEmailLogs = async (
   page: number,
   limit: number,
   sortBy: string,
-  order: "asc" | "desc"
+  order: 'asc' | 'desc',
 ) => {
   const skip = (page - 1) * limit;
 

@@ -1,18 +1,19 @@
-import { Router } from "express";
+import { Router } from 'express';
+
+import { getAllUsers, getAllEmails } from '@/controllers/admin.controller';
+import { sendEmail, getEmailLogs } from '@/controllers/email.controller';
+import {
+  sendPushNotification,
+  getAllNotifications,
+} from '@/controllers/notification.controller';
 import {
   clerkAuthMiddleware,
   requireAuth,
   requireAdmin,
-} from "@/middleware/clerk.middleware";
-import { rateLimitMiddleware } from "@/middleware/rateLimit.middleware";
-import { validateRequest } from "@/middleware/validation.middleware";
-import { sendNotificationSchema, sendEmailSchema } from "@/utils/validation";
-import {
-  sendPushNotification,
-  getAllNotifications,
-} from "@/controllers/notification.controller";
-import { sendEmail, getEmailLogs } from "@/controllers/email.controller";
-import { getAllUsers, getAllEmails } from "@/controllers/admin.controller";
+} from '@/middleware/clerk.middleware';
+import { rateLimitMiddleware } from '@/middleware/rateLimit.middleware';
+import { validateRequest } from '@/middleware/validation.middleware';
+import { sendNotificationSchema, sendEmailSchema } from '@/utils/validation';
 
 const router = Router();
 
@@ -25,10 +26,10 @@ router.use(clerkAuthMiddleware, requireAuth, requireAdmin);
  * @access  Admin only
  */
 router.post(
-  "/notification/send",
+  '/notification/send',
   rateLimitMiddleware({ windowMs: 60000, max: 20 }), // 20 req/min
   validateRequest(sendNotificationSchema),
-  sendPushNotification
+  sendPushNotification,
 );
 
 /**
@@ -37,9 +38,9 @@ router.post(
  * @access  Admin only
  */
 router.get(
-  "/notifications",
+  '/notifications',
   rateLimitMiddleware({ windowMs: 60000, max: 30 }),
-  getAllNotifications
+  getAllNotifications,
 );
 
 /**
@@ -48,9 +49,9 @@ router.get(
  * @access  Admin only
  */
 router.get(
-  "/users",
+  '/users',
   rateLimitMiddleware({ windowMs: 60000, max: 30 }),
-  getAllUsers
+  getAllUsers,
 );
 
 /**
@@ -59,9 +60,9 @@ router.get(
  * @access  Admin only
  */
 router.get(
-  "/emails",
+  '/emails',
   rateLimitMiddleware({ windowMs: 60000, max: 30 }),
-  getAllEmails
+  getAllEmails,
 );
 
 /**
@@ -70,10 +71,10 @@ router.get(
  * @access  Admin only
  */
 router.post(
-  "/email/send",
+  '/email/send',
   rateLimitMiddleware({ windowMs: 60000, max: 10 }), // 10 req/min
   validateRequest(sendEmailSchema),
-  sendEmail
+  sendEmail,
 );
 
 /**
@@ -82,9 +83,9 @@ router.post(
  * @access  Admin only
  */
 router.get(
-  "/email/logs",
+  '/email/logs',
   rateLimitMiddleware({ windowMs: 60000, max: 30 }),
-  getEmailLogs
+  getEmailLogs,
 );
 
 export default router;

@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 import logger from '@/utils/logger';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
@@ -12,9 +13,9 @@ export interface ExpoMessage {
 
 export const sendExpoNotification = async (
   tokens: string[],
-  title:  string,
+  title: string,
   body: string,
-  imageUrl?: string
+  imageUrl?: string,
 ) => {
   try {
     const messages: ExpoMessage[] = tokens.map((token) => ({
@@ -33,7 +34,7 @@ export const sendExpoNotification = async (
 
     logger.info(
       { tokensCount: tokens.length, response: response.data },
-      'Expo notification sent'
+      'Expo notification sent',
     );
 
     return {
@@ -54,7 +55,7 @@ export const checkExpoReceipts = async (receiptIds: string[]) => {
   try {
     const response = await axios.post(
       'https://exp.host/--/api/v2/push/getReceipts',
-      { ids: receiptIds }
+      { ids: receiptIds },
     );
     return response.data;
   } catch (error: any) {

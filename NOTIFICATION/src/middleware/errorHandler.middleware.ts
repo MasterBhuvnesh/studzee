@@ -1,11 +1,12 @@
-import { Request, Response, NextFunction } from "express";
-import logger from "@/utils/logger";
+import { Request, Response, NextFunction } from 'express';
+
+import logger from '@/utils/logger';
 
 export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   // Check if it's a JSON parsing error
   if (err instanceof SyntaxError && 'body' in err) {
@@ -15,15 +16,16 @@ export const errorHandler = (
         path: req.path,
         method: req.method,
       },
-      "Invalid JSON in request body"
+      'Invalid JSON in request body',
     );
 
     return res.status(400).json({
       success: false,
-      message: "Invalid JSON format in request body",
-      error: process.env.NODE_ENV === "development" 
-        ? `JSON parsing failed: ${err.message}. Please check that property names are quoted and there are no trailing commas.` 
-        : "Malformed JSON",
+      message: 'Invalid JSON format in request body',
+      error:
+        process.env.NODE_ENV === 'development'
+          ? `JSON parsing failed: ${err.message}. Please check that property names are quoted and there are no trailing commas.`
+          : 'Malformed JSON',
     });
   }
 
@@ -34,12 +36,12 @@ export const errorHandler = (
       path: req.path,
       method: req.method,
     },
-    "Unhandled error"
+    'Unhandled error',
   );
 
   res.status(500).json({
     success: false,
-    message: "Internal server error",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
   });
 };

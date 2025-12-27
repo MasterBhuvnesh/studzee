@@ -1,7 +1,8 @@
-import cron from 'node-cron';
 import axios from 'axios';
-import logger from '@/utils/logger';
+import cron from 'node-cron';
+
 import { config } from '@/config';
+import logger from '@/utils/logger';
 
 export const startHeartbeatJob = () => {
   if (!config.HEALTHCHECK_URL) {

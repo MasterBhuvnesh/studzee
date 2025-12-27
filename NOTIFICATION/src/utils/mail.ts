@@ -8,10 +8,11 @@
 export const generateEmailTemplate = (
   title: string,
   body: string,
-  footer?: string
+  footer?: string,
 ): string => {
   // Default footer if not provided
-  const footerText = footer || "This is an automated email. Please do not reply.";
+  const footerText =
+    footer || 'This is an automated email. Please do not reply.';
   return `<!DOCTYPE html>
 
 
@@ -173,4 +174,3 @@ export const generateEmailTemplate = (
   </body>
 </html>`;
 };
-

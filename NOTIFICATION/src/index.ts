@@ -1,16 +1,15 @@
-import 'dotenv/config';
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import { config } from "@/config";
-import logger from "@/utils/logger";
-import { errorHandler } from "@/middleware/errorHandler.middleware";
-import { startAllJobs } from "@/jobs";
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
 
+import { config } from '@/config';
+import { startAllJobs } from '@/jobs';
+import { errorHandler } from '@/middleware/errorHandler.middleware';
 // Import routes
-import healthRoutes from "@/routes/health.routes";
-import userRoutes from "@/routes/user.routes";
-import adminRoutes from "@/routes/admin.routes";
+import adminRoutes from '@/routes/admin.routes';
+import healthRoutes from '@/routes/health.routes';
+import userRoutes from '@/routes/user.routes';
+import logger from '@/utils/logger';
 
 const app = express();
 
@@ -21,9 +20,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use("/", healthRoutes);
-app.use("/api", userRoutes);
-app.use("/api/admin", adminRoutes);
+app.use('/', healthRoutes);
+app.use('/api', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

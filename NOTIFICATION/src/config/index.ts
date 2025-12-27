@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 const configSchema = z.object({
   NODE_ENV: z.string().default('development'),
-  PORT: z.preprocess((val) => parseInt(val as string, 10), z.number().default(3000)),
+  PORT: z.preprocess(
+    (val) => parseInt(val as string, 10),
+    z.number().default(3000),
+  ),
   DATABASE_URL: z.string().url(),
   CLERK_SECRET_KEY: z.string(),
   CLERK_PUBLISHABLE_KEY: z.string(),

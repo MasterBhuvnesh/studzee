@@ -1,7 +1,8 @@
-import nodemailer from "nodemailer";
-import { config } from "@/config";
-import logger from "@/utils/logger";
-import { generateEmailTemplate } from "@/utils/mail";
+import nodemailer from 'nodemailer';
+
+import { config } from '@/config';
+import logger from '@/utils/logger';
+import { generateEmailTemplate } from '@/utils/mail';
 
 const transporter = nodemailer.createTransport({
   host: config.SMTP_HOST,
@@ -13,14 +14,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
 export const sendEmailWithAttachments = async (
   recipients: string[],
   subject: string,
   title: string,
   body: string,
   footer?: string,
-  pdfUrls?: string[]
+  pdfUrls?: string[],
 ) => {
   try {
     // Prepare attachments if PDF URLs provided
@@ -29,7 +29,7 @@ export const sendEmailWithAttachments = async (
           pdfUrls.map(async (url, index) => ({
             filename: `attachment-${index + 1}.pdf`,
             path: url,
-          }))
+          })),
         )
       : [];
 
@@ -38,7 +38,7 @@ export const sendEmailWithAttachments = async (
 
     const mailOptions = {
       from: config.EMAIL_FROM,
-      to: recipients.join(", "),
+      to: recipients.join(', '),
       subject,
       html: htmlContent,
       attachments,
@@ -48,7 +48,7 @@ export const sendEmailWithAttachments = async (
 
     logger.info(
       { messageId: info.messageId, recipients },
-      "Email sent successfully"
+      'Email sent successfully',
     );
 
     return {
@@ -56,7 +56,7 @@ export const sendEmailWithAttachments = async (
       messageId: info.messageId,
     };
   } catch (error: any) {
-    logger.error({ error: error.message }, "Email sending failed");
+    logger.error({ error: error.message }, 'Email sending failed');
     return {
       success: false,
       error: error.message,

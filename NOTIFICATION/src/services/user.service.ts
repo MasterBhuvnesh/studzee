@@ -1,10 +1,11 @@
-import { prisma } from "@/utils/prisma";
-import logger from "@/utils/logger";
+import logger from '@/utils/logger';
+import { prisma } from '@/utils/prisma';
+
 
 export const registerOrUpdateUser = async (
   clerkId: string,
   email: string,
-  expoToken: string
+  expoToken: string,
 ) => {
   try {
     const existingUser = await prisma.user.findUnique({
@@ -35,7 +36,7 @@ export const registerOrUpdateUser = async (
       });
     }
   } catch (error: any) {
-    logger.error({ error: error.message }, "User registration/update failed");
+    logger.error({ error: error.message }, 'User registration/update failed');
     throw error;
   }
 };
@@ -64,7 +65,7 @@ export const getUsers = async (page: number, limit: number) => {
     prisma.user.findMany({
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.user.count(),
   ]);

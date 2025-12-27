@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit from 'express-rate-limit';
 
 export const rateLimitMiddleware = (options: {
   windowMs: number;
@@ -9,7 +9,7 @@ export const rateLimitMiddleware = (options: {
     max: options.max,
     message: {
       success: false,
-      message: "Too many requests, please try again later.",
+      message: 'Too many requests, please try again later.',
     },
     standardHeaders: true,
     legacyHeaders: false,
