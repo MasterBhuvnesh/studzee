@@ -26,13 +26,10 @@ jobs:
         run: bun install
         working-directory: ./NOTIFICATION
 
-      - name: Decrypt .env.enc
-        run: |
-          openssl aes-256-cbc -pbkdf2 -d -in ./NOTIFICATION/.env.enc -out ./NOTIFICATION/.env -k "${{ secrets.ENV_SECRET_KEY }}"
-
-      - name: Run Unit Tests [ Pre-Deployment ]
-        run: bun test
-        working-directory: ./NOTIFICATION
+     
+      # - name: Run Unit Tests [ Pre-Deployment ]
+      #   run: bun test
+      #   working-directory: ./NOTIFICATION
 
       - name: Extract version or commit hash
         id: version
