@@ -8,8 +8,15 @@ import logger from "@/utils/logger";
 
 export const sendEmail = async (req: Request, res: Response) => {
   try {
-    const clerkId = req.auth.userId;
+    const clerkId = req.auth().userId;
     const { emails, subject, message, pdfUrls } = req.body;
+
+    if (!clerkId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: User ID not found",
+      });
+    }
 
     logger.info({ clerkId, emails }, "Sending email");
 
@@ -25,7 +32,7 @@ export const sendEmail = async (req: Request, res: Response) => {
       subject,
       message,
       pdfUrls: pdfUrls || [],
-      sentBy: clerkId!,
+      sentBy: clerkId,
       sentTo: emails,
       status: result.success ? "sent" : "failed",
     });

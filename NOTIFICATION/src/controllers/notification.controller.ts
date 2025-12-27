@@ -9,7 +9,15 @@ import logger from "@/utils/logger";
 
 export const sendPushNotification = async (req: Request, res: Response) => {
   try {
-    const clerkId = req.auth.userId;
+    const clerkId = req.auth().userId;
+    
+    if (!clerkId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: User ID not found",
+      });
+    }
+    
     const { title, message, imageUrl, sendToAll, emails } = req.body;
 
     logger.info({ clerkId, sendToAll, emails }, "Sending push notification");
@@ -53,7 +61,7 @@ export const sendPushNotification = async (req: Request, res: Response) => {
       title,
       message,
       imageUrl,
-      sentBy: clerkId!,
+      sentBy: clerkId,
       sentTo: recipientEmails,
       sentToAll: sendToAll,
       status: result.success ? "sent" : "failed",

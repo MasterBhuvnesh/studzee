@@ -4,8 +4,15 @@ import logger from "@/utils/logger";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const clerkId = req.auth.userId;
+    const clerkId = req.auth().userId;
     const { email, expoToken } = req.body;
+
+    if (!clerkId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: User ID not found",
+      });
+    }
 
     logger.info({ clerkId, email }, "User registration attempt");
 
