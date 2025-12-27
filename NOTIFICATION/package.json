@@ -1,7 +1,7 @@
 {
   "name": "studzee-notification-api",
-  "version": "1.0.0",
-    "description": "A Bun server for handling Expo push Notification and Email Notification using Clerk and Prisma ( Postgres )",
+  "version": "1.1.0",
+  "description": "A Bun server for handling Expo push Notification and Email Notification using Clerk and Prisma ( Postgres )",
   "main": "src/index.ts",
   "scripts": {
     "dev": "bun --watch src/index.ts",
@@ -22,7 +22,7 @@
     "do-release:minor": "bash ../code.sh notification minor",
     "do-release:major": "bash ../code.sh notification major"
   },
-    "keywords": [
+  "keywords": [
     "expo",
     "push-notifications",
     "prisma",
