@@ -9,7 +9,7 @@ import logger from "@/utils/logger";
 export const sendEmail = async (req: Request, res: Response) => {
   try {
     const clerkId = req.auth().userId;
-    const { emails, subject, message, pdfUrls } = req.body;
+    const { emails, subject, title, body, footer, pdfUrls } = req.body;
 
     if (!clerkId) {
       return res.status(401).json({
@@ -18,19 +18,36 @@ export const sendEmail = async (req: Request, res: Response) => {
       });
     }
 
-    logger.info({ clerkId, emails }, "Sending email");
+    // Validate required fields
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one email recipient is required",
+      });
+    }
+
+    if (!subject || !title || !body) {
+      return res.status(400).json({
+        success: false,
+        message: "Subject, title, and body are required fields",
+      });
+    }
+
+    logger.info({ clerkId, emails, subject }, "Sending email");
 
     const result = await sendEmailWithAttachments(
       emails,
       subject,
-      message,
+      title,
+      body,
+      footer, // Optional, will use default if not provided
       pdfUrls
     );
 
     // Save email log
     await saveEmailLog({
       subject,
-      message,
+      message: body,
       pdfUrls: pdfUrls || [],
       sentBy: clerkId,
       sentTo: emails,

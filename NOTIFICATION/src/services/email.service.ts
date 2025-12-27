@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { config } from "@/config";
 import logger from "@/utils/logger";
+import { generateEmailTemplate } from "@/utils/mail";
 
 const transporter = nodemailer.createTransport({
   host: config.SMTP_HOST,
@@ -12,10 +13,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+
 export const sendEmailWithAttachments = async (
   recipients: string[],
   subject: string,
-  htmlContent: string,
+  title: string,
+  body: string,
+  footer?: string,
   pdfUrls?: string[]
 ) => {
   try {
@@ -28,6 +32,9 @@ export const sendEmailWithAttachments = async (
           }))
         )
       : [];
+
+    // Generate HTML content using the email template
+    const htmlContent = generateEmailTemplate(title, body, footer);
 
     const mailOptions = {
       from: config.EMAIL_FROM,

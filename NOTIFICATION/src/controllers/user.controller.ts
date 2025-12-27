@@ -7,16 +7,9 @@ export const registerUser = async (req: Request, res: Response) => {
     const clerkId = req.auth().userId;
     const { email, expoToken } = req.body;
 
-    if (!clerkId) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: User ID not found",
-      });
-    }
-
     logger.info({ clerkId, email }, "User registration attempt");
 
-    const user = await registerOrUpdateUser(clerkId, email, expoToken);
+    const user = await registerOrUpdateUser(clerkId!, email, expoToken);
 
     return res.status(200).json({
       success: true,

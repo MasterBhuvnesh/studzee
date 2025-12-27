@@ -16,6 +16,8 @@ export const sendNotificationSchema = z.object({
 export const sendEmailSchema = z.object({
   emails: z.array(z.string().email()).min(1, "At least one email is required"),
   subject: z.string().min(1, "Subject is required"),
-  message: z.string().min(1, "Message is required"),
+  title: z.string().min(1, "Title is required"),
+  body: z.string().min(1, "Body is required"),
+  footer: z.string().optional(),
   pdfUrls: z.array(z.string().url()).optional(),
 });

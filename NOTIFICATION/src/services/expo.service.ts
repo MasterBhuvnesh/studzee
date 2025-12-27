@@ -17,23 +17,12 @@ export const sendExpoNotification = async (
   imageUrl?: string
 ) => {
   try {
-    const messages: ExpoMessage[] = tokens.map((token) => {
-      const message: any = {
-        to: token,
-        title,
-        body,
-        sound: 'default',
-      };
-
-      // Add image using richContent if imageUrl is provided
-      if (imageUrl) {
-        message.richContent = {
-          image: imageUrl,
-        };
-      }
-
-      return message;
-    });
+    const messages: ExpoMessage[] = tokens.map((token) => ({
+      to: token,
+      title,
+      body,
+      ...(imageUrl && { data: { imageUrl } }),
+    }));
 
     // Expo API accepts array of messages
     const response = await axios.post(EXPO_PUSH_URL, messages, {

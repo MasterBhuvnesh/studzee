@@ -1,30 +1,47 @@
-# Use Bun official image
-FROM oven/bun:1 AS base
+# ---------- Base Image ----------
+FROM oven/bun:1.1.30 AS base
 WORKDIR /app
 
+# ---------- Install Dependencies ----------
+FROM base AS deps
+
+# Copy only dependency files first (better caching)
+COPY package.json bun.lock ./
+
 # Install dependencies
-FROM base AS install
-COPY package.json bun.lockb ./
 RUN bun install --frozen-lockfile
 
-# Build stage
-FROM base AS build
-COPY --from=install /app/node_modules ./node_modules
+# ---------- Build Stage ----------
+FROM deps AS build
+
+# Copy full source
 COPY . .
 
 # Generate Prisma Client
 RUN bunx prisma generate
 
-# Production stage
-FROM base AS release
-COPY --from=build /app/node_modules ./node_modules
+# If you build TypeScript -> JS
+# Uncomment if you have a build step
+# RUN bun run build
+
+# ---------- Production Runtime ----------
+FROM oven/bun:1.1.30 AS runner
+WORKDIR /app
+
+# Set NODE_ENV
+ENV NODE_ENV=production
+
+# Copy only required files
+COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/src ./src
-COPY --from=build /app/package.json ./
-COPY --from=build /app/tsconfig.json ./
+COPY --from=build /app/package.json ./package.json
 
-# Expose port
+# Prisma needs this at runtime
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+
+# Expose app port
 EXPOSE 3000
 
-# Run migrations and start app
-CMD ["sh", "-c", "bunx prisma migrate deploy && bun run src/index.ts"]
+# Run Prisma migrations + start app
+CMD ["sh", "-c", "bunx prisma migrate deploy && bun run start"]
