@@ -12,8 +12,15 @@ export interface NotificationContextType {
 
 export interface BackendTokenResponse {
   success: boolean;
-  message?: string;
-  token?: string;
+  message: string;
+  data: {
+    id: string;
+    clerkId: string;
+    email: string;
+    expoTokens: string[];
+    createdAt: string;
+    updatedAt: string;
+  };
 }
 
 export interface NotificationPermissionStatus {

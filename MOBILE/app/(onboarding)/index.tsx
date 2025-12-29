@@ -176,8 +176,9 @@ export default function OnboardingFlow() {
           ) : (
             <TouchableOpacity
               onPress={handleDone}
-              className="w-full rounded-lg bg-white py-4"
+              className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5 shadow-sm"
               disabled={isCompleting}
+              activeOpacity={0.7}
             >
               {isCompleting ? (
                 <ActivityIndicator color={colors.zinc[600]} />

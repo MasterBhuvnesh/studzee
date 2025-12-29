@@ -8,8 +8,7 @@ import type { BackendTokenResponse } from '@/types/notification';
 import logger from '@/utils/logger';
 
 // Backend API configuration
-const NOTIFICATION_API_URL = `${process.env.EXPO_PUBLIC_BACKEND_API_URL}/register-token`;
-const API_AUTH_TOKEN = process.env.EXPO_PUBLIC_API_AUTH_TOKEN;
+const NOTIFICATION_API_URL = `${process.env.EXPO_PUBLIC_NOTIFICATION_API_URL}/api/register`;
 
 /**
  * Configures the default notification handler for the app
@@ -43,24 +42,29 @@ async function setupAndroidNotificationChannel() {
 
 /**
  * Registers the Expo push token with the backend API
- * @param token - The Expo push token to register
+ * @param email - The user's email address
+ * @param expoToken - The Expo push token to register
+ * @param clerkToken - The Clerk authentication token
  * @returns Promise with backend response
  */
 export async function registerTokenWithBackend(
-  token: string
+  email: string,
+  expoToken: string,
+  clerkToken: string
 ): Promise<BackendTokenResponse> {
   try {
-    logger.info(`Registering token with backend: ${token}`);
+    logger.info(`Registering token with backend for email: ${email}`);
 
     const response = await axios.post<BackendTokenResponse>(
       NOTIFICATION_API_URL,
       {
-        token,
+        email,
+        expoToken,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${API_AUTH_TOKEN}`,
+          Authorization: `Bearer ${clerkToken}`,
         },
         timeout: 10000, // 10 second timeout
       }
@@ -92,11 +96,14 @@ export async function registerTokenWithBackend(
 /**
  * Requests notification permissions and retrieves the Expo push token
  * Only works on physical devices
+ * @param email - The user's email address (required for backend registration)
+ * @param getToken - Clerk's getToken function for authentication
  * @returns The Expo push token or undefined if registration fails
  */
-export async function registerForPushNotificationsAsync(): Promise<
-  string | undefined
-> {
+export async function registerForPushNotificationsAsync(
+  email?: string,
+  getToken?: () => Promise<string | null>
+): Promise<string | undefined> {
   logger.info('registerForPushNotificationsAsync called');
 
   // Setup Android notification channel first
@@ -150,15 +157,25 @@ export async function registerForPushNotificationsAsync(): Promise<
     const token = response.data;
     logger.success(`Expo Push Token: ${token}`);
 
-    // Register token with backend
-    try {
-      await registerTokenWithBackend(token);
-    } catch (backendError) {
+    // Register token with backend (if email and getToken are provided)
+    if (email && getToken) {
+      try {
+        const clerkToken = await getToken();
+        if (!clerkToken) {
+          throw new Error('Failed to get Clerk authentication token');
+        }
+        await registerTokenWithBackend(email, token, clerkToken);
+      } catch (backendError) {
+        logger.warn(
+          `Token obtained but backend registration failed: ${backendError}`
+        );
+        // Don't throw here - we still want to return the token
+        // The app can still use it, even if backend registration failed
+      }
+    } else {
       logger.warn(
-        `Token obtained but backend registration failed: ${backendError}`
+        'Email or getToken not provided, skipping backend registration'
       );
-      // Don't throw here - we still want to return the token
-      // The app can still use it, even if backend registration failed
     }
 
     return token;

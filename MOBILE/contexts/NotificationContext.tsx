@@ -6,6 +6,8 @@ import React, {
   useState,
 } from 'react';
 
+import { useAuth, useUser } from '@clerk/clerk-expo';
+
 import {
   registerForPushNotificationsAsync,
   setupNotificationHandler,
@@ -43,16 +45,28 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const { getToken } = useAuth();
+  const { user } = useUser();
+
   // Setup notification handler on mount
   useEffect(() => {
     setupNotificationHandler();
   }, []);
 
-  // Automatically register for push notifications on mount
+  // Automatically register for push notifications when user is available
   useEffect(() => {
+    if (!user?.primaryEmailAddress?.emailAddress) {
+      logger.info('User not available yet, skipping notification registration');
+      setIsLoading(false);
+      return;
+    }
+
     logger.info('NotificationProvider mounted, requesting permissions...');
 
-    registerForPushNotificationsAsync()
+    registerForPushNotificationsAsync(
+      user.primaryEmailAddress.emailAddress,
+      getToken
+    )
       .then(token => {
         setExpoPushToken(token ?? null);
         setIsLoading(false);
@@ -67,7 +81,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         setIsLoading(false);
         logger.error(`Push notification registration failed: ${err}`);
       });
-  }, []);
+  }, [user, getToken]);
 
   return (
     <NotificationContext.Provider value={{ expoPushToken, error, isLoading }}>

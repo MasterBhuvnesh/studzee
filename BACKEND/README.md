@@ -599,361 +599,33 @@ Admin endpoints additionally require the user to have the admin role configured 
 
 ### Endpoints
 
+For detailed API documentation, see [API.md](./API.md).
+
 #### Health Check Endpoints
 
-##### Liveness Check
-
-- **GET** `/health/liveness`
-- **Description**: Checks if the application is running
-- **Access**: Public
-- **Response**:
-  ```json
-  {
-    "status": "ok"
-  }
-  ```
-
-##### Healthcheck (Render/Production)
-
-- **GET** `/healthcheck`
-- **Description**: Simple health check endpoint for Render or other hosting platforms
-- **Access**: Public
-- **Response**:
-  ```json
-  {
-    "status": "ok",
-    "timestamp": "2024-01-15T10:30:00.000Z"
-  }
-  ```
-
-##### Readiness Check
-
-- **GET** `/health/readiness`
-- **Description**: Checks if database and Redis are connected and ready
-- **Access**: Public
-- **Success Response** (200 OK):
-  ```json
-  {
-    "status": "ready",
-    "checks": {
-      "db": "ok",
-      "redis": "ok"
-    }
-  }
-  ```
-- **Error Response** (503 Service Unavailable):
-  ```json
-  {
-    "status": "unavailable",
-    "checks": {
-      "db": "error",
-      "redis": "ok"
-    }
-  }
-  ```
-
----
+- **GET** `/health/liveness` - Check if application is running (Public)
+- **GET** `/healthcheck` - Simple health check for Render/production (Public)
+- **GET** `/health/readiness` - Check database and Redis connectivity (Public)
 
 #### Content Endpoints
 
-##### Get Today's Content
-
-- **GET** `/content/today`
-- **Description**: Retrieve documents created today (India Standard Time / IST timezone)
-- **Access**: Public
-- **Cache**: Uses `TODAY_CACHE_TTL` (default: 1 hour)
-- **Example Request**:
-  ```bash
-  curl "http://localhost:4000/content/today"
-  ```
-- **Success Response** (200 OK):
-  ```json
-  {
-    "data": [
-      {
-        "_id": "507f1f77bcf86cd799439011",
-        "title": "Introduction to TypeScript",
-        "summary": "A comprehensive guide to TypeScript basics",
-        "createdAt": "2024-01-15T10:30:00.000Z"
-      }
-    ],
-    "meta": {
-      "date": "2024-01-15",
-      "total": 1
-    }
-  }
-  ```
-
-##### Get Paginated Content
-
-- **GET** `/content`
-- **Description**: Retrieve a paginated list of documents (cached for 5 minutes)
-- **Access**: Public
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1, min: 1)
-  - `limit` (optional): Items per page (default: 20, min: 1, max: 100)
-- **Example Request**:
-  ```bash
-  curl "http://localhost:4000/content?page=1&limit=10"
-  ```
-- **Success Response** (200 OK):
-  ```json
-  {
-    "data": [
-      {
-        "_id": "507f1f77bcf86cd799439011",
-        "title": "Introduction to TypeScript",
-        "summary": "A comprehensive guide to TypeScript basics",
-        "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.jpg",
-        "createdAt": "2024-01-15T10:30:00.000Z",
-        "updatedAt": "2024-01-15T10:30:00.000Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "totalPages": 5,
-      "totalItems": 50
-    }
-  }
-  ```
-
-##### Get Document by ID
-
-- **GET** `/content/:id`
-- **Description**: Retrieve a complete document by its ID (cached for 24 hours)
-- **Access**: Authenticated
-- **Headers**:
-  ```
-  Authorization: Bearer <CLERK_JWT_TOKEN>
-  ```
-- **Example Request**:
-  ```bash
-  curl -H "Authorization: Bearer eyJhbGc..." \
-       http://localhost:4000/content/507f1f77bcf86cd799439011
-  ```
-- **Success Response** (200 OK):
-  ```json
-  {
-    "_id": "507f1f77bcf86cd799439011",
-    "title": "Introduction to TypeScript",
-    "content": "TypeScript is a typed superset of JavaScript...",
-    "summary": "A comprehensive guide to TypeScript basics",
-    "facts": "TypeScript was developed by Microsoft",
-    "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.jpg",
-    "pdfUrl": [
-      {
-        "name": "typescript-guide.pdf",
-        "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
-        "uploadedAt": "2024-01-15T10:30:00.000Z",
-        "size": 1234567
-      }
-    ],
-    "quiz": {
-      "q1": {
-        "que": "What is TypeScript?",
-        "ans": "A typed superset of JavaScript",
-        "options": [
-          "A typed superset of JavaScript",
-          "A new programming language"
-        ]
-      }
-    },
-    "key_notes": {
-      "note1": "TypeScript adds static types to JavaScript",
-      "note2": "It compiles down to plain JavaScript"
-    },
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "updatedAt": "2024-01-15T10:30:00.000Z"
-  }
-  ```
-- **Error Responses**:
-  - `401 Unauthorized`: Missing or invalid authentication token
-  - `404 Not Found`: Document does not exist
-
----
+- **GET** `/content/today` - Get documents created today in IST timezone (Public, Cached 1h)
+- **GET** `/content` - Get paginated list of documents (Public, Cached 5min)
+- **GET** `/content/:id` - Get document by ID (Authenticated, Cached 24h)
 
 #### PDF Endpoints
 
-##### List All PDFs
-
-- **GET** `/pdfs`
-- **Description**: Retrieve a paginated list of all documents with uploaded PDFs
-- **Access**: Public
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1, min: 1)
-  - `limit` (optional): Items per page (default: 20, min: 1, max: 100)
-- **Example Request**:
-  ```bash
-  curl "http://localhost:4000/pdfs?page=1&limit=10"
-  ```
-- **Success Response** (200 OK):
-  ```json
-  {
-    "data": [
-      {
-        "documentId": "507f1f77bcf86cd799439011",
-        "title": "Introduction to TypeScript",
-        "pdfs": [
-          {
-            "name": "typescript-guide.pdf",
-            "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
-            "uploadedAt": "2024-01-15T10:30:00.000Z",
-            "size": 1234567
-          }
-        ]
-      }
-    ],
-    "meta": {
-      "page": 1,
-      "limit": 10,
-      "total": 25
-    }
-  }
-  ```
-
----
+- **GET** `/pdfs` - Get paginated list of documents with PDFs (Public)
 
 #### Admin Endpoints
 
-All admin endpoints require authentication AND admin role.
+- **POST** `/admin/documents` - Create new document (Admin)
+- **PUT** `/admin/documents/:id` - Update document (Admin)
+- **DELETE** `/admin/documents/:id` - Delete document (Admin)
+- **POST** `/admin/documents/:id/upload-image` - Upload document image (Admin, max 10MB)
+- **POST** `/admin/documents/:id/upload-pdf` - Upload document PDF (Admin, max 50MB)
 
-**Required Headers**:
-
-```
-Authorization: Bearer <CLERK_JWT_TOKEN>
-```
-
-##### Create Document
-
-- **POST** `/admin/documents`
-- **Description**: Create a new document
-- **Access**: Admin only
-- **Request Body**:
-  ```json
-  {
-    "title": "New Tutorial",
-    "content": "Complete tutorial content goes here...",
-    "summary": "Optional summary of the content",
-    "facts": "Optional interesting facts",
-    "quiz": {
-      "q1": {
-        "que": "Sample question?",
-        "ans": "Correct answer",
-        "options": ["Option 1", "Option 2", "Correct answer", "Option 4"]
-      }
-    },
-    "key_notes": {
-      "note1": "Important point 1",
-      "note2": "Important point 2"
-    }
-  }
-  ```
-- **Success Response** (201 Created):
-  ```json
-  {
-    "message": "Document created successfully",
-    "doc": {
-      "_id": "507f1f77bcf86cd799439013",
-      "title": "New Tutorial",
-      "content": "Complete tutorial content...",
-      "createdAt": "2024-01-17T09:15:00.000Z",
-      "updatedAt": "2024-01-17T09:15:00.000Z"
-    }
-  }
-  ```
-- **Error Responses**:
-  - `400 Bad Request`: Invalid document data
-  - `401 Unauthorized`: Missing or invalid authentication
-  - `403 Forbidden`: User does not have admin role
-
-##### Update Document
-
-- **PUT** `/admin/documents/:id`
-- **Description**: Update an existing document
-- **Access**: Admin only
-- **Request Body**: Partial document updates
-- **Success Response** (200 OK): Updated document
-- **Error Responses**:
-  - `400 Bad Request`: Invalid update data
-  - `401 Unauthorized`: Missing or invalid authentication
-  - `403 Forbidden`: User does not have admin role
-  - `404 Not Found`: Document does not exist
-
-##### Delete Document
-
-- **DELETE** `/admin/documents/:id`
-- **Description**: Delete a document by its ID
-- **Access**: Admin only
-- **Success Response** (204 No Content): Empty response
-- **Error Responses**:
-  - `401 Unauthorized`: Missing or invalid authentication
-  - `403 Forbidden`: User does not have admin role
-  - `404 Not Found`: Document does not exist
-
-##### Upload Document Image
-
-- **POST** `/admin/documents/:id/upload-image`
-- **Description**: Upload an image for a document (replaces existing image if present)
-- **Access**: Admin only
-- **Content-Type**: `multipart/form-data`
-- **Request Body**:
-  - `file`: Image file (JPG, PNG, or WebP, max 10MB)
-- **Example Request**:
-  ```bash
-  curl -X POST http://localhost:4000/admin/documents/507f1f77bcf86cd799439011/upload-image \
-       -H "Authorization: Bearer eyJhbGc..." \
-       -F "file=@/path/to/image.png"
-  ```
-- **Success Response** (200 OK):
-  ```json
-  {
-    "message": "Image uploaded successfully",
-    "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.png",
-    "documentId": "507f1f77bcf86cd799439011"
-  }
-  ```
-- **Error Responses**:
-  - `400 Bad Request`: No file uploaded or invalid file type
-  - `401 Unauthorized`: Missing or invalid authentication
-  - `403 Forbidden`: User does not have admin role
-  - `404 Not Found`: Document does not exist
-  - `500 Internal Server Error`: S3 upload failure
-
-##### Upload Document PDF
-
-- **POST** `/admin/documents/:id/upload-pdf`
-- **Description**: Upload a PDF for a document (adds to PDF array)
-- **Access**: Admin only
-- **Content-Type**: `multipart/form-data`
-- **Request Body**:
-  - `file`: PDF file (max 50MB)
-- **Example Request**:
-  ```bash
-  curl -X POST http://localhost:4000/admin/documents/507f1f77bcf86cd799439011/upload-pdf \
-       -H "Authorization: Bearer eyJhbGc..." \
-       -F "file=@/path/to/document.pdf"
-  ```
-- **Success Response** (200 OK):
-  ```json
-  {
-    "message": "PDF uploaded successfully",
-    "pdf": {
-      "name": "document.pdf",
-      "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
-      "uploadedAt": "2024-01-15T10:30:00.000Z",
-      "size": 1234567
-    },
-    "documentId": "507f1f77bcf86cd799439011",
-    "title": "Introduction to TypeScript"
-  }
-  ```
-- **Error Responses**:
-  - `400 Bad Request`: No file uploaded, invalid file type, or file size exceeded
-  - `401 Unauthorized`: Missing or invalid authentication
-  - `403 Forbidden`: User does not have admin role
-  - `404 Not Found`: Document does not exist
-  - `500 Internal Server Error`: S3 upload failure
+For full request/response examples and detailed documentation, refer to [API.md](./API.md).
 
 ---
 
@@ -1356,7 +1028,7 @@ cat .env | grep CLERK_SECRET_KEY
 
 ## License
 
-This project is licensed under the ISC License.
+This project is licensed under the ISC License. See the [LICENSE](./LICENSE) file for details.
 
 ## Support
 
