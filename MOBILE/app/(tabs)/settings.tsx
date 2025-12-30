@@ -6,6 +6,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 import { SettingCardProps } from '@/types';
 import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import {
   Bell,
   BellOff,
@@ -84,6 +85,7 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
 );
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { expoPushToken, isLoading } = useNotification();
 
   const handleOpenSettings = () => {
@@ -139,22 +141,22 @@ export default function SettingsPage() {
               items={[
                 {
                   label: 'Get Support',
-                  onPress: () => logger.debug('Get Support pressed'),
+                  onPress: () => router.push('/screens/get-support'),
                   icon: HelpCircle,
                 },
                 {
                   label: 'Send Feedback',
-                  onPress: () => logger.debug('Send Feedback pressed'),
+                  onPress: () => router.push('/screens/send-feedback'),
                   icon: MessageCircle,
                 },
                 {
                   label: 'Terms of Use',
-                  onPress: () => logger.debug('Terms of Use pressed'),
+                  onPress: () => router.push('/screens/terms-of-use'),
                   icon: Menu,
                 },
                 {
                   label: 'Privacy Policy',
-                  onPress: () => logger.debug('Privacy Policy pressed'),
+                  onPress: () => router.push('/screens/privacy-policy'),
                   icon: FileText,
                 },
               ]}
