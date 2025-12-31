@@ -10,7 +10,7 @@ import logger from '@/utils/logger';
 export const sendEmail = async (req: Request, res: Response) => {
   try {
     const clerkId = req.auth().userId;
-    const { emails, subject, title, body, footer, pdfUrls } = req.body;
+    const { emails, subject, title, body, footer, banner, pdfUrls } = req.body;
 
     if (!clerkId) {
       return res.status(401).json({
@@ -41,6 +41,7 @@ export const sendEmail = async (req: Request, res: Response) => {
       subject,
       title,
       body,
+      banner,// Optional, will use default if not provided
       footer, // Optional, will use default if not provided
       pdfUrls,
     );

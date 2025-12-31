@@ -19,6 +19,7 @@ export const sendEmailWithAttachments = async (
   subject: string,
   title: string,
   body: string,
+  banner?: string,
   footer?: string,
   pdfUrls?: string[],
 ) => {
@@ -34,7 +35,7 @@ export const sendEmailWithAttachments = async (
       : [];
 
     // Generate HTML content using the email template
-    const htmlContent = generateEmailTemplate(title, body, footer);
+    const htmlContent = generateEmailTemplate(title, body, banner,footer);
 
     const mailOptions = {
       from: config.EMAIL_FROM,

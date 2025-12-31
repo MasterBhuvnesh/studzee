@@ -1,10 +1,10 @@
-| FOLDER       | VERSION | BRANCH     | TECH STACK                                                                       |
-| ------------ | ------- | ---------- | -------------------------------------------------------------------------------- |
-| NOTIFICATION | tags    | production | -                                                                                |
-| BACKEND      | tags    | production | TypeScript, Express.js, MongoDB, Redis, AWS S3, Docker, Clerk, Zod, vitest, pino |
-| MOBILE       | eas     | production | -                                                                                |
-| WEBSITE      | tags    | production | -                                                                                |
-| DESKTOP      | release | production | -                                                                                |
+| FOLDER       | VERSION | BRANCH     | TECH STACK                                                                                       |
+| ------------ | ------- | ---------- | ------------------------------------------------------------------------------------------------ |
+| NOTIFICATION | tags    | production | TypeScript, Bun, Express.js, PostgreSQL, Prisma, Clerk, Expo Push, Nodemailer, Zod, Docker, pino |
+| BACKEND      | tags    | production | TypeScript, Express.js, MongoDB, Redis, AWS S3, Docker, Clerk, Zod, vitest, pino                 |
+| MOBILE       | eas     | production | -                                                                                                |
+| WEBSITE      | tags    | production | -                                                                                                |
+| DESKTOP      | release | production | -                                                                                                |
 
 > **⚠️ CRITICAL:**  
 > The `VERSION` and `BRANCH` columns trigger automated deployment workflows for their respective folders.

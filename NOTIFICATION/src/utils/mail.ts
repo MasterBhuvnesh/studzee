@@ -9,6 +9,7 @@ export const generateEmailTemplate = (
   title: string,
   body: string,
   footer?: string,
+  banner?: string,
 ): string => {
   // Default footer if not provided
   const footerText =
@@ -132,7 +133,7 @@ export const generateEmailTemplate = (
               <td style="padding: 30px">
                 <!-- GDG RBU banner / logo image -->
                 <img
-                  src="https://images2.imgbox.com/4b/ee/zfP80V2d_o.jpg"
+                  src=${banner}
                   alt="GDG RBU"
                   style="max-width: 100%; height: auto"
                 />

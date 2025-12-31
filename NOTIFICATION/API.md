@@ -159,6 +159,7 @@
       "subject": "Important Update",
       "title": "Email Title - Shown in Browser/Client",
       "body": "<p><strong>Hello,</strong></p><p>Here is an important update.</p>",
+      "banner": "https://images2.imgbox.com/4b/ee/zfP80V2d_o.jpg",
       "footer": "Optional custom footer text",
       "pdfUrls": ["https://example.com/document.pdf"]
     }
@@ -169,6 +170,7 @@
     - `title` - Email title (displayed in email client/browser tab)
     - `body` - HTML content for the email body
   - **Optional Fields:**
+    - `banner` - Custom banner image URL
     - `footer` - Custom footer text (defaults to: "This is an automated email. Please do not reply.")
     - `pdfUrls` - Array of PDF URLs to attach
 - **Response:**
