@@ -27,9 +27,9 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Validate the provided service name.
-# Add your other service names to this regex pattern, e.g., ^(notification|backend|frontend)$
-if [[ ! "$SERVICE_NAME" =~ ^(notification|backend|frontend)$ ]]; then
-    echo -e "${RED}Error: Invalid service name '${SERVICE_NAME}'. Please use 'notification', 'backend', or 'frontend'.${NC}"
+# Add your other service names to this regex pattern, e.g., ^(notification|backend|mobile)$
+if [[ ! "$SERVICE_NAME" =~ ^(notification|backend|mobile)$ ]]; then
+    echo -e "${RED}Error: Invalid service name '${SERVICE_NAME}'. Please use 'notification', 'backend', or 'mobile'.${NC}"
     exit 1
 fi
 
