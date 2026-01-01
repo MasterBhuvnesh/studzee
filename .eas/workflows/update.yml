@@ -1,0 +1,17 @@
+name: Publish Update
+
+# description:
+# -  It uses the `update` job type to handle the update process.
+# -  It directly show the updates in the app without requiring a rebuild or redeployment.
+
+on:
+  push:
+    tags:
+      - "mobile-v*"
+
+jobs:
+  update:
+    name: Update
+    type: update
+    params:
+      branch: ${{ github.ref_name || 'mobile' }}
