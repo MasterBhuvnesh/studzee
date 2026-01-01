@@ -9,7 +9,10 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "do-release": "bash ../code.sh mobile patch",
+    "do-release:minor": "bash ../code.sh mobile minor",
+    "do-release:major": "bash ../code.sh mobile major"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.9",
