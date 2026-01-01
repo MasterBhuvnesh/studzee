@@ -1,5 +1,6 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { Header } from '@/components/global/Header';
+import { PlanningList } from '@/components/profile/PlanningList';
 import { colors } from '@/constants/colors';
 import { ProfileCardProps } from '@/types';
 import { useAuth, useUser } from '@clerk/clerk-expo';
@@ -147,15 +148,7 @@ export default function ProfilePage() {
               onPress={() => router.push('/screens/edit-profile')}
             />
 
-            <TouchableOpacity
-              onPress={getTokenAndLog}
-              className="mb-6 rounded-lg bg-zinc-800 px-5 py-3 shadow-lg"
-              activeOpacity={0.7}
-            >
-              <Text className="text-center font-product text-base text-white">
-                Log Token to Console
-              </Text>
-            </TouchableOpacity>
+            <PlanningList />
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>

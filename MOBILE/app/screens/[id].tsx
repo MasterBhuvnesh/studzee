@@ -18,10 +18,25 @@ import {
   Calendar,
   Download,
   Eye,
-  Lightbulb
+  Lightbulb,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // ============ COMPONENTS ============
 
@@ -82,6 +97,47 @@ const ErrorState = ({
   );
 };
 
+/**
+ * Animated quiz illustration component
+ */
+const QuizIllustration = () => {
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    translateY.value = withRepeat(
+      withSequence(
+        withTiming(-8, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1, // Infinite repeat
+      true // Reverse
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle} className="items-end justify-center">
+      <View className="gap-1.5">
+        <View className="flex-row items-center gap-2">
+          <View className="h-6 w-6 rounded bg-zinc-100" />
+          <View className="h-2 w-16 rounded-full bg-zinc-100" />
+        </View>
+        <View className="flex-row items-center gap-2">
+          <View className="h-6 w-6 rounded bg-zinc-100" />
+          <View className="h-2 w-20 rounded-full bg-zinc-200" />
+        </View>
+        <View className="flex-row items-center gap-2">
+          <View className="h-6 w-6 rounded bg-zinc-100" />
+          <View className="h-2 w-12 rounded-full bg-zinc-100" />
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
+
 // ============ MAIN COMPONENT ============
 
 export default function ContentDetailPage() {
@@ -97,6 +153,7 @@ export default function ContentDetailPage() {
   const [downloadingPdfIndex, setDownloadingPdfIndex] = useState<number | null>(
     null
   );
+  const [readProgress, setReadProgress] = useState(0);
 
   const fetchContent = async () => {
     try {
@@ -196,7 +253,7 @@ export default function ContentDetailPage() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      <SafeAreaView className="flex-1">
+      <SafeAreaView className="mb-10 flex-1">
         {/* Header */}
         <View className="flex-row items-center gap-3 px-6 pb-4 pt-2">
           <TouchableOpacity
@@ -247,7 +304,22 @@ export default function ContentDetailPage() {
         </View>
 
         {/* Content */}
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          onScroll={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
+            const { contentOffset, layoutMeasurement, contentSize } =
+              event.nativeEvent;
+            const scrollProgress =
+              contentOffset.y / (contentSize.height - layoutMeasurement.height);
+            const percentage = Math.min(
+              Math.max(Math.round(scrollProgress * 100), 0),
+              100
+            );
+            setReadProgress(percentage);
+          }}
+          scrollEventThrottle={16}
+        >
           {loading ? (
             <ContentDetailSkeleton />
           ) : error ? (
@@ -395,7 +467,7 @@ export default function ContentDetailPage() {
 
               {/* Quiz Section */}
               {content.quiz && Object.keys(content.quiz).length > 0 && (
-                <View className="mb-6">
+                <View className="mb-20">
                   <Text className="mb-3 font-product text-xl text-zinc-800">
                     Quiz
                   </Text>
@@ -411,28 +483,69 @@ export default function ContentDetailPage() {
                         },
                       });
                     }}
-                   className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-4 shadow-sm"
-      activeOpacity={0.8}
-    >
-      <View className="flex-row items-center justify-between">
-        <View className="flex-1">
-          <Text className="font-product text-base  text-zinc-800">
-            Test Your Knowledge
-          </Text>
-        </View>
-        <View className="rounded-xl bg-zinc-800 px-8 py-3.5 shadow-md">
-          <Text className="font-product text-sm font-medium text-white">
-            Start Quiz
-          </Text>
-        </View>
-      </View>
+                    className="overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5"
+                    activeOpacity={0.8}
+                  >
+                    <View className="flex-row items-center">
+                      {/* Left Content */}
+                      <View className="flex-1 pr-4">
+                        <Text className="mb-1 font-product text-lg text-zinc-800">
+                          Test Your Knowledge
+                        </Text>
+                        <Text className="mb-4 font-sans text-sm leading-5 text-zinc-500">
+                          Challenge yourself with questions from this topic
+                        </Text>
+                        <View className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2.5">
+                          <Text className="font-product text-sm text-zinc-700">
+                            Start Quiz
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Right Illustration - Animated */}
+                      <QuizIllustration />
+                    </View>
                   </TouchableOpacity>
                 </View>
               )}
-
             </View>
           ) : null}
         </ScrollView>
+
+        {/* Reading Progress Indicator with Gradient Fade */}
+        {!loading && !error && content && (
+          <View
+            className="absolute bottom-0 left-0 right-0"
+            pointerEvents="box-none"
+          >
+            <LinearGradient
+              colors={[
+                'transparent',
+                'rgba(244, 244, 245, 0.8)',
+                colors.zinc[100],
+              ]}
+              locations={[0, 0.5, 1]}
+              className="items-center pb-6 pt-16"
+            >
+              <View className="flex-row items-center rounded-full bg-zinc-900 px-4 py-2 shadow-lg">
+                <View
+                  className="mr-2 h-4 w-4 items-center justify-center rounded-full border-2 border-zinc-400"
+                  style={{
+                    borderColor:
+                      readProgress > 0 ? colors.zinc[400] : colors.zinc[600],
+                  }}
+                >
+                  {readProgress >= 100 && (
+                    <View className="h-2 w-2 rounded-full bg-zinc-400" />
+                  )}
+                </View>
+                <Text className="font-product text-sm text-white">
+                  {readProgress}% read
+                </Text>
+              </View>
+            </LinearGradient>
+          </View>
+        )}
       </SafeAreaView>
 
       {/* Key Notes Bottom Sheet */}
