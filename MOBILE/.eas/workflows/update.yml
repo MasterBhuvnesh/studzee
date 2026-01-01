@@ -14,4 +14,4 @@ jobs:
     name: Update
     type: update
     params:
-      branch: ${{ github.ref_name || 'mobile' }}
+      branch: ${{ github.ref_name || 'development' }}
