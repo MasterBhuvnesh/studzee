@@ -176,7 +176,7 @@ export default function OnboardingFlow() {
           ) : (
             <TouchableOpacity
               onPress={handleDone}
-              className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5 shadow-sm"
+              className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5"
               disabled={isCompleting}
               activeOpacity={0.7}
             >
