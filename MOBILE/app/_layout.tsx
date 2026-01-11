@@ -1,7 +1,6 @@
 import { LoadingScreen } from '@/components/global/LoadingScreen';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { useCustomFonts } from '@/hooks/useCustomFonts';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import '@/styles/global.css';
 import logger from '@/utils/logger';
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
@@ -25,8 +24,6 @@ if (!publishableKey) {
 
 function RootLayoutNav() {
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
-  const { hasCompletedOnboarding, isLoading: onboardingLoading } =
-    useOnboarding();
   const segments = useSegments();
   const router = useRouter();
 
@@ -34,14 +31,13 @@ function RootLayoutNav() {
   const navigationAttempted = useRef(false);
 
   useEffect(() => {
-    // Wait for both auth and onboarding to load
-    if (!authLoaded || onboardingLoading || hasCompletedOnboarding === null) {
-      logger.debug('Waiting for initialization...');
+    // Wait for auth to load
+    if (!authLoaded) {
+      logger.debug('Waiting for auth initialization...');
       return;
     }
 
     // Get current route group
-    const inOnboarding = segments[0] === '(onboarding)';
     const inAuth = segments[0] === '(auth)';
     const inTabs = segments[0] === '(tabs)';
     const inScreens = segments[0] === 'screens';
@@ -55,16 +51,14 @@ function RootLayoutNav() {
     // Log current state
     logger.info(`Navigation State: 
       - Signed In: ${isSignedIn}
-      - Onboarding Complete: ${hasCompletedOnboarding}
       - Current Route: ${segments.join('/')}
       - Navigation Attempted: ${navigationAttempted.current}
     `);
 
     /**
      * Navigation Priority:
-     * 1. If signed in -> Go to tabs (highest priority)
-     * 2. If not completed onboarding -> Go to onboarding
-     * 3. If completed onboarding but not signed in -> Go to auth
+     * 1. If signed in -> Go to tabs
+     * 2. If not signed in -> Go to auth (which starts at onboarding)
      */
 
     let targetRoute: string | null = null;
@@ -75,17 +69,11 @@ function RootLayoutNav() {
         targetRoute = '/(tabs)';
         logger.info('User signed in, navigating to tabs');
       }
-    } else if (!hasCompletedOnboarding) {
-      // User hasn't completed onboarding
-      if (!inOnboarding) {
-        targetRoute = '/(onboarding)';
-        logger.info('Onboarding incomplete, navigating to onboarding');
-      }
     } else {
-      // User completed onboarding but not signed in
+      // User is not signed in - go to auth (starts at onboarding)
       if (!inAuth) {
-        targetRoute = '/(auth)/sign-in';
-        logger.info('Onboarding complete, navigating to auth');
+        targetRoute = '/(auth)/onboarding';
+        logger.info('User not signed in, navigating to auth');
       }
     }
 
@@ -106,17 +94,10 @@ function RootLayoutNav() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [
-    isSignedIn,
-    authLoaded,
-    hasCompletedOnboarding,
-    onboardingLoading,
-    segments,
-    router,
-  ]);
+  }, [isSignedIn, authLoaded, segments, router]);
 
   // Show loading screen while initializing
-  if (!authLoaded || onboardingLoading || hasCompletedOnboarding === null) {
+  if (!authLoaded) {
     return <LoadingScreen />;
   }
 

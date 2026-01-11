@@ -33,8 +33,9 @@ const ProfileCard = ({
         style={{ width: 100, height: 100, borderRadius: 50 }}
       />
 
-      <Image
-        source="https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/verified.png"
+      {/* <Image
+        // source="https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/verified.png"
+        source="https://studzee-assets.s3.ap-south-1.amazonaws.com/welcome.svg"
         className="rounded-full"
         style={{
           width: 140,
@@ -42,7 +43,7 @@ const ProfileCard = ({
           marginRight: 20,
         }}
         alt="Verified"
-      />
+      /> */}
     </View>
 
     <View className="p-6">

@@ -11,7 +11,8 @@ export const SignOutButton = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      router.replace('/(auth)/sign-in');
+      // Navigate to auth which will start at onboarding
+      router.replace('/(auth)/onboarding');
     } catch (err) {
       logger.error(JSON.stringify(err, null, 2));
     }

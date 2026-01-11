@@ -1,6 +1,5 @@
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { colors } from '@/constants/colors';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import logger from '@/utils/logger';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 const { width } = Dimensions.get('window');
 const gradientColors = [
   '#FFFFFF',
@@ -25,13 +25,13 @@ const gradientColors = [
   colors.zinc[100],
   colors.zinc[200],
 ];
+
 const onboardingData = [
   {
     id: '1',
     title: 'Welcome to Studzee',
     description:
       'Your dedicated companion for academic excellence. Download study materials to ensure uninterrupted learning, even without an internet connection.',
-    // gradientColors: ['#9333ea', '#ec4899'], // purple to pink
     gradientColors,
     imageSource:
       'https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/Welcome+to+Studzee.png',
@@ -41,7 +41,6 @@ const onboardingData = [
     title: 'AI-Powered Concept Mastery',
     description:
       'Master complex topics with AI-driven insights and interactive tools designed for deep understanding and long-term retention.',
-    // gradientColors: ['#0ea5e9', '#06b6d4'], // blue to cyan
     gradientColors,
     imageSource:
       'https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/AI-Powered+Concept+Mastery.png',
@@ -51,7 +50,6 @@ const onboardingData = [
     title: 'Smart Study Reminders',
     description:
       'Stay consistent and never miss a study session with personalized notifications designed to keep you on track.',
-    // gradientColors: ['#f97316', '#ef4444'], // orange to red
     gradientColors,
     imageSource:
       'https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/Smart+Study+Reminders.png',
@@ -60,9 +58,8 @@ const onboardingData = [
 
 export default function OnboardingFlow() {
   const router = useRouter();
-  const { completeOnboarding } = useOnboarding();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isCompleting, setIsCompleting] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -71,29 +68,20 @@ export default function OnboardingFlow() {
     setCurrentIndex(index);
   };
 
-  const handleComplete = async () => {
-    if (isCompleting) return;
+  const handleContinue = () => {
+    if (isNavigating) return;
 
-    try {
-      setIsCompleting(true);
-      logger.info('Completing onboarding...');
-
-      await completeOnboarding();
-
-      logger.success('Onboarding completed, navigating to sign-in');
-      router.replace('/(auth)/sign-in');
-    } catch (error) {
-      logger.error(`Failed to complete onboarding: ${error}`);
-      setIsCompleting(false);
-    }
+    setIsNavigating(true);
+    logger.info('Navigating to sign-in...');
+    router.push('/sign-in');
   };
 
-  const handleSkip = async () => {
-    await handleComplete();
+  const handleSkip = () => {
+    handleContinue();
   };
 
-  const handleDone = async () => {
-    await handleComplete();
+  const handleDone = () => {
+    handleContinue();
   };
 
   const handleNext = () => {
@@ -132,7 +120,7 @@ export default function OnboardingFlow() {
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        scrollEnabled={!isCompleting}
+        scrollEnabled={!isNavigating}
       />
 
       {/* Navigation Controls */}
@@ -156,15 +144,15 @@ export default function OnboardingFlow() {
               <TouchableOpacity
                 onPress={handleSkip}
                 className="rounded-lg px-6 py-3"
-                disabled={isCompleting}
+                disabled={isNavigating}
               >
                 <Text className="font-product text-base text-zinc-700">
-                  {isCompleting ? 'Loading...' : 'Skip'}
+                  {isNavigating ? 'Loading...' : 'Skip'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleNext}
-                disabled={isCompleting}
+                disabled={isNavigating}
                 className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5 shadow-sm"
                 activeOpacity={0.7}
               >
@@ -177,10 +165,10 @@ export default function OnboardingFlow() {
             <TouchableOpacity
               onPress={handleDone}
               className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5"
-              disabled={isCompleting}
+              disabled={isNavigating}
               activeOpacity={0.7}
             >
-              {isCompleting ? (
+              {isNavigating ? (
                 <ActivityIndicator color={colors.zinc[600]} />
               ) : (
                 <Text className="text-center font-product text-base text-zinc-700">
