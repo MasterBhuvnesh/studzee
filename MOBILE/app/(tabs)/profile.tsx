@@ -7,7 +7,7 @@ import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { TriangleAlertIcon } from 'lucide-react-native';
+import { Link, TriangleAlertIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   RefreshControl,
@@ -20,37 +20,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ProfileCard = ({
   name,
+  bio,
   email,
   buttonText,
   image,
   onPress,
 }: ProfileCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
-    <View className="flex-row items-center justify-between pl-4 pr-4 pt-4">
+    <View className="flex-row items-center gap-4 px-4 pt-4">
       <Image
         source={image}
-        className="h-24 w-24 rounded-full "
+        className="h-24 w-24 rounded-full"
         style={{ width: 100, height: 100, borderRadius: 50 }}
       />
-
-      {/* <Image
-        // source="https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/verified.png"
-        source="https://studzee-assets.s3.ap-south-1.amazonaws.com/welcome.svg"
-        className="rounded-full"
-        style={{
-          width: 140,
-          height: 80,
-          marginRight: 20,
-        }}
-        alt="Verified"
-      /> */}
+      <View className="flex-1 gap-0.5">
+        <Text className="font-product text-base text-zinc-800">{name}</Text>
+        <Text className="font-sans text-sm leading-5 text-zinc-600">{bio}</Text>
+      </View>
     </View>
 
     <View className="p-6">
-      <Text className="mb-2 font-product text-base text-zinc-800">{name}</Text>
-      <Text className="mb-4 font-sans text-base leading-5 text-zinc-500">
-        {email}
-      </Text>
+      <View className="mb-4 flex-row items-center gap-2">
+        <AppIcon Icon={Link} size={16} color={colors.zinc[500]} />
+        <Text className="font-sans text-sm leading-5 text-zinc-500">
+          {email}
+        </Text>
+      </View>
       <TouchableOpacity
         onPress={onPress}
         className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5 shadow-sm"
@@ -140,6 +135,7 @@ export default function ProfilePage() {
 
             <ProfileCard
               name={user?.fullName || 'User'}
+              bio={(user?.publicMetadata?.bio as string) || 'Studzee.in'}
               email={user?.emailAddresses[0]?.emailAddress || 'User'}
               buttonText="Edit Profile"
               image={

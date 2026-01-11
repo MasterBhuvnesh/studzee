@@ -128,6 +128,7 @@ export interface PdfItem {
  */
 export interface ProfileCardProps {
   name: string;
+  bio: string;
   email: string;
   buttonText: string;
   image: string;
