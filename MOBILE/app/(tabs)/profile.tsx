@@ -7,7 +7,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Link, PencilIcon, TriangleAlertIcon } from 'lucide-react-native';
+import { Link, TriangleAlertIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   RefreshControl,
@@ -66,7 +66,6 @@ const ProfileCard = ({
           className="flex-row items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2.5 shadow-sm"
           activeOpacity={0.7}
         >
-          <AppIcon Icon={PencilIcon} size={16} color={colors.zinc[600]} />
           <Text className="font-product text-base text-zinc-700">Edit Bio</Text>
         </TouchableOpacity>
       </View>

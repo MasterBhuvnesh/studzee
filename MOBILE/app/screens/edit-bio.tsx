@@ -120,11 +120,11 @@ export default function EditBioScreen() {
                   textAlignVertical="top"
                   value={bioText}
                   onChangeText={setBioText}
-                  maxLength={150}
+                  maxLength={50}
                   editable={!isLoading}
                 />
                 <Text className="mt-2 text-right font-sans text-sm text-zinc-400">
-                  {bioText.length}/150
+                  {bioText.length}/50
                 </Text>
               </View>
 
