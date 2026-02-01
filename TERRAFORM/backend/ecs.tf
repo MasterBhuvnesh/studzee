@@ -48,6 +48,33 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# IAM Policy for SSM Parameter Store access
+resource "aws_iam_role_policy" "ecs_ssm_policy" {
+  name = "${var.app_name}-ecs-ssm-policy"
+  role = aws_iam_role.ecs_task_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameters",
+          "ssm:GetParameter"
+        ]
+        Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/${var.app_name}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # ECS Task Definition
 resource "aws_ecs_task_definition" "task" {
   family                   = "${var.app_name}-task"
@@ -66,6 +93,23 @@ resource "aws_ecs_task_definition" "task" {
       hostPort      = 3000
       protocol      = "tcp"
     }]
+
+    # Non-sensitive environment variables
+    environment = [
+      for key, value in local.environment : {
+        name  = key
+        value = value
+      }
+    ]
+
+    # Secrets from SSM Parameter Store
+    secrets = [
+      for key, param in aws_ssm_parameter.secrets : {
+        name      = key
+        valueFrom = param.arn
+      }
+    ]
+
     logConfiguration = {
       logDriver = "awslogs"
       options = {

@@ -28,10 +28,10 @@ USER appuser
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD [ "node", "-e", "require('http').get('http://localhost:4000/health/liveness', (res) => process.exit(res.statusCode === 200 ? 0 : 1))" ]
+  CMD [ "node", "-e", "require('http').get('http://localhost:3000/health/liveness', (res) => process.exit(res.statusCode === 200 ? 0 : 1))" ]
 
 # Expose port 
-EXPOSE 4000
+EXPOSE 3000
 
 # Run the app
 CMD [ "node", "dist/index.js" ]
