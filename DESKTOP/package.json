@@ -1,13 +1,14 @@
 {
   "name": "desktop",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "Studzee is a full-stack SaaS educational platform designed to transform how educational content is created, structured, delivered, and consumed across multiple platforms.",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "MasterBhuvnesh",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
+    "validate": "npm run format && npm run lint && npm run typecheck",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
@@ -23,7 +24,9 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "electron-updater": "^6.3.9"
+    "@tailwindcss/vite": "^4.1.18",
+    "electron-updater": "^6.3.9",
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

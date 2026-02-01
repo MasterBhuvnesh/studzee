@@ -1,3 +1,10 @@
-provider: generic
-url: https://example.com/auto-updates
-updaterCacheDirName: desktop-updater
+owner: MasterBhuvnesh
+repo: studzee
+provider: github
+repository: 'https://github.com/MasterBhuvnesh/studzee'
+updaterCacheDirName: studzee-updater
+publisherName:
+  - MasterBhuvnesh
+branch: main
+releaseType: release
+private: false

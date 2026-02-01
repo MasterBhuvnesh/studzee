@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: desktop
+appId: in.studzee.desktop
+productName: studzee
 directories:
   buildResources: build
 files:
@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: desktop
+  executableName: studzee
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -39,7 +39,12 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  owner: MasterBhuvnesh
+  repo: studzee
+  provider: github
+  updaterCacheDirName: studzee-updater
+  publisherName:
+    - MasterBhuvnesh
+
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
