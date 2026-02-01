@@ -14,24 +14,24 @@ function createWindow(): void {
     title: 'Studzee',
     center: true,
     frame: false,
-    transparent: true,
-    backgroundColor: '#00000000',
+    // transparent: true,
+    // backgroundColor: '#00000000',
 
     // Windows 11+ blur effects (acrylic, mica, tabbed, auto, none)
     // 'acrylic' = Acrylic blur effect
     // 'mica' = Mica material (Windows 11+)
     // 'tabbed' = Tabbed Mica (Windows 11 22H2+)
-    ...(process.platform === 'win32' ? { backgroundMaterial: 'acrylic' } : {}),
+    // ...(process.platform === 'win32' ? { backgroundMaterial: 'acrylic' } : {}),
 
     // macOS blur effects
-    ...(process.platform === 'darwin'
-      ? {
-          vibrancy: 'under-window',
-          visualEffectState: 'active',
-          titleBarStyle: 'hidden',
-          trafficLightPosition: { x: 15, y: 10 }
-        }
-      : {}),
+    // ...(process.platform === 'darwin'
+    // ? {
+    //     vibrancy: 'under-window',
+    //     visualEffectState: 'active',
+    //     titleBarStyle: 'hidden',
+    //     trafficLightPosition: { x: 15, y: 10 }
+    //   }
+    // : {}),
 
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

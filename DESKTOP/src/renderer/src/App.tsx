@@ -8,12 +8,7 @@ function App(): React.JSX.Element {
       <TitleBar title="Studzee" />
 
       <main style={{ flex: 1, padding: '1rem' }}>
-        <h1>Bhuvnesh Verma</h1>
-        <div className="font-google text-xl ">Medium Text</div>
-
-        <h1 className="font-google text-4xl font-bold">Bold Heading</h1>
-
-        <p className="font-google font-normal">Regular body text</p>
+        <div className="font-google text-xl ">Studzee Admin Dashboard</div>
 
         {/* Testing */}
         <button onClick={ipcHandle}>Send IPC</button>
