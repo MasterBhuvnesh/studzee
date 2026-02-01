@@ -10,6 +10,7 @@
 @layer base {
   body {
     font-family: 'Google Sans', sans-serif;
+
     /* cursor:
       url('../assets/icons/cursor.svg') 1 1,
       auto; */

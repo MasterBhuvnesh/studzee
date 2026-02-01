@@ -11,6 +11,28 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
+    title: 'Studzee',
+    center: true,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+
+    // Windows 11+ blur effects (acrylic, mica, tabbed, auto, none)
+    // 'acrylic' = Acrylic blur effect
+    // 'mica' = Mica material (Windows 11+)
+    // 'tabbed' = Tabbed Mica (Windows 11 22H2+)
+    ...(process.platform === 'win32' ? { backgroundMaterial: 'acrylic' } : {}),
+
+    // macOS blur effects
+    ...(process.platform === 'darwin'
+      ? {
+          vibrancy: 'under-window',
+          visualEffectState: 'active',
+          titleBarStyle: 'hidden',
+          trafficLightPosition: { x: 15, y: 10 }
+        }
+      : {}),
+
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -51,6 +73,29 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // Window control IPC handlers
+  ipcMain.on('window-minimize', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) win.minimize()
+  })
+
+  ipcMain.on('window-maximize', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize()
+      } else {
+        win.maximize()
+      }
+      win.webContents.send('window-maximized', win.isMaximized())
+    }
+  })
+
+  ipcMain.on('window-close', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) win.close()
+  })
 
   createWindow()
 
