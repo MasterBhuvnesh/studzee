@@ -1,6 +1,7 @@
 .terraform
 *.tfstate
 *.tfstate.backup
+*.tfstate.lock.info
 *.tfvars
 *.tfvars.json
 .env

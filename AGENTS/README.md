@@ -74,7 +74,11 @@ System Prompt + Retrieved Knowledge + User Input
 
 Refer to the architecture diagram for complete system visualization:
 
-![Workflow Diagram](assets/content-generation-agent.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/content-generation-agent.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/content-generation-agent.dark.png">
+  <img alt="Content Generation Agent" src="assets/content-generation-agent.dark.png">
+</picture>
 
 ## Key Features
 
