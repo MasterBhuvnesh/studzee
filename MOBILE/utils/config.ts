@@ -1,0 +1,4 @@
+const EXPO_PUBLIC_NOTIFICATION_API_URL = "http://api.studzee.in:3000";
+const EXPO_PUBLIC_BACKEND_API_URL = "http://api.studzee.in:4000";
+export { EXPO_PUBLIC_BACKEND_API_URL, EXPO_PUBLIC_NOTIFICATION_API_URL };
+

@@ -7,12 +7,11 @@ import type {
   PdfsResponse,
   TodayContentResponse,
 } from '@/types/api';
+import { EXPO_PUBLIC_BACKEND_API_URL } from '@/utils/config';
 import logger from '@/utils/logger';
 
 // Backend API configuration
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_BACKEND_API_URL ||
-  'https://studzee-backend-drz3.onrender.com';
+const API_BASE_URL = EXPO_PUBLIC_BACKEND_API_URL;
 
 /**
  * Fetches the list of PDF documents with pagination support

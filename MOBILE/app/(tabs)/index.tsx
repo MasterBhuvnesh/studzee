@@ -408,7 +408,7 @@ export default function HomePage() {
           )}
 
           {/* Locked/Upcoming Content Section */}
-          {!loading && <LockedContentSection title="SQL" />}
+          {!loading && <LockedContentSection title="System Design" />}
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
