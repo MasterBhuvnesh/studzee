@@ -1,5 +1,3 @@
-import { AppIcon } from '@/components/global/AppIcon';
-import { colors } from '@/constants/colors';
 import { Brain, Code } from 'lucide-react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -28,14 +26,14 @@ const PLANNING_DATA: PlanItem[] = [
 
 const PlanningListItem = ({ item }: { item: PlanItem }) => (
   <View className="mb-3 flex-row items-center rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-    <View className="h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
+    {/* <View className="h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
       <AppIcon
         Icon={item.icon}
         size={20}
         strokeWidth={1.5}
         color={colors.zinc[500]}
       />
-    </View>
+    </View> */}
 
     <View className="ml-4 flex-1">
       <Text className="font-product text-base text-zinc-900">{item.title}</Text>

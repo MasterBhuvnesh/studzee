@@ -1,3 +1,5 @@
+![Studzee Banner](./assets/studzee_banner.png)
+
 ## What is Studzee?
 
 **Studzee** is a **full-stack SaaS educational platform** designed to transform how educational content is created, structured, delivered, and consumed across multiple platforms.

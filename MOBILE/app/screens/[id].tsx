@@ -14,11 +14,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import {
   ArrowLeft,
-  BookOpen,
   Calendar,
   Download,
-  Eye,
-  Lightbulb,
+  Eye
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -271,8 +269,11 @@ export default function ContentDetailPage() {
           <Text className="flex-1 font-product text-xl text-zinc-800">
             Overview
           </Text>
+
+
+          {/* WILL HANDLE LATER */}
           {/* Key Notes Icon Button */}
-          {content?.key_notes && Object.keys(content.key_notes).length > 0 && (
+          {/* {content?.key_notes && Object.keys(content.key_notes).length > 0 && (
             <TouchableOpacity
               onPress={() => keyNotesSheetRef.current?.present()}
               className="rounded-full p-2 active:bg-zinc-100"
@@ -285,9 +286,9 @@ export default function ContentDetailPage() {
                 strokeWidth={1.5}
               />
             </TouchableOpacity>
-          )}
+          )} */}
           {/* Facts Icon Button */}
-          {content?.facts && (
+          {/* {content?.facts && (
             <TouchableOpacity
               onPress={() => setFactsModalVisible(true)}
               className="rounded-full p-2 active:bg-zinc-100"
@@ -300,7 +301,7 @@ export default function ContentDetailPage() {
                 strokeWidth={1.5}
               />
             </TouchableOpacity>
-          )}
+          )} */}
         </View>
 
         {/* Content */}
