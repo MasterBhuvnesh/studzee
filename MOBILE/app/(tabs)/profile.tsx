@@ -3,18 +3,19 @@ import { Header } from '@/components/global/Header';
 import { PlanningList } from '@/components/profile/PlanningList';
 import { colors } from '@/constants/colors';
 import { ProfileCardProps } from '@/types';
+import { useLogTokenDev } from '@/utils/jwt.dev';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Link, TriangleAlertIcon } from 'lucide-react-native';
+import { Key, Link, TriangleAlertIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -74,8 +75,10 @@ const ProfileCard = ({
 );
 
 export default function ProfilePage() {
+
   const { user } = useUser();
   const router = useRouter();
+  const logToken = useLogTokenDev();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -152,6 +155,20 @@ export default function ProfilePage() {
           />
 
           <PlanningList />
+
+          {process.env.NODE_ENV !== 'production' && (
+            <View className="flex-row items-center justify-center">
+            <TouchableOpacity
+              onPress={logToken}
+              className="flex-row items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2.5 shadow-sm"
+              activeOpacity={0.7}
+            >
+              <AppIcon Icon={Key} size={16} color={colors.zinc[500]} />
+              <Text className="font-product text-base text-zinc-700">Log Token</Text>
+            </TouchableOpacity>
+            </View>
+          )}
+
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>

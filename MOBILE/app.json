@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
+        "backgroundColor": "#F4F4F4",
         "foregroundImage": "./assets/icons/adaptive-icon.png",
         "backgroundImage": "./assets/icons/adaptive-icon.png",
         "monochromeImage": "./assets/icons/adaptive-icon.png"
@@ -34,7 +34,7 @@
             {
               "scheme": "https",
               "host": "studzee.in",
-              "pathPrefix": "/pages/"
+              "pathPrefix": "/news/"
             }
           ],
           "category": [
@@ -56,9 +56,9 @@
           "image": "./assets/icons/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#F7F7F9",
+          "backgroundColor": "#F4F4F4",
           "dark": {
-            "backgroundColor": "#F7F7F9"
+            "backgroundColor": "#F4F4F4"
           }
         }
       ],
