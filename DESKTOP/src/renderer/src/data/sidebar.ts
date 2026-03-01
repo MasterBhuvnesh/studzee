@@ -1,4 +1,5 @@
 import {
+  Brain,
   CodeXml,
   File,
   Image,
@@ -11,49 +12,49 @@ export const data = {
   navMain: [
     {
       title: "Notifications",
-      url: "#",
+      url: "/notifications/applications",
       icon: NotebookIcon,
       isActive: true,
       items: [
         {
           title: "Applications",
-          url: "#",
+          url: "/notifications/applications",
         },
         {
           title: "Email",
-          url: "#",
+          url: "/notifications/email",
         },
         
       ],
     },
     {
       title: "Notification Service",
-      url: "#",
+      url: "/notification-service/email-templates",
       icon: Mail,
       items: [
         {
           title: "Email Templates",
-          url: "#",
+          url: "/notification-service/email-templates",
         },
         {
           title: "Email logs",
-          url: "#",
+          url: "/notification-service/email-logs",
         },
         
       ],
     },
     {
       title: "Backend Service",
-      url: "#",
+      url: "/backend-service/upload-pdf",
       icon: CodeXml,
       items: [
         {
           title: "Upload PDF",
-          url: "#",
+          url: "/backend-service/upload-pdf",
         },
         {
           title: "Upload Image",
-          url: "#",
+          url: "/backend-service/upload-image",
         },
 
       ],
@@ -62,13 +63,18 @@ export const data = {
   storage: [
     {
       name: "Images",
-      url: "#",
+      url: "/storage/images",
       icon: Image,
     },
     {
       name: "PDFs",
-      url: "#",
+      url: "/storage/pdfs",
       icon: File,
     }
   ],
+  ai: {
+    name: "AI",
+    url: "/home-screen",
+    icon: Brain,
+  }
 }

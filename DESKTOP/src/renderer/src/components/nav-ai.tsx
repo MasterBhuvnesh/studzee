@@ -1,42 +1,40 @@
 import {
-  type LucideIcon
+    type LucideIcon
 } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import {
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem
+    SidebarGroup,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem
 } from "@renderer/components/ui/sidebar"
 
-export function NavStorage({
-  storage,
+export function NavAI({
+  ai,
 }: {
-  storage: {
+  ai: {
     name: string
     url: string
     icon: LucideIcon
-  }[]
+  }
 }) {
 
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Storage</SidebarGroupLabel>
+
       <SidebarMenu>
-        {storage.map((item) => (
-          <SidebarMenuItem key={item.name}>
+          <SidebarMenuItem >
             <SidebarMenuButton asChild>
-              <Link to={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
+              <Link to={ai.url}>
+                <ai.icon />
+                <span>{ai.name}</span>
               </Link>
             </SidebarMenuButton>
          
           </SidebarMenuItem>
-        ))}
+        
       </SidebarMenu>
     </SidebarGroup>
   )

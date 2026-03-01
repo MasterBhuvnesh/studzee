@@ -9,6 +9,7 @@ import {
   SidebarRail
 } from "@renderer/components/ui/sidebar"
 import { data } from "@renderer/data/sidebar"
+import { NavAI } from "./nav-ai"
 import { NavStorage } from "./nav-storage"
 
 
@@ -18,6 +19,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="none" {...props}>
       
       <SidebarContent>
+<NavAI ai={data.ai} />        
         <NavMain items={data.navMain} />
         <NavStorage storage={data.storage} />
       </SidebarContent>
