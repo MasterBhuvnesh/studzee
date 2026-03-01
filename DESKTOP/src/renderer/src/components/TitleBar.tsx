@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Minus, Square, Copy, X } from 'lucide-react'
+import { Copy, Minus, Square, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface TitleBarProps {
   title?: string
@@ -36,14 +36,20 @@ export function TitleBar({ title = 'Studzee' }: TitleBarProps): React.JSX.Elemen
       className="titlebar"
       style={
         {
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
           height: '32px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 8px',
+          boxSizing: 'border-box',
+          zIndex: 9999,
           WebkitAppRegion: 'drag',
           userSelect: 'none',
-          backgroundColor: 'transparent'
+          backgroundColor: 'hsl(var(--background))'
         } as React.CSSProperties
       }
     >
