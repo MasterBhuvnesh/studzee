@@ -29,11 +29,11 @@ function App(): React.JSX.Element {
 
         {update && <Updates />}
 
-        <main style={{ flex: 1, overflow: 'hidden' }}>
-          <SidebarProvider>
+        <main style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+          <SidebarProvider style={{ height: '100%' }}>
             <AppSidebar />
-            <SidebarInset>
-              <div className="m-3 flex-1 rounded-2xl bg-gray-50 p-6 overflow-auto">
+            <SidebarInset className="overflow-hidden">
+              <div className="m-3 flex-1 rounded-2xl bg-gray-50 p-6 overflow-y-auto">
                 <Routes>
                   <Route path="/" element={<Navigate to="/home-screen" replace />} />
                   <Route path="/home-screen" element={<HomeScreen />} />

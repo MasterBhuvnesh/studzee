@@ -29,6 +29,7 @@
     "clsx": "^2.1.1",
     "electron-updater": "^6.3.9",
     "framer-motion": "^12.34.3",
+    "ldrs": "^1.1.9",
     "lucide-react": "^0.563.0",
     "radix-ui": "^1.4.3",
     "react-router-dom": "^7.13.1",
