@@ -18,11 +18,10 @@ export function usePdfs() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/pdfs')
-      if (!response.ok) throw new Error(`Failed to fetch PDFs (${response.status})`)
-      const json = await response.json()
-      console.log(json)
-      setPdfs(json.data ?? [])
+      // const response = await fetch('/api/pdfs')
+      const response = await window.electronAPI.fetchPDFs()
+      if (!response.success) throw new Error(`Failed to fetch PDFs (${response.error})`)
+      setPdfs(response.data ?? [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {

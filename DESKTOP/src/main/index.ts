@@ -1,6 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
 function createWindow(): void {
@@ -95,6 +95,16 @@ app.whenReady().then(() => {
   ipcMain.on('window-close', () => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) win.close()
+  })
+
+    ipcMain.handle('fetch-pdfs', async () => {
+    try {
+      const response = await fetch('http://api.studzee.in:4000/pdfs')
+      const data = await response.json()
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: error }
+    }
   })
 
   createWindow()

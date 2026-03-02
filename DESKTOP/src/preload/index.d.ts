@@ -1,8 +1,12 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
+export { }
+
 declare global {
   interface Window {
     electron: ElectronAPI
-    // api: unknown
+    electronAPI: {
+      fetchPDFs: () => Promise<{ success: boolean; data?: any; error?: string }>
+    }
   }
 }
