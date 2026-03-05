@@ -1,3 +1,4 @@
+import { Content } from '@/components/content/contentmd';
 import { AppIcon } from '@/components/global/AppIcon';
 import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { FactModal } from '@/components/global/FactModal';
@@ -244,6 +245,7 @@ export default function ContentDetailPage() {
     }
   };
 
+
   return (
     <LinearGradient
       colors={[colors.zinc[50], colors.zinc[100]]}
@@ -367,9 +369,11 @@ export default function ContentDetailPage() {
                 {/* <Text className="mb-3 font-product text-xl text-zinc-800">
                   Content
                 </Text> */}
-                <Text className="font-sans text-base leading-7 text-zinc-700">
-                  {content.content}
-                </Text>
+                {/* <Text className="font-sans text-base leading-7 text-zinc-700">
+                 {content.content}
+                </Text> */}
+                
+            <Content content={content.content} />
               </View>
 
               <View className="mb-6 border-t border-zinc-200 pb-6 pt-4">
