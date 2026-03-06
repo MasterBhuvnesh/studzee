@@ -3,7 +3,6 @@ import { CircleChevronRight } from 'lucide-react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
 
-
 const PLANNING_DATA: UpcomingProfile[] = [
   {
     id: '1',
@@ -46,13 +45,19 @@ const PlanningListItem = ({ item }: { item: UpcomingProfile }) => (
 
     <View className="rounded-full px-2 py-1">
       {item.status === 'Not Started' && (
-        <Text className="font-product text-xs bg-red-300 px-2 py-1 text-white rounded-lg">{item.status}</Text>
+        <Text className="rounded-lg bg-red-300 px-2 py-1 font-product text-xs text-white">
+          {item.status}
+        </Text>
       )}
       {item.status === 'In Progress' && (
-        <Text className="font-product text-xs bg-green-300 px-2 py-1 text-white rounded-lg">{item.status}</Text>
+        <Text className="rounded-lg bg-green-300 px-2 py-1 font-product text-xs text-white">
+          {item.status}
+        </Text>
       )}
       {item.status === 'Ongoing' && (
-        <Text className="font-product text-xs bg-blue-300 px-2 py-1 text-white rounded-lg">{item.status}</Text>
+        <Text className="rounded-lg bg-blue-300 px-2 py-1 font-product text-xs text-white">
+          {item.status}
+        </Text>
       )}
     </View>
   </View>
@@ -61,9 +66,7 @@ const PlanningListItem = ({ item }: { item: UpcomingProfile }) => (
 export const PlanningList = () => {
   return (
     <View className="mb-6">
-      <Text className="mb-4 font-product text-xl text-zinc-800">
-        Upcoming 
-      </Text>
+      <Text className="mb-4 font-product text-xl text-zinc-800">Upcoming</Text>
       <View>
         {PLANNING_DATA.map(item => (
           <PlanningListItem key={item.id} item={item} />

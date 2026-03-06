@@ -90,9 +90,7 @@ const RadioOption = ({
     <TouchableOpacity
       onPress={onPress}
       className={`mb-3 flex-row items-center rounded-xl border p-4 ${
-        selected
-          ? 'border-zinc-700 bg-zinc-50'
-          : 'border-zinc-200 bg-white'
+        selected ? 'border-zinc-700 bg-zinc-50' : 'border-zinc-200 bg-white'
       }`}
       activeOpacity={0.7}
     >
@@ -153,7 +151,7 @@ export default function QuizScreen() {
   const handleNext = () => {
     if (isLastQuestion) {
       // Calculate results
-      const finalResults: UserAnswer[] = questions.map((q) => {
+      const finalResults: UserAnswer[] = questions.map(q => {
         const selected = userAnswers.get(q.id) || '';
         return {
           questionId: q.id,
@@ -165,13 +163,13 @@ export default function QuizScreen() {
       setShowResults(true);
       logger.info('Quiz completed');
     } else {
-      setCurrentQuestionIndex((prev) => prev + 1);
+      setCurrentQuestionIndex(prev => prev + 1);
     }
   };
 
   const handleBack = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
+      setCurrentQuestionIndex(prev => prev - 1);
     }
   };
 
@@ -185,7 +183,7 @@ export default function QuizScreen() {
 
   // ============ RESULTS SCREEN ============
   if (showResults) {
-    const correctCount = results.filter((r) => r.isCorrect).length;
+    const correctCount = results.filter(r => r.isCorrect).length;
     const totalCount = results.length;
 
     return (
@@ -195,7 +193,7 @@ export default function QuizScreen() {
         end={{ x: 0, y: 1 }}
         className="flex-1"
       >
-        <SafeAreaView className="flex-1 mb-8">
+        <SafeAreaView className="mb-8 flex-1">
           {/* Header */}
           <View className="flex-row items-center justify-between px-6 pb-4 pt-2">
             <Text className="font-product text-xl text-zinc-800">
@@ -215,7 +213,10 @@ export default function QuizScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="flex-1 px-6"
+            showsVerticalScrollIndicator={false}
+          >
             {/* Score Card */}
             <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <Text className="mb-2 text-center font-product text-2xl text-zinc-800">
@@ -258,43 +259,49 @@ export default function QuizScreen() {
                       }`}
                     >
                       {isCorrect ? (
-                        <Check size={16} color={colors.green[500]} strokeWidth={2} />
+                        <Check
+                          size={16}
+                          color={colors.green[500]}
+                          strokeWidth={2}
+                        />
                       ) : (
-                        <XIcon size={16} color={colors.red[500]} strokeWidth={2} />
+                        <XIcon
+                          size={16}
+                          color={colors.red[500]}
+                          strokeWidth={2}
+                        />
                       )}
                     </View>
                   </View>
 
                   {/* Answers */}
                   <View className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-  <View>
-    <Text className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-zinc-400">
-      Your answer
-    </Text>
-    <Text
-      className={`font-sans pb-4 text-base font-semibold ${
-        isCorrect ? 'text-green-500' : 'text-red-500'
-      }`}
-    >
-      {result.selectedOption || 'Not answered'}
-    </Text>
-  </View>
-  {!isCorrect && (
-    <View className="border-t border-zinc-200 pt-3">
-      <Text className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-zinc-400">
-        Correct answer
-      </Text>
-      <Text className="font-sans text-base font-semibold text-green-500">
-        {question.ans}
-      </Text>
-    </View>
-  )}
-</View>
+                    <View>
+                      <Text className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                        Your answer
+                      </Text>
+                      <Text
+                        className={`pb-4 font-sans text-base font-semibold ${
+                          isCorrect ? 'text-green-500' : 'text-red-500'
+                        }`}
+                      >
+                        {result.selectedOption || 'Not answered'}
+                      </Text>
+                    </View>
+                    {!isCorrect && (
+                      <View className="border-t border-zinc-200 pt-3">
+                        <Text className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                          Correct answer
+                        </Text>
+                        <Text className="font-sans text-base font-semibold text-green-500">
+                          {question.ans}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               );
             })}
-
-         
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
@@ -334,7 +341,7 @@ export default function QuizScreen() {
 
         {/* Quiz Card */}
         <View className="flex-1 px-6">
-          <View className="flex-1  mb-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
+          <View className="mb-8  flex-1 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
               {/* Question Number */}
               <Text className="mb-2 font-sans text-xs font-medium uppercase tracking-wide text-zinc-400">
@@ -376,7 +383,9 @@ export default function QuizScreen() {
               >
                 <Text
                   className={`text-center font-product text-base ${
-                    currentQuestionIndex === 0 ? 'text-zinc-400' : 'text-zinc-600'
+                    currentQuestionIndex === 0
+                      ? 'text-zinc-400'
+                      : 'text-zinc-600'
                   }`}
                 >
                   Back

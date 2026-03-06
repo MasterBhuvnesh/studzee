@@ -43,8 +43,7 @@ const onboardingData = [
       'Master complex topics with AI-driven insights and interactive tools designed for deep understanding and long-term retention.',
     gradientColors,
     imageSource:
-      'https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/AI-Powered+Concept+Mastery.png',
-  },
+   'https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/AI-Powered+Concept+Mastery.png'  },
   {
     id: '3',
     title: 'Smart Study Reminders',
@@ -52,8 +51,7 @@ const onboardingData = [
       'Stay consistent and never miss a study session with personalized notifications designed to keep you on track.',
     gradientColors,
     imageSource:
-      'https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/Smart+Study+Reminders.png',
-  },
+      'https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/Smart+Study+Reminders.png'  },
 ];
 
 export default function OnboardingFlow() {
@@ -138,7 +136,7 @@ export default function OnboardingFlow() {
         </View>
 
         {/* Buttons */}
-        <View className="flex-row items-center justify-between">
+        {/* <View className="flex-row items-center justify-between">
           {!isLastScreen ? (
             <>
               <TouchableOpacity
@@ -177,7 +175,50 @@ export default function OnboardingFlow() {
               )}
             </TouchableOpacity>
           )}
-        </View>
+        </View> */}
+
+        <View className="flex-row items-center justify-between">
+  {!isLastScreen ? (
+    <>
+      <TouchableOpacity
+        onPress={handleSkip}
+        className="rounded-lg px-6 py-3"
+        disabled={isNavigating}
+      >
+        <Text className="font-product text-base text-zinc-700">
+          {isNavigating ? 'Loading...' : 'Skip'}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={handleNext}
+        disabled={isNavigating}
+        className="self-start rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5 shadow-sm"
+        activeOpacity={0.7}
+      >
+        <Text className="font-product text-base text-zinc-700">
+          Next
+        </Text>
+      </TouchableOpacity>
+    </>
+  ) : (
+    <View className="flex-1 items-center">
+      <TouchableOpacity
+        onPress={handleDone}
+        className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-2.5"
+        disabled={isNavigating}
+        activeOpacity={0.7}
+      >
+        {isNavigating ? (
+          <ActivityIndicator color={colors.zinc[600]} />
+        ) : (
+          <Text className="text-center font-product text-base text-zinc-700">
+            Get Started Now
+          </Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  )}
+</View>
       </View>
     </View>
   );

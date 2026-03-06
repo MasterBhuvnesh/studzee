@@ -15,7 +15,7 @@ export type {
   ResourceCardProps,
   ResourceItem,
   SettingCardProps,
-  SettingItem
+  SettingItem,
 } from './components';
 
 // Icon types
@@ -37,13 +37,15 @@ export type {
   PaginatedResponse,
   PaginationMeta,
   PaginationParams,
-  PdfDocument, PdfsResponse, PdfUrlObject, Quiz,
-  QuizQuestion
+  PdfDocument,
+  PdfsResponse,
+  PdfUrlObject,
+  Quiz,
+  QuizQuestion,
 } from './api';
 
 // Storage types
 export type { DownloadedPdfMetadata } from './storage';
-
 
 // Upcoming Profile types
 export type { UpcomingProfile } from './upcoming.profile';

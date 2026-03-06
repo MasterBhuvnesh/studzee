@@ -3,12 +3,7 @@ import { colors } from '@/constants/colors';
 import { useAuth } from '@clerk/clerk-expo';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import {
-  Home,
-  Package,
-  Settings,
-  User
-} from 'lucide-react-native';
+import { Home, Package, Settings, User } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function TabLayout() {

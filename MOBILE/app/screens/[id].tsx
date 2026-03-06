@@ -13,12 +13,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import {
-  ArrowLeft,
-  Calendar,
-  Download,
-  Eye
-} from 'lucide-react-native';
+import { ArrowLeft, Calendar, Download, Eye } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   NativeScrollEvent,
@@ -245,7 +240,6 @@ export default function ContentDetailPage() {
     }
   };
 
-
   return (
     <LinearGradient
       colors={[colors.zinc[50], colors.zinc[100]]}
@@ -271,7 +265,6 @@ export default function ContentDetailPage() {
           <Text className="flex-1 font-product text-xl text-zinc-800">
             Overview
           </Text>
-
 
           {/* WILL HANDLE LATER */}
           {/* Key Notes Icon Button */}
@@ -372,8 +365,8 @@ export default function ContentDetailPage() {
                 {/* <Text className="font-sans text-base leading-7 text-zinc-700">
                  {content.content}
                 </Text> */}
-                
-            <Content content={content.content} />
+
+                <Content content={content.content} />
               </View>
 
               <View className="mb-6 border-t border-zinc-200 pb-6 pt-4">
