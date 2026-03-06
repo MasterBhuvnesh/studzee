@@ -72,7 +72,7 @@ const ContactOption = ({
 
 export default function GetSupportScreen() {
   const handleEmailSupport = () => {
-    Linking.openURL('mailto:support@studzee.in?subject=Support Request');
+    Linking.openURL('mailto:studzee247@gmail.com?subject=Support Request');
   };
 
   const faqs = [

@@ -129,7 +129,7 @@ export default function PrivacyPolicyScreen() {
 
           <Section title="10. Contact Us">
             If you have any questions about this Privacy Policy, please contact
-            us at privacy@studzee.in.
+            us at studzee247@gmail.com .
           </Section>
 
           <View className="mb-8" />

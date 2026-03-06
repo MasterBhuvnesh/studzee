@@ -97,7 +97,7 @@ export default function SendFeedbackScreen() {
     const body = `Rating: ${rating}/5\nCategory: ${category || 'Not specified'}\n\nFeedback:\n${feedback}\n\n---\nUser: ${user?.emailAddresses[0]?.emailAddress || 'Anonymous'}`;
 
     Linking.openURL(
-      `mailto:feedback@studzee.in?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      `mailto:studzee247@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     );
 
     showAlert('Thank You!', 'Your feedback helps us improve Studzee.', [
