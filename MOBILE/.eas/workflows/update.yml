@@ -14,5 +14,5 @@ jobs:
     name: Update
     type: update
     params:
-      branch: development
+      branch: production
       # branch: ${{ github.ref_name || 'development' }}

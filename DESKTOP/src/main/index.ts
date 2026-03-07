@@ -97,15 +97,7 @@ app.whenReady().then(() => {
     if (win) win.close()
   })
 
-    ipcMain.handle('fetch-pdfs', async () => {
-    try {
-      const response = await fetch('http://api.studzee.in:4000/pdfs')
-      const data = await response.json()
-      return { success: true, data }
-    } catch (error) {
-      return { success: false, error: error }
-    }
-  })
+
 
   createWindow()
 
