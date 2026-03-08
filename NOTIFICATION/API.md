@@ -210,3 +210,53 @@
     ```
   - `401 Unauthorized` / `403 Forbidden` if not an admin.
   - `500 Internal Server Error` for server errors.
+
+---
+
+### Webhook: Clerk User Created
+
+- **Route:** `POST /api/webhooks/clerk`
+- **Description:** Handle Clerk webhook events. When a new user is created in Clerk (`user.created` event), this endpoint automatically sends a welcome email to the user.
+- **Protected:** No (Public endpoint, verified via SVIX signature)
+- **Request:**
+  - Headers (required):
+    - `svix-id` - Webhook event ID
+    - `svix-timestamp` - Webhook timestamp
+    - `svix-signature` - Webhook signature for verification
+  - Body (sent by Clerk):
+    ```json
+    {
+      "type": "user.created",
+      "data": {
+        "id": "user_xxx",
+        "email_addresses": [
+          {
+            "email_address": "user@example.com",
+            "id": "idn_xxx"
+          }
+        ],
+        "first_name": "John",
+        "last_name": "Doe",
+        "username": "johndoe",
+        "created_at": 1234567890,
+        "updated_at": 1234567890
+      }
+    }
+    ```
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "success": true,
+      "message": "Welcome email processed",
+      "emailSent": true
+    }
+    ```
+  - `400 Bad Request` if webhook verification fails or headers are missing.
+  - `500 Internal Server Error` if webhook secret is not configured.
+- **Setup:**
+  1. Add `CLERK_WEBHOOK_SIGNING_SECRET` to your `.env` file
+  2. In Clerk Dashboard → Webhooks → Add Endpoint
+  3. Set URL to `https://your-domain/api/webhooks/clerk`
+  4. Subscribe to `user.created` event
+  5. Copy the Signing Secret to your `.env`

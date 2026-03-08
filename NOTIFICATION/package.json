@@ -45,12 +45,14 @@
     "nodemailer": "^6.9.0",
     "pino": "^9.0.0",
     "pino-pretty": "^11.0.0",
+    "svix": "^1.86.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/node": "^25.3.5",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.15",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

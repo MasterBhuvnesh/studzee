@@ -126,6 +126,7 @@ A production-ready notification service built with Bun and TypeScript that provi
 | `CLERK_SECRET_KEY`      | Clerk authentication secret key                     | Yes      | -           |
 | `CLERK_PUBLISHABLE_KEY` | Clerk publishable key                               | Yes      | -           |
 | `DEV_TOKEN`             | Development auth bypass token (bypasses Clerk auth) | No       | -           |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Clerk webhook signing secret for verification | No       | -           |
 | `SMTP_HOST`             | SMTP server host (e.g., smtp.gmail.com)             | Yes      | -           |
 | `SMTP_PORT`             | SMTP server port                                    | Yes      | 587         |
 | `SMTP_USER`             | SMTP username/email                                 | Yes      | -           |
@@ -139,6 +140,21 @@ A production-ready notification service built with Bun and TypeScript that provi
 2. Navigate to API Keys and copy your Secret Key and Publishable Key
 3. Add the keys to your `.env` file
 4. Set up roles in Clerk and create an `admin` role for admin access
+
+#### Clerk Webhook Setup (for Welcome Emails)
+
+To automatically send welcome emails when new users sign up:
+
+1. In Clerk Dashboard, navigate to **Webhooks**
+2. Click **Add Endpoint**
+3. Set the **Endpoint URL** to `https://your-domain/api/webhooks/clerk`
+   - For local development, use [ngrok](https://ngrok.com/) to expose your local server
+4. Subscribe to the `user.created` event
+5. Click **Create** and copy the **Signing Secret**
+6. Add the secret to your `.env` file:
+   ```
+   CLERK_WEBHOOK_SIGNING_SECRET=whsec_xxxxxxxxxxxxx
+   ```
 
 ### PostgreSQL Setup
 
@@ -480,7 +496,8 @@ src/
 │   ├── admin.controller.ts      # Admin operations (users, notifications)
 │   ├── email.controller.ts      # Email management
 │   ├── notification.controller.ts # Push notification handling
-│   └── user.controller.ts       # User registration
+│   ├── user.controller.ts       # User registration
+│   └── webhook.controller.ts    # Clerk webhook handling
 ├── jobs/               # Scheduled background jobs
 │   ├── cleanupTokens.ts         # Token cleanup job
 │   ├── heartbeat.ts             # Health monitoring
@@ -494,6 +511,7 @@ src/
 │   ├── admin.routes.ts          # Admin endpoints
 │   ├── health.routes.ts         # Health checks
 │   ├── user.routes.ts           # User endpoints
+│   ├── webhook.routes.ts        # Clerk webhook endpoints
 │   └── index.ts                 # Route aggregation
 ├── services/           # Business logic layer
 │   ├── email.service.ts         # Email sending logic
@@ -515,6 +533,7 @@ src/
 - **Notification Service**: Manages push notification sending and history
 - **Email Service**: Handles email delivery with HTML templates and PDF attachments
 - **Expo Service**: Integrates with Expo Push Notification API
+- **Webhook Handler**: Processes Clerk webhooks for automated welcome emails
 - **Authentication**: Clerk middleware with role-based access control and development bypass
 - **Security Middleware**: Helmet, CORS, and rate limiting (100 req/15min)
 - **Scheduled Jobs**: Token cleanup and production heartbeat monitoring
@@ -554,6 +573,10 @@ For detailed API documentation, see [API.md](./API.md).
 - **GET** `/api/admin/emails` - Get all user emails (Admin)
 - **POST** `/api/admin/email/send` - Send HTML email with attachments (Admin)
 - **GET** `/api/admin/email/logs` - Get email logs with pagination (Admin)
+
+#### Webhook Endpoints
+
+- **POST** `/api/webhooks/clerk` - Handle Clerk webhooks (Public, verified via SVIX)
 
 For full request/response examples and detailed documentation, refer to [API.md](./API.md).
 

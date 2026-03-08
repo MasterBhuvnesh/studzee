@@ -9,6 +9,7 @@ const configSchema = z.object({
   DATABASE_URL: z.string().url(),
   CLERK_SECRET_KEY: z.string(),
   CLERK_PUBLISHABLE_KEY: z.string(),
+  CLERK_WEBHOOK_SIGNING_SECRET: z.string().optional(),
   DEV_TOKEN: z.string().optional(),
   SMTP_HOST: z.string(),
   SMTP_PORT: z.preprocess((val) => parseInt(val as string, 10), z.number()),

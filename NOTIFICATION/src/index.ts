@@ -9,6 +9,7 @@ import { errorHandler } from '@/middleware/errorHandler.middleware';
 import adminRoutes from '@/routes/admin.routes';
 import healthRoutes from '@/routes/health.routes';
 import userRoutes from '@/routes/user.routes';
+import webhookRoutes from '@/routes/webhook.routes';
 import logger from '@/utils/logger';
 
 const app = express();
@@ -35,6 +36,7 @@ app.get('/', (req, res) => {
 app.use('/', healthRoutes);
 app.use('/api', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

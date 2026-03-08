@@ -2,7 +2,10 @@ import nodemailer from 'nodemailer';
 
 import { config } from '@/config';
 import logger from '@/utils/logger';
-import { generateEmailTemplate } from '@/utils/mail';
+import {
+  generateEmailTemplate,
+  generateWelcomeEmailTemplate,
+} from '@/utils/mail';
 
 const transporter = nodemailer.createTransport({
   host: config.SMTP_HOST,
@@ -58,6 +61,42 @@ export const sendEmailWithAttachments = async (
     };
   } catch (error: any) {
     logger.error({ error: error.message }, 'Email sending failed');
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+};
+
+/**
+ * Send a welcome email to a new user
+ * @param email - User's email address
+ * @param displayName - User's display name
+ */
+export const sendWelcomeEmail = async (email: string, displayName: string) => {
+  try {
+    const htmlContent = generateWelcomeEmailTemplate(displayName);
+
+    const mailOptions = {
+      from: config.EMAIL_FROM,
+      to: email,
+      subject: 'Welcome to Studzee!',
+      html: htmlContent,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+
+    logger.info(
+      { messageId: info.messageId, email },
+      'Welcome email sent successfully',
+    );
+
+    return {
+      success: true,
+      messageId: info.messageId,
+    };
+  } catch (error: any) {
+    logger.error({ error: error.message, email }, 'Welcome email sending failed');
     return {
       success: false,
       error: error.message,
