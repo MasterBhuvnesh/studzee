@@ -19,7 +19,7 @@ export const clerkAuthMiddleware = (
 
     if (token === config.DEV_TOKEN) {
       logger.info('Development mode: Using DEV_TOKEN authentication bypass');
-       
+
       (req as any).auth = () => ({
         userId: 'dev-user-id',
       });
@@ -55,7 +55,7 @@ export const requireAdmin = async (
 
     if (isDevelopmentMode && config.DEV_TOKEN && userId === 'dev-user-id') {
       logger.info('Development mode: Granting admin access');
-       
+
       (req as any).userRole = 'admin';
       return next();
     }
@@ -67,7 +67,6 @@ export const requireAdmin = async (
       return res.status(403).json({ message: 'Forbidden: admin only' });
     }
 
-     
     (req as any).userRole = role;
     next();
   } catch (err) {

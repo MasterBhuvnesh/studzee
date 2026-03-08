@@ -1,7 +1,6 @@
 import logger from '@/utils/logger';
 import { prisma } from '@/utils/prisma';
 
-
 export const registerOrUpdateUser = async (
   clerkId: string,
   email: string,

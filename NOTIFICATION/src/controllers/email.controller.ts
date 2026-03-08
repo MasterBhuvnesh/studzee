@@ -41,7 +41,7 @@ export const sendEmail = async (req: Request, res: Response) => {
       subject,
       title,
       body,
-      banner,// Optional, will use default if not provided
+      banner, // Optional, will use default if not provided
       footer, // Optional, will use default if not provided
       pdfUrls,
     );

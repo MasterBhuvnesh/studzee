@@ -21,7 +21,6 @@ interface ClerkUserEvent {
   type: string;
 }
 
-
 export const handleClerkWebhook = async (req: Request, res: Response) => {
   try {
     const WEBHOOK_SECRET = config.CLERK_WEBHOOK_SIGNING_SECRET;

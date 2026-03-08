@@ -29,8 +29,8 @@ app.get('/', (req, res) => {
       health: '/healthcheck',
       register: 'POST /api/register',
     },
-  })
-})
+  });
+});
 
 // Routes
 app.use('/', healthRoutes);

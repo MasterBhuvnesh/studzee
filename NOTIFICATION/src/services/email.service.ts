@@ -38,7 +38,7 @@ export const sendEmailWithAttachments = async (
       : [];
 
     // Generate HTML content using the email template
-    const htmlContent = generateEmailTemplate(title, body, banner,footer);
+    const htmlContent = generateEmailTemplate(title, body, banner, footer);
 
     const mailOptions = {
       from: config.EMAIL_FROM,
@@ -96,7 +96,10 @@ export const sendWelcomeEmail = async (email: string, displayName: string) => {
       messageId: info.messageId,
     };
   } catch (error: any) {
-    logger.error({ error: error.message, email }, 'Welcome email sending failed');
+    logger.error(
+      { error: error.message, email },
+      'Welcome email sending failed',
+    );
     return {
       success: false,
       error: error.message,
