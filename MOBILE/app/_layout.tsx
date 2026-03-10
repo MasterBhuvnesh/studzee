@@ -7,6 +7,7 @@ import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Slot, SplashScreen, useRouter, useSegments } from 'expo-router';
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -114,6 +115,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+        <StatusBar style="dark" translucent/>
         <SafeAreaProvider>
           <NotificationProvider>
             <BottomSheetModalProvider>

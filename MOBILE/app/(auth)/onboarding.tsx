@@ -2,7 +2,6 @@ import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { colors } from '@/constants/colors';
 import logger from '@/utils/logger';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -106,7 +105,6 @@ export default function OnboardingFlow() {
 
   return (
     <View className="flex-1">
-      <StatusBar style="light" />
 
       <FlatList
         ref={flatListRef}

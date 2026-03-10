@@ -4,7 +4,6 @@ import React from 'react';
 import { Text, View } from 'react-native';
 
 import { OnboardingScreenProps } from '@/types';
-import { StatusBar } from 'expo-status-bar';
 
 export default function OnboardingScreen({
   title,
@@ -14,7 +13,6 @@ export default function OnboardingScreen({
 }: OnboardingScreenProps) {
   return (
     <>
-      <StatusBar style="dark" />
       <LinearGradient
         colors={gradientColors as any}
         start={{ x: 0, y: 0 }}
