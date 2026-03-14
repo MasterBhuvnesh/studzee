@@ -13,5 +13,3 @@ pypdf
 langchain-text-splitters
 reportlab
 faiss-cpu
-requests_aws4auth
-opensearch-py
