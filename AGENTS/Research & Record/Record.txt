@@ -45,15 +45,14 @@ Provider : AWS Bedrock
 
 ## Vector Database
 
-Primary DB : AWS OpenSearch
+Primary DB : AWS S3 FAISS Vector Store
 Backup DB : FAISS (Local)
 
 FAISS Index Creation Time : 10m 49s
-OpenSearch Upload Time : [write time]
 
 ---
 
 ## Notes
 
 Metadata preserved for each chunk to enable filtered retrieval.
-FAISS stored locally as backup for OpenSearch vector index.
+FAISS stored locally as backup for S3 vector index.
