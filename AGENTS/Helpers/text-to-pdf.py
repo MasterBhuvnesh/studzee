@@ -28,7 +28,7 @@ def add_header_footer(canvas, doc):
 
     # Header logo
     canvas.drawImage(
-        "code/content generation/images/studzee_icon.png",
+        "assets/studzee.png",
         x=40,
         y=A4[1] - 80,
         width=60,
@@ -38,11 +38,11 @@ def add_header_footer(canvas, doc):
     )
 
     canvas.setFont("MyFont", 14)
-    canvas.drawString(120, A4[1] - 50, "Company Name")
+    canvas.drawString(120, A4[1] - 50, "Studzee")
 
     # Footer text
     canvas.setFont("MyFont", 9)
-    canvas.drawString(40, 40, "© 2026 Company Name. All rights reserved.")
+    canvas.drawString(40, 40, "© 2026 Studzee. All rights reserved.")
 
     # Page number
     page_number_text = f"Page {doc.page}"
@@ -51,7 +51,7 @@ def add_header_footer(canvas, doc):
     # Watermark
     canvas.setFillAlpha(0.1)
     canvas.drawImage(
-        "code/content generation/images/watermark.png",
+        "assets/studzee.png",
         x=100,
         y=250,
         width=300,
