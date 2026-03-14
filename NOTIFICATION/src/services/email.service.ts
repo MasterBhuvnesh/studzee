@@ -30,15 +30,15 @@ export const sendEmailWithAttachments = async (
     // Prepare attachments if PDF URLs provided
     const attachments = pdfUrls
       ? await Promise.all(
-          pdfUrls.map(async (url, index) => ({
-            filename: `attachment-${index + 1}.pdf`,
-            path: url,
-          })),
-        )
+        pdfUrls.map(async (url, index) => ({
+          filename: `attachment-${index + 1}.pdf`,
+          path: url,
+        })),
+      )
       : [];
 
     // Generate HTML content using the email template
-    const htmlContent = generateEmailTemplate(title, body, banner, footer);
+    const htmlContent = generateEmailTemplate(title, body, footer, banner);
 
     const mailOptions = {
       from: config.EMAIL_FROM,
