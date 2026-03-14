@@ -13,3 +13,5 @@ pypdf
 langchain-text-splitters
 reportlab
 faiss-cpu
+duckduckgo-search
+ddgs
