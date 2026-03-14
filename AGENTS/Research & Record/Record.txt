@@ -1,0 +1,59 @@
+Date : 14 March 2026
+Author : Bhuvnesh Verma
+
+---
+
+## Dataset Information
+
+Total Books : 2
+File Format : PDF
+Loader : PyPDFLoader (LangChain)
+
+---
+
+## Chunking
+
+Method : RecursiveCharacterTextSplitter
+Chunk Size : 800
+Chunk Overlap : 150
+
+Total Chunks Generated : 1175
+Time Taken : 4m 29s
+
+---
+
+## Metadata Schema
+
+Fields Stored :
+
+* book_title
+* author
+* publisher
+* source_file
+* page
+* chunk_id
+
+---
+
+## Embedding
+
+Model : Amazon Titan Text Embeddings
+Model ID : amazon.titan-embed-text-v2:0
+Provider : AWS Bedrock
+
+---
+
+## Vector Database
+
+Primary DB : AWS OpenSearch
+Backup DB : FAISS (Local)
+
+FAISS Index Creation Time : 10m 49s
+OpenSearch Upload Time : [write time]
+
+---
+
+## Notes
+
+Metadata preserved for each chunk to enable filtered retrieval.
+FAISS stored locally as backup for OpenSearch vector index.

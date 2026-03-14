@@ -1,0 +1,14 @@
+Date : 14 March 2026
+By : Bhuvnesh Verma
+
+We are Embedding 2 books from Books folder which are "ML - Aurelien Geron - O'Reilly" and "Introduction to Machine Learning - Ethem Alpaydin - MIT Press" using Amazon Embedding model "Titan Text Embeddings V2"
+
+Amazon Titan Text Embeddings V2 is a light weight, efficient model ideal for high accuracy retrieval tasks at different dimensions. The model supports flexible embeddings sizes (1024, 512, and 256) and prioritizes accuracy maintenance at smaller dimension sizes, making it possible to reduce storage costs without compromising on accuracy. Titan Text Embeddings V2 includes multi-lingual support for 100+ languages in pre-training as well as unit vector normalization for improving accuracy of measuring vector similarity.
+
+Output vector size = 1024 (default) ,512 or 256
+Model ID = amazon.titan-embed-text-v2:0
+Input modalities = Text
+Output modalities = Embedding
+Max tokens = 8k tokens
+Language = English (GA), Multilingual in 100+ languages (Preview)
+Deployment type = Serverless

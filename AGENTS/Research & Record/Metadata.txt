@@ -1,0 +1,42 @@
+Metadata for the books 
+
+FORMAT : 
+metadata = {
+    "book_title": "",
+    "author": "",
+    "publisher": "",
+    "source_file": "",
+    "page": "",
+    "chunk_id": "",
+    "topic": "" (optional)
+}
+
+FOR EXAMPLE : 
+
+{
+ "text": "A decision tree is a supervised learning algorithm...",
+ "embedding": [0.12, 0.87, ...],
+ "metadata": {
+   "book_title": "Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow",
+   "author": "Aurelien Geron",
+   "publisher": "O'Reilly",
+   "chapter": "Decision Trees",
+   "page": 185,
+   "source_file": "ml_oreilly.pdf",
+   "chunk_id": 42,
+   "topic": "Machine Learning"
+ }
+}
+
+{
+ "metadata": {
+   "book_title": "Introduction to Machine Learning",
+   "author": "Ethem Alpaydin",
+   "publisher": "MIT Press",
+   "chapter": "Supervised Learning",
+   "page": 67,
+   "source_file": "ml_alpaydin.pdf",
+   "chunk_id": 12
+ }
+}
+

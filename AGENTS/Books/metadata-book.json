@@ -1,0 +1,12 @@
+{
+    "ml_oreilly.pdf": {
+        "book_title": "Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow",
+        "author": "Aurelien Geron",
+        "publisher": "O'Reilly"
+    },
+    "ml_alpaydin.pdf": {
+        "book_title": "Introduction to Machine Learning",
+        "author": "Ethem Alpaydin",
+        "publisher": "MIT Press"
+    }
+}
