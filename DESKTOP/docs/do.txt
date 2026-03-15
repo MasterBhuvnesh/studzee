@@ -1,2 +1,0 @@
-- delete pdf button
-- view s3 images ( direclty aws cli js code )

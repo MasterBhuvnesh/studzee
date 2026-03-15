@@ -20,7 +20,7 @@ export default defineConfig({
     server: {
       proxy: {
         '/api': {
-          target: 'http://api.studzee.in:4000',
+          target: 'https://api.studzee.in',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
           configure: (proxy, _options) => {
