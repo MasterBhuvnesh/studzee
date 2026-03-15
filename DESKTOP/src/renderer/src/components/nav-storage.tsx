@@ -1,7 +1,5 @@
-import {
-  type LucideIcon
-} from "lucide-react"
-import { Link } from "react-router-dom"
+import { type LucideIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import {
   SidebarGroup,
@@ -9,10 +7,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem
-} from "@renderer/components/ui/sidebar"
+} from '@renderer/components/ui/sidebar'
 
 export function NavStorage({
-  storage,
+  storage
 }: {
   storage: {
     name: string
@@ -20,8 +18,6 @@ export function NavStorage({
     icon: LucideIcon
   }[]
 }) {
-
-
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Storage</SidebarGroupLabel>
@@ -34,7 +30,6 @@ export function NavStorage({
                 <span>{item.name}</span>
               </Link>
             </SidebarMenuButton>
-         
           </SidebarMenuItem>
         ))}
       </SidebarMenu>

@@ -97,8 +97,6 @@ app.whenReady().then(() => {
     if (win) win.close()
   })
 
-
-
   createWindow()
 
   app.on('activate', function () {

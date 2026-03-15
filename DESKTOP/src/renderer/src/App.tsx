@@ -2,11 +2,8 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { TitleBar } from './components/TitleBar'
 import { Updates } from './components/Updates'
 
-import { AppSidebar } from "./components/app-sidebar"
-import {
-  SidebarInset,
-  SidebarProvider
-} from "./components/ui/sidebar"
+import { AppSidebar } from './components/app-sidebar'
+import { SidebarInset, SidebarProvider } from './components/ui/sidebar'
 
 // Pages
 import ApplicationsPage from './pages/ApplicationsPage'
@@ -24,7 +21,9 @@ function App(): React.JSX.Element {
 
   return (
     <HashRouter>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: '40px' }}>
+      <div
+        style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: '40px' }}
+      >
         <TitleBar title="Studzee" />
 
         {update && <Updates />}
@@ -39,7 +38,10 @@ function App(): React.JSX.Element {
                   <Route path="/home-screen" element={<HomeScreen />} />
                   <Route path="/notifications/applications" element={<ApplicationsPage />} />
                   <Route path="/notifications/email" element={<EmailPage />} />
-                  <Route path="/notification-service/email-templates" element={<EmailTemplatesPage />} />
+                  <Route
+                    path="/notification-service/email-templates"
+                    element={<EmailTemplatesPage />}
+                  />
                   <Route path="/notification-service/email-logs" element={<EmailLogsPage />} />
                   <Route path="/backend-service/upload-pdf" element={<UploadPDFPage />} />
                   <Route path="/backend-service/upload-image" element={<UploadImagePage />} />

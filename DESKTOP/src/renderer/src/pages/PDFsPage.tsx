@@ -8,7 +8,7 @@ import PDF from '@renderer/assets/images/pdf.svg'
 import { AppIcon } from '@renderer/components/AppIcon'
 import Loading from '@renderer/components/Loading'
 import { Search } from 'lucide-react'
-//  Helpers 
+//  Helpers
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -24,7 +24,7 @@ function formatDate(dateString: string): string {
   })
 }
 
-//  PDFHeader 
+//  PDFHeader
 
 function PDFHeader({
   totalCount,
@@ -40,27 +40,27 @@ function PDFHeader({
       <div>
         <h1 className="text-2xl font-medium text-gray-900">PDFs</h1>
         <p className="mt-1 text-sm font-medium text-gray-500">
-          {totalCount} document{totalCount !== 1 ? 's' : ''} 
+          {totalCount} document{totalCount !== 1 ? 's' : ''}
         </p>
       </div>
 
-    <div className="relative w-full sm:w-72">
-  <div className='absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center'>
-    <AppIcon Icon={Search} size={16} color="#9ca3af" strokeWidth={2} />
-  </div>
-  <input
-    type="text"
-    placeholder="Search PDFs..."
-    value={searchQuery}
-    onChange={(e) => onSearchChange(e.target.value)}
-    className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
-  />
-</div>
+      <div className="relative w-full sm:w-72">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center">
+          <AppIcon Icon={Search} size={16} color="#9ca3af" strokeWidth={2} />
+        </div>
+        <input
+          type="text"
+          placeholder="Search PDFs..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
+        />
+      </div>
     </div>
   )
 }
 
-//  PDFItem 
+//  PDFItem
 
 function PDFItem({ pdf }: { pdf: PDFDocument }) {
   return (
@@ -74,29 +74,26 @@ function PDFItem({ pdf }: { pdf: PDFDocument }) {
         {pdf.title}
       </p>
       <div className="flex items-start gap-3">
-        <div className='flex items-center justify-start gap-2 w-full '>
-        {/* PDF Icon */}
-        <img src={PDF} className="h-12 w-12" alt="pdf icon" />
-        
+        <div className="flex items-center justify-start gap-2 w-full ">
+          {/* PDF Icon */}
+          <img src={PDF} className="h-12 w-12" alt="pdf icon" />
 
-       <div className='flex flex-col gap-1 min-w-0'>
-
-          <p className="truncate text-md text-gray-500">{pdf.pdfName}</p>
-           <span className="text-sm text-gray-400">{formatFileSize(pdf.size)}</span>
-        </div>
+          <div className="flex flex-col gap-1 min-w-0">
+            <p className="truncate text-md text-gray-500">{pdf.pdfName}</p>
+            <span className="text-sm text-gray-400">{formatFileSize(pdf.size)}</span>
+          </div>
         </div>
       </div>
 
       {/* Meta */}
       <div className="mt-4 flex items-center gap-4 border-t-2 border-gray-100 pt-3 text-sm text-gray-400">
-       
         <span>{formatDate(pdf.uploadedAt)}</span>
       </div>
     </a>
   )
 }
 
-//  PDFEmptyState 
+//  PDFEmptyState
 
 function PDFEmptyState() {
   return (
@@ -107,7 +104,7 @@ function PDFEmptyState() {
   )
 }
 
-//  PDFList 
+//  PDFList
 
 function PDFList({ pdfs }: { pdfs: PDFDocument[] }) {
   if (pdfs.length === 0) return <PDFEmptyState />
@@ -121,7 +118,7 @@ function PDFList({ pdfs }: { pdfs: PDFDocument[] }) {
   )
 }
 
-//  PDFErrorState 
+//  PDFErrorState
 
 function PDFErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
@@ -145,7 +142,7 @@ function PDFErrorState({ error, onRetry }: { error: string; onRetry: () => void 
   )
 }
 
-//  PDFsPage 
+//  PDFsPage
 
 export default function PDFsPage() {
   const { pdfs, loading, error, refetch } = usePdfs()

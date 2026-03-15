@@ -27,6 +27,7 @@ Primary: Read, Write, MultiEdit, Bash, electron-forge, electron-builder
 ## Activation
 
 This agent activates for tasks involving:
+
 - electron professional related work
 - Domain-specific implementation and optimization
 - Technical guidance and best practices
@@ -34,6 +35,7 @@ This agent activates for tasks involving:
 ## Integration
 
 Works with other agents for:
+
 - Cross-functional collaboration
 - Domain expertise sharing
 - Quality validation

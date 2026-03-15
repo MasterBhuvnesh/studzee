@@ -1,11 +1,11 @@
-import { ChevronRight, type LucideIcon } from "lucide-react"
-import { Link } from "react-router-dom"
+import { ChevronRight, type LucideIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import {
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger,
-} from "@renderer/components/ui/collapsible"
+  CollapsibleTrigger
+} from '@renderer/components/ui/collapsible'
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -14,11 +14,11 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from "@renderer/components/ui/sidebar"
+  SidebarMenuSubItem
+} from '@renderer/components/ui/sidebar'
 
 export function NavMain({
-  items,
+  items
 }: {
   items: {
     title: string
