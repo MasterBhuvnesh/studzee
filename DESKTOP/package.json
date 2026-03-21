@@ -1,5 +1,6 @@
 {
-  "name": "desktop",
+  "name": "studzee",
+  "productName": "Studzee",
   "version": "1.0.0",
   "description": "Studzee is a full-stack SaaS educational platform designed to transform how educational content is created, structured, delivered, and consumed across multiple platforms.",
   "main": "./out/main/index.js",

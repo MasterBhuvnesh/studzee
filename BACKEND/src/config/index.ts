@@ -11,7 +11,7 @@ const configSchema = z.object({
     .default('development'),
   CLERK_SECRET_KEY: z.string().startsWith('sk_'),
   CLERK_PUBLISHABLE_KEY: z.string().startsWith('pk_'),
-  MONGO_URI: z.string().url(),
+  MONGO_URI: z.string().min(1, 'MongoDB URI is required'),
   REDIS_URL: z.string().url(),
   LIST_CACHE_TTL: z.coerce.number().default(300),
   DOC_CACHE_TTL: z.coerce.number().default(86400),

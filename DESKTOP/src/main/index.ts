@@ -1,11 +1,55 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { join } from 'path'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import path, { join } from 'path'
 import icon from '../../resources/icon.png?asset'
+
+let mainWindow: BrowserWindow | null = null
+
+// Deep link protocol registration
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(
+      'studzee',
+      process.execPath,
+      [path.resolve(process.argv[1])]
+    )
+  }
+} else {
+  if (!app.isDefaultProtocolClient('studzee')) {
+    app.setAsDefaultProtocolClient('studzee')
+  }
+}
+
+// Windows - Ensure single instance
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+  process.exit(0)
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+
+      // Handle deep link on Windows
+      const url = commandLine.find((arg) => arg.startsWith('studzee://'))
+      if (url) {
+        // dialog.showErrorBox('Welcome Back', `You arrived from: ${url}`)
+        dialog.showMessageBox({
+          type: 'info', // 'none' | 'info' | 'error' | 'question' | 'warning'
+          title: 'Welcome Back',
+          message: `You arrived from: ${url}`
+        })
+        mainWindow.webContents.send('deep-link', url)
+      }
+    }
+  })
+}
 
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
@@ -40,7 +84,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow?.show()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -95,6 +139,16 @@ app.whenReady().then(() => {
   ipcMain.on('window-close', () => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) win.close()
+  })
+
+  // Unix machines - Linux and Mac
+  app.on('open-url', (event, url) => {
+    event.preventDefault()
+    dialog.showErrorBox('Welcome Back', `You arrived from: ${url}`)
+
+    if (mainWindow) {
+      mainWindow.webContents.send('deep-link', url)
+    }
   })
 
   createWindow()
