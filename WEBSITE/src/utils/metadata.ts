@@ -16,7 +16,7 @@ interface MetadataProps {
 }
 
 export const generateMetadata = ({
-  title = `Studzee — Learn smarter. Study better.`,
+  title = `Studzee`,
   description = `Studzee is a next-gen ed-tech platform that organises, delivers, and automates educational content across mobile, web, and desktop. Built for students and developers who refuse to settle.`,
   icons = [
     {
