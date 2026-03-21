@@ -128,15 +128,20 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--foreground) / 0.1);
+  background: color-mix(in oklab, var(--foreground) 10%, transparent);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: var(--background);
 }
 
 img {
   user-select: none;
   pointer-events: none;
+}
+
+* {
+  user-select: none;
+  -webkit-user-select: none;
 }
