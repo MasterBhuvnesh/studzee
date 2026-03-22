@@ -1,0 +1,27 @@
+{
+  "unknown": {
+    "versionFramework": "4.33.0",
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": true,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "command": [
+      "login"
+    ],
+    "options": {},
+    "orgId": "2b2c714a-7f75-40e0-841d-7b904b237dc9",
+    "orgName": "agent",
+    "userId": "TGCzgHqkW8N1gSF4d3",
+    "userName": "agent",
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}
