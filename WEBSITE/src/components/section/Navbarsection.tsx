@@ -8,7 +8,13 @@ const Navbarsection = () => {
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-background/50 backdrop-blur-md border-b border-background">
       {/* Brand Logo */}
       <div className="flex items-center gap-3">
-        <Image src="/images/icon.png" alt="Studzee icon" width={40} height={40} className="w-10 h-10 object-contain" />
+        <Image
+          src="/images/icon.png"
+          alt="Studzee icon"
+          width={40}
+          height={40}
+          className="w-10 h-10 object-contain"
+        />
         <span className="text-lg font-semibold text-foreground tracking-tight">
           Studzee
         </span>

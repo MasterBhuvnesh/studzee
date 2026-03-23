@@ -5,17 +5,6 @@ export default function Home() {
     <>
       <Navbarsection />
       <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
-      <Herosection />
     </>
   );
 }
