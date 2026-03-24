@@ -11,3 +11,10 @@ services:
     restart: always
     stdin_open: true
     tty: true
+    networks:
+      - studzee-network
+
+networks:
+  studzee-network:
+    name: studzee-network
+    driver: bridge
