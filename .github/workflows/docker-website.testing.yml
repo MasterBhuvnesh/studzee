@@ -1,0 +1,55 @@
+# GitHub Actions Workflow for Docker Backend Deployment
+name: Build, Tag, and Deploy Docker Image - Backend
+
+on:
+  push:
+    tags:
+      - "website-v*"
+    # Uncomment the following lines when we want to trigger on branch pushes as well
+    # branches:
+    #   - 'production'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version or commit hash
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/website-v* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/website-v}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./WEBSITE
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/studzee-website:latest
+            ${{ secrets.DOCKER_USERNAME }}/studzee-website:${{ steps.version.outputs.VERSION }}
+
+      - name: Print Docker image information
+        run: |
+          echo "Docker image successfully built and pushed:"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-website:latest"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-website:${{ steps.version.outputs.VERSION }}"
+
+      # # # Trigger Render deploy hook ( uncomment when using Render.com )
+      # - name: Trigger Render deploy hook
+      #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_WEBSITE }}
