@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "do-release": "bash ../code.sh website patch",
+    "do-release:minor": "bash ../code.sh website minor",
+    "do-release:major": "bash ../code.sh website major"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
