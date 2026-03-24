@@ -55,14 +55,14 @@ export const generateMetadata = ({
   return {
     metadataBase,
     title: {
-      template: `%s | ${process.env.NEXT_PUBLIC_APP_NAME}`,
+      template: `%s | Studzee`,
       default: title,
     },
     description,
     keywords,
     authors: [{ name: author }],
     creator: author,
-    publisher: process.env.NEXT_PUBLIC_APP_NAME,
+    publisher: 'Studzee',
     formatDetection: {
       email: false,
       address: false,
