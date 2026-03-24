@@ -30,7 +30,7 @@ export const generateMetadata = ({
       media: '(prefers-color-scheme: dark)',
     },
   ],
-  noIndex = false,
+  // noIndex = false,
   keywords = [
     'studzee',
     'edtech platform',
@@ -45,7 +45,7 @@ export const generateMetadata = ({
     'document learning',
     'AI content automation',
   ],
-  author = process.env.NEXT_PUBLIC_AUTHOR_NAME,
+  author = 'Bhuvnesh Verma',
   type = 'website',
 }: MetadataProps = {}): Metadata => {
   const metadataBase = new URL(
