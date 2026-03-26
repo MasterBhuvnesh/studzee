@@ -3,8 +3,8 @@ import { PlayCircleIcon } from '@heroicons/react/24/solid';
 
 const Herosection = () => {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-6">
-      <div className="max-w-4xl text-center space-y-6">
+    <main className="min-h-3/5 flex items-center justify-center bg-background px-2 pt-40">
+      <div className="max-w-7xl text-center space-y-6">
         {/* Heading */}
         <h1 className="text-6xl md:text-7xl font-medium tracking-tight text-foreground leading-tight">
           The{' '}
