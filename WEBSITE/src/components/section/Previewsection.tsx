@@ -32,6 +32,7 @@ const Previewsection = () => {
               alt="Preview"
               width={1600}
               height={900}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="w-full h-auto object-cover relative z-10"
               priority
             />
