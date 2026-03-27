@@ -1,6 +1,7 @@
 import {
   Detailsection,
   Featuressection,
+  Feedbacksection,
   Herosection,
   Navbarsection,
   Previewsection,
@@ -14,6 +15,7 @@ export default function Home() {
       <Previewsection />
       <Featuressection />
       <Detailsection />
+      <Feedbacksection />
     </>
   );
 }

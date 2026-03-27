@@ -96,6 +96,7 @@ const Detailsection = () => {
                     src={detail.image}
                     alt={detail.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover object-top-left opacity-90"
                   />
                   {/* Subtle fade effect at the bottom matching dark UI */}
