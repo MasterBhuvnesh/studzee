@@ -1,8 +1,10 @@
 import {
+  Contactsection,
   Detailsection,
   FAQsection,
   Featuressection,
   Feedbacksection,
+  Footersection,
   Herosection,
   Navbarsection,
   Previewsection,
@@ -20,6 +22,8 @@ export default function Home() {
       <Feedbacksection />
       <Pricesection />
       <FAQsection />
+      <Contactsection />
+      <Footersection />
     </>
   );
 }
