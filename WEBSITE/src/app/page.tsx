@@ -1,10 +1,12 @@
 import {
   Detailsection,
+  FAQsection,
   Featuressection,
   Feedbacksection,
   Herosection,
   Navbarsection,
   Previewsection,
+  Pricesection,
 } from '@/components/section/';
 
 export default function Home() {
@@ -16,6 +18,8 @@ export default function Home() {
       <Featuressection />
       <Detailsection />
       <Feedbacksection />
+      <Pricesection />
+      <FAQsection />
     </>
   );
 }
