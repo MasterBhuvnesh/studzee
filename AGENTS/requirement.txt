@@ -15,3 +15,5 @@ reportlab
 faiss-cpu
 duckduckgo-search
 ddgs
+pymongo
+dnspython
