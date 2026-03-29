@@ -1,7 +1,8 @@
+import type { ContentSection } from '@/types/api';
 import { Text } from 'react-native';
 
 type Props = {
-  content: string;
+  content: ContentSection[];
 };
 
 // const markdown = `
@@ -32,7 +33,7 @@ export const Content = ({ content }: Props) => {
     },
   }}
 /> */}
-      {content}
+      {JSON.stringify(content)}
     </Text>
   );
 };

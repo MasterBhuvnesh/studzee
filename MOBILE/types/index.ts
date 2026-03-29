@@ -4,18 +4,18 @@
 
 // Component types
 export type {
-  ActionCardProps,
-  DownloadedCardProps,
-  DownloadedItem,
-  DownloadedPdfInfoProps,
-  OAuthButtonsProps,
-  OnboardingScreenProps,
-  PdfItem,
-  ProfileCardProps,
-  ResourceCardProps,
-  ResourceItem,
-  SettingCardProps,
-  SettingItem,
+    ActionCardProps,
+    DownloadedCardProps,
+    DownloadedItem,
+    DownloadedPdfInfoProps,
+    OAuthButtonsProps,
+    OnboardingScreenProps,
+    PdfItem,
+    ProfileCardProps,
+    ResourceCardProps,
+    ResourceItem,
+    SettingCardProps,
+    SettingItem
 } from './components';
 
 // Icon types
@@ -29,19 +29,18 @@ export type { AuthError, AuthState, OAuthProvider } from './auth';
 
 // API types
 export type {
-  ApiError,
-  ContentDetail,
-  ContentListResponse,
-  ContentSummary,
-  KeyNotes,
-  PaginatedResponse,
-  PaginationMeta,
-  PaginationParams,
-  PdfDocument,
-  PdfsResponse,
-  PdfUrlObject,
-  Quiz,
-  QuizQuestion,
+    ApiError,
+    ContentBlock,
+    ContentDetail,
+    ContentListResponse,
+    ContentSection,
+    ContentSummary,
+    KeyNotes,
+    PaginatedResponse,
+    PaginationMeta,
+    PaginationParams,
+    PdfDocument, PdfUrlObject, PdfsResponse, Quiz,
+    QuizQuestion
 } from './api';
 
 // Storage types
@@ -49,3 +48,4 @@ export type { DownloadedPdfMetadata } from './storage';
 
 // Upcoming Profile types
 export type { UpcomingProfile } from './upcoming.profile';
+

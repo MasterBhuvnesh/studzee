@@ -103,13 +103,30 @@ export interface KeyNotes {
 }
 
 /**
+ * Structured content block types for rich lesson rendering
+ */
+export type ContentBlock =
+  | { type: 'text'; value: string }
+  | { type: 'list'; items: string[] }
+  | { type: 'table'; headers: string[]; rows: string[][] }
+  | { type: 'formula'; value: string }
+  | { type: 'code'; value: string };
+
+/**
+ * Content section wrapper returned by backend
+ */
+export interface ContentSection {
+  title: string;
+  content: ContentBlock[];
+}
+
+/**
  * Full content detail from /content/:id endpoint
  */
 export interface ContentDetail {
   _id: string;
   title: string;
-  // content: string;
-  content: string;
+  content: ContentSection[];
   quiz: Quiz;
   facts: string;
   summary: string;

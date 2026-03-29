@@ -1,21 +1,10 @@
+import type { ContentSection } from "@/types/api";
 import React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { EnrichedMarkdownText } from "react-native-enriched-markdown";
 
-type ContentBlock =
-  | { type: "text"; value: string }
-  | { type: "list"; items: string[] }
-  | { type: "table"; headers: string[]; rows: string[][] }
-  | { type: "formula"; value: string }
-  | { type: "code"; value: string };
-
-type Section = {
-  title: string;
-  content: ContentBlock[];
-};
-
 type Props = {
-  content: Section[];
+  content: ContentSection[];
 };
 
 export const Content = ({ content }: Props) => {
