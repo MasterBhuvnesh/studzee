@@ -311,7 +311,7 @@ describe('ContentService - getContentById', () => {
       _id: 'abc123',
       title: 'Cached Document',
       summary: 'This came from cache',
-      content: 'Full content here',
+      content: { text: 'Full content here' },
     }
 
     vi.mocked(redisClient.get).mockResolvedValue(JSON.stringify(fakeDoc))

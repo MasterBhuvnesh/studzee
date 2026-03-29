@@ -25,7 +25,9 @@ export const PdfFileSchema = z.object({
  */
 export const DocumentSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters long'),
-  content: z.string().min(10, 'Content must be at least 10 characters long'),
+  content: z.union([z.record(z.string(), z.any()), z.array(z.any())], {
+    required_error: 'Content is required',
+  }),
   quiz: z.record(z.string(), QuizItemSchema),
   facts: z.string().optional(),
   summary: z.string().optional(),

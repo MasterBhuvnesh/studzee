@@ -11,7 +11,7 @@ import { DocumentModel } from '@/models/document.model'
 import { DocumentSchema } from '@/models/document.validation'
 import { invalidateAllCache } from '@/utils/cache'
 import logger from '@/utils/logger'
-
+import dns from 'dns'
 /**
  * Sanitize a string to be used as a filename
  */
@@ -29,7 +29,8 @@ const sanitizeFilename = (filename: string): string => {
  */
 const seedDatabaseWithFiles = async () => {
   logger.info('Starting database seeding with S3 file uploads...')
-
+  // Set DNS servers to avoid local network issues
+  dns.setServers(["1.1.1.1", "8.8.8.8"])
   // Connect to databases
   await connectDB()
   await connectRedis()

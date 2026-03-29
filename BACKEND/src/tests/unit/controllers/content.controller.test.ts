@@ -320,7 +320,7 @@ describe('ContentController - getDocumentById', () => {
       _id: 'test-doc-id',
       title: 'Test Document',
       summary: 'Test summary',
-      content: 'Full content here',
+      content: { text: 'Full content here' },
       quiz: {
         q1: {
           que: 'Test question?',
@@ -385,7 +385,7 @@ describe('ContentController - getDocumentById', () => {
     const fakeDocument = {
       _id: 'test',
       title: 'Test',
-      content: 'Test content',
+      content: { text: 'Test content' },
       quiz: {
         q1: {
           que: 'Test question?',

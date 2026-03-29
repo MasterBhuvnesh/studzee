@@ -32,7 +32,7 @@ const PdfFileMongooseSchema = new Schema(
 const DocumentMongooseSchema = new Schema<IDocument>(
   {
     title: { type: String, required: true, index: true },
-    content: { type: String, required: true },
+    content: { type: Schema.Types.Mixed, required: true },
     quiz: {
       type: Map,
       of: QuizItemMongooseSchema,
@@ -49,6 +49,7 @@ const DocumentMongooseSchema = new Schema<IDocument>(
   },
   {
     timestamps: true,
+    collection: 'content',
   }
 )
 

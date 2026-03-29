@@ -12,6 +12,7 @@ const configSchema = z.object({
   CLERK_SECRET_KEY: z.string().startsWith('sk_'),
   CLERK_PUBLISHABLE_KEY: z.string().startsWith('pk_'),
   MONGO_URI: z.string().min(1, 'MongoDB URI is required'),
+  DB_NAME: z.string().default('Studzee_Database'),
   REDIS_URL: z.string().url(),
   LIST_CACHE_TTL: z.coerce.number().default(300),
   DOC_CACHE_TTL: z.coerce.number().default(86400),

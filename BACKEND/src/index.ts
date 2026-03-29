@@ -3,6 +3,7 @@ import cors from 'cors'
 import express from 'express'
 import rateLimit from 'express-rate-limit'
 import morgan from 'morgan'
+import dns from 'dns'
 
 import adminRoutes from '@/api/routes/admin.route'
 import authRoutes from '@/api/routes/auth.route'
@@ -23,6 +24,7 @@ const main = async () => {
     const app = express()
 
     // --- Middleware ---
+    dns.setServers(["1.1.1.1", "8.8.8.8"])
     app.use(helmetConfig)
     app.use(cors())
     app.use(compression())

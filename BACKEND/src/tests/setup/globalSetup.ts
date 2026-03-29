@@ -23,10 +23,11 @@ process.env.NODE_ENV = 'test'
 
 // Use test databases (if you have them)
 // If these env vars aren't set, falls back to regular databases
-process.env.MONGODB_URI =
-  process.env.MONGODB_URI_TEST ||
-  process.env.MONGODB_URI ||
-  'mongodb://localhost:27017/studzee-test'
+process.env.MONGO_URI =
+  process.env.MONGO_URI_TEST ||
+  process.env.MONGO_URI ||
+  'mongodb://localhost:27017/Studzee_Database_Test'
+process.env.DB_NAME = 'Studzee_Database_Test'
 process.env.REDIS_URL =
   process.env.REDIS_URL_TEST ||
   process.env.REDIS_URL ||
