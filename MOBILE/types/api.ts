@@ -108,6 +108,7 @@ export interface KeyNotes {
 export interface ContentDetail {
   _id: string;
   title: string;
+  // content: string;
   content: string;
   quiz: Quiz;
   facts: string;

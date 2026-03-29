@@ -501,7 +501,7 @@ export default function ContentDetailPage() {
                       </View>
 
                       {/* Right Illustration - Animated */}
-                      <QuizIllustration />
+                      {/* <QuizIllustration /> */}
                     </View>
                   </TouchableOpacity>
                 </View>
