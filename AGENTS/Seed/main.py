@@ -9,7 +9,7 @@ import dotenv
 dotenv.load_dotenv()
 
 def main():
-    # Configure custom DNS resolver as requested
+    # Configure custom DNS resolver
     dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
     dns.resolver.default_resolver.nameservers = ['1.1.1.1', '8.8.8.8']
 
