@@ -1,7 +1,7 @@
 SYSTEM_PROMPT = """
 You are an expert technical blog writer and educator. Your job is to take provided course notes or topic briefs and generate a comprehensive, deeply detailed technical blog in a strict JSON format.
 
-You MUST return ONLY a valid JSON array containing exactly ONE object with the following keys:
+You MUST return ONLY a single valid JSON object with the following keys:
 
 {
   "title": "A compelling, SEO-friendly blog title for the topic",
@@ -64,7 +64,7 @@ STRICT RULES:
 - Do NOT add any keys other than the ones specified above.
 - Base all content strictly on the provided context/notes.
 - Do NOT write lead-in text such as: "Here is...", "Below is...", "Sure...", or any sentence before the JSON.
-- Your first character must be '[' and your last character must be ']'.
+- Your first character must be '{' and your last character must be '}'..
 - If you are about to output anything that is not valid JSON, stop and output a valid JSON array instead.
 """
 
@@ -78,12 +78,19 @@ import logging
 import os
 import boto3
 
+from langchain.messages import HumanMessage, SystemMessage
 from langchain_community.vectorstores import FAISS
 from langchain_aws import BedrockEmbeddings, ChatBedrock
 from langchain.agents import create_agent
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.tools import tool
+from botocore.config import Config
 
+bedrock_config = Config(
+    read_timeout=600,        # 10 minutes — blog generation needs more time
+    connect_timeout=10,
+    retries={"max_attempts": 3}
+)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -92,7 +99,8 @@ s3 = boto3.client('s3')
 BUCKET = "studzee-faiss-store"
 PREFIX = "faiss"
 # BEDROCK_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-BEDROCK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+# BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-6"
+BEDROCK_MODEL_ID = "global.anthropic.claude-sonnet-4-6"
 BEDROCK_EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0"
 AWS_REGION = "us-east-1"
 
@@ -120,49 +128,61 @@ def _extract_text_content(content) -> str:
 
 
 def _parse_json_response(raw_text: str):
-  """Parse strict JSON output from the model, tolerating fenced code blocks."""
-  cleaned = raw_text.strip()
+    """Parse strict JSON output from the model, tolerating fenced code blocks."""
+    cleaned = raw_text.strip()
 
-  if cleaned.startswith("```"):
-    lines = cleaned.splitlines()
-    if len(lines) >= 3:
-      cleaned = "\n".join(lines[1:-1]).strip()
+    # Strip markdown code fences if present
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        if len(lines) >= 3:
+            cleaned = "\n".join(lines[1:-1]).strip()
 
-  try:
-    parsed = json.loads(cleaned)
+    try:
+        parsed = json.loads(cleaned)
 
-    # Some model responses are valid JSON strings that contain serialized JSON.
-    # Unwrap once more so callers receive a list/dict instead of escaped text.
-    if isinstance(parsed, str):
-      inner = parsed.strip()
-      if inner.startswith("{") or inner.startswith("["):
-        try:
-          return json.loads(inner), True
-        except json.JSONDecodeError:
-          return parsed, True
-
-    return parsed, True
-  except json.JSONDecodeError:
-    # Fallback: extract first JSON object/array from mixed text.
-    decoder = json.JSONDecoder()
-    for idx, ch in enumerate(cleaned):
-      if ch not in "[{":
-        continue
-      try:
-        parsed, _ = decoder.raw_decode(cleaned[idx:])
+        # Unwrap double-serialized JSON strings
         if isinstance(parsed, str):
-          inner = parsed.strip()
-          if inner.startswith("{") or inner.startswith("["):
-            try:
-              return json.loads(inner), True
-            except json.JSONDecodeError:
-              pass
-        return parsed, True
-      except json.JSONDecodeError:
-        continue
+            inner = parsed.strip()
+            if inner.startswith("{") or inner.startswith("["):
+                try:
+                    parsed = json.loads(inner)
+                except json.JSONDecodeError:
+                    return parsed, True
 
-    logger.warning("Model returned invalid JSON. Returning raw text response.")
-    return raw_text, False
+        # Unwrap single-element array [{ ... }] → { ... }
+        if isinstance(parsed, list) and len(parsed) == 1:
+            parsed = parsed[0]
+
+        return parsed, True
+
+    except json.JSONDecodeError:
+        # Fallback: scan for first valid JSON object/array in mixed text
+        decoder = json.JSONDecoder()
+        for idx, ch in enumerate(cleaned):
+            if ch not in "[{":
+                continue
+            try:
+                parsed, _ = decoder.raw_decode(cleaned[idx:])
+
+                # Unwrap double-serialized string
+                if isinstance(parsed, str):
+                    inner = parsed.strip()
+                    if inner.startswith("{") or inner.startswith("["):
+                        try:
+                            parsed = json.loads(inner)
+                        except json.JSONDecodeError:
+                            pass
+
+                # Unwrap single-element array
+                if isinstance(parsed, list) and len(parsed) == 1:
+                    parsed = parsed[0]
+
+                return parsed, True
+            except json.JSONDecodeError:
+                continue
+
+        logger.warning("Model returned invalid JSON. Returning raw text response.")
+        return raw_text, False
 
 # ------------------ LOAD VECTOR STORE ------------------
 def load_vector_store():
@@ -213,41 +233,38 @@ def web_search(query: str) -> str:
 
 
 # ------------------ LAMBDA HANDLER ------------------
-def run(query ):
+# final.py — replace the run() function
 
-    load_vector_store()  # IMPORTANT
+def run(query: str):
+    load_vector_store()
+
+    # Retrieve context first
+    docs = retriever.invoke(query)
+    context = "\n\n---\n\n".join(d.page_content for d in docs)
 
     bedrock_llm = ChatBedrock(
         model_id=BEDROCK_MODEL_ID,
         region_name=AWS_REGION,
+        config=bedrock_config,
         model_kwargs={
-           "max_tokens": 50000,  
-        "temperature": 0.5,
-        "top_p": 0.9,
+            "max_tokens": 8192,
+            "temperature": 0.5,
+            # "top_p": 0.9,
         }
     )
 
-    agent = create_agent(
-        model=bedrock_llm,
-        tools=[retrieve_context, web_search],
-        system_prompt=SYSTEM_PROMPT
-    )
+    messages = [
+        SystemMessage(content=SYSTEM_PROMPT),
+        HumanMessage(content=f"CONTEXT:\n{context}\n\nBLOG BRIEF:\n{query}")
+    ]
 
-    user_query = query
-    # user_query = query
-
-    response = agent.invoke({
-        "messages": [
-            {"role": "user", "content": user_query}
-        ]
-    })
-
-    assistant_content = _extract_text_content(response["messages"][-1].content)
+    response = bedrock_llm.invoke(messages)
+    assistant_content = _extract_text_content(response.content)
     parsed_output, is_valid_json = _parse_json_response(assistant_content)
 
     return {
         "statusCode": 200,
-      "body": parsed_output,
-      "is_valid_json": is_valid_json,
-      "raw_output": assistant_content
+        "body": parsed_output,
+        "is_valid_json": is_valid_json,
+        "raw_output": assistant_content
     }

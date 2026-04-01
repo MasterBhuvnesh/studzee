@@ -1,0 +1,259 @@
+{
+  "title": "Ensemble Methods in Python: Stacking Explained",
+  "content": [
+    {
+      "title": "INTRODUCTION",
+      "content": [
+        {
+          "type": "text",
+          "value": "Stacking (short for Stacked Generalization) is an advanced ensemble learning technique that combines multiple machine learning models through a meta-estimator. Instead of simply voting or averaging predictions, stacking trains a second-layer model to intelligently combine the outputs of first-layer models — much like a relay race where each runner hands off to the next."
+        }
+      ]
+    },
+    {
+      "title": "CORE CONCEPTS",
+      "content": [
+        {
+          "type": "text",
+          "value": "At its core, text generation is a sequential prediction problem. Given a sequence of tokens so far, the model learns to predict the most likely next token."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Sequential prediction problem",
+            "Predict next token",
+            "Uses previous context",
+            "Similar to autocomplete"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "RNN BASED MODELS",
+      "content": [
+        {
+          "type": "text",
+          "value": "Early text generation systems relied heavily on Recurrent Neural Networks."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Processes sequence step-by-step",
+            "Maintains hidden state",
+            "Acts like short-term memory"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "LSTM AND GRU",
+      "content": [
+        {
+          "type": "text",
+          "value": "LSTMs and GRUs solve long-term dependency problems."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "Model",
+            "Key Feature",
+            "Advantage"
+          ],
+          "rows": [
+            [
+              "LSTM",
+              "Input, Forget, Output gates",
+              "Handles long dependencies"
+            ],
+            [
+              "GRU",
+              "Reset & Update gates",
+              "Simpler and faster"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "TRANSFORMER MODELS",
+      "content": [
+        {
+          "type": "text",
+          "value": "Transformer models are the most advanced approach for text generation."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Pre-trained on large datasets",
+            "Use attention mechanism",
+            "GPT: autoregressive",
+            "T5: text-to-text"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "TOKENIZATION AND DECODING",
+      "content": [
+        {
+          "type": "text",
+          "value": "Tokenization splits text into smaller units."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Subword tokenization",
+            "Handles rare words",
+            "Balances vocabulary size"
+          ]
+        },
+        {
+          "type": "table",
+          "headers": [
+            "Strategy",
+            "Effect",
+            "Use Case",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Low Temperature",
+              "Deterministic output",
+              "Factual tasks",
+              "Summarization and translation"
+            ],
+            [
+              "High Temperature",
+              "Creative but random",
+              "Creative tasks",
+              "Creative writing and brainstorming"
+            ],
+            [
+              "Repetition Penalty",
+              "Avoids repeated text",
+              "Text generation",
+              "Story generation and dialogue systems"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "EVALUATION METRICS",
+      "content": [
+        {
+          "type": "text",
+          "value": "Evaluation requires specialized metrics."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "Metric",
+            "Use Case",
+            "Focus"
+          ],
+          "rows": [
+            [
+              "BLEU",
+              "Translation",
+              "n-gram precision"
+            ],
+            [
+              "ROUGE",
+              "Summarization",
+              "Recall"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "FUTURE DIRECTIONS",
+      "content": [
+        {
+          "type": "formula",
+          "value": "P(x) = \\prod_{t=1}^{T} P(x_t | x_{<t})"
+        }
+      ]
+    },
+    {
+      "title": "SAMPLE CODE",
+      "content": [
+        {
+          "type": "code",
+          "value": "from transformers import GPT2LMHeadModel, GPT2Tokenizer\n\n# Load pre-trained model and tokenizer\nmodel_name = 'gpt2'\ntokenizer = GPT2Tokenizer.from_pretrained(model_name)\nmodel = GPT2LMHeadModel.from_pretrained(model_name)\n\n# Encode input prompt\nprompt = 'Once upon a time'\ninput_ids = tokenizer.encode(prompt, return_tensors='pt')\n\n# Generate text\noutput = model.generate(input_ids, max_length=50, num_return_sequences=1)\n\n# Decode and print generated text\ngenerated_text = tokenizer.decode(output[0], skip_special_tokens=True)\nprint(generated_text)"
+        }
+      ]
+    }
+  ],
+  "quiz": {
+    "1": {
+      "que": "What is the primary purpose of regularization in machine learning?",
+      "ans": "To prevent overfitting and improve generalization",
+      "options": [
+        "To prevent overfitting and improve generalization",
+        "To increase model complexity",
+        "To remove training data noise completely",
+        "To eliminate the need for validation data"
+      ]
+    },
+    "2": {
+      "que": "Which regularization technique can shrink some coefficients exactly to zero?",
+      "ans": "Lasso Regression (L1)",
+      "options": [
+        "Lasso Regression (L1)",
+        "Ridge Regression (L2)",
+        "Elastic Net",
+        "Batch Normalization"
+      ]
+    },
+    "3": {
+      "que": "Which regularization method is best suited for handling multicollinearity?",
+      "ans": "Ridge Regression (L2)",
+      "options": [
+        "Ridge Regression (L2)",
+        "Lasso Regression (L1)",
+        "Dropout",
+        "Early Stopping"
+      ]
+    },
+    "4": {
+      "que": "What does Elastic Net combine?",
+      "ans": "Both L1 and L2 regularization",
+      "options": [
+        "Both L1 and L2 regularization",
+        "Feature scaling and normalization",
+        "Bagging and boosting",
+        "Dimensionality reduction techniques"
+      ]
+    },
+    "5": {
+      "que": "What happens if regularization strength is set too high?",
+      "ans": "The model may underfit the data",
+      "options": [
+        "The model may underfit the data",
+        "The model will always overfit",
+        "Training time becomes zero",
+        "The model memorizes the dataset"
+      ]
+    }
+  },
+   "facts": "Stacking was first introduced by David Wolpert in 1992. Scikit-learn added native stacking support in version 0.22. MLxtend was developed by Sebastian Raschka as a machine learning extensions library. Stacking is a heterogeneous ensemble method, meaning it can combine different types of models. The second-layer meta-estimator learns how to best combine the outputs of the first-layer models.",
+  "summary": "Stacking is an advanced ensemble technique that trains a meta-model on the predictions of multiple base models. It can be implemented using scikit-learn's StackingClassifier/StackingRegressor or the mlxtend library, and is best suited when different models each capture different patterns in the data.",
+  "key_notes": {
+    "1": "Stacking uses a meta-estimator (second-layer model) to combine predictions from multiple first-layer models.",
+    "2": "The relay race analogy helps understand stacking: base models pass their predictions like a baton to the combiner.",
+    "3": "Scikit-learn trains the final estimator via cross-validation to prevent data leakage.",
+    "4": "MLxtend provides an alternative, flexible stacking implementation compatible with scikit-learn.",
+    "5": "Use stacking when voting or averaging has not delivered the desired performance improvement."
+  },
+  "imageUrl": "",
+  "pdfUrl": [
+    {
+      "name": "chapter4.pdf",
+      "uploadedAt": {
+        "$date": "2026-04-01T00:00:00.000Z"
+      }
+    }
+  ]
+}
