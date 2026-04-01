@@ -1,0 +1,261 @@
+{
+  "title": "Regularization in Machine Learning: Concepts and Techniques",
+  "content": [
+    {
+      "title": "INTRODUCTION",
+      "content": [
+        {
+          "type": "text",
+          "value": "Text generation is the task of training models to produce coherent, human-like text one token at a time. It matters because it powers modern applications such as chatbots, automated writing assistants, translation systems, and code generation tools."
+        }
+      ]
+    },
+    {
+      "title": "CORE CONCEPTS",
+      "content": [
+        {
+          "type": "text",
+          "value": "At its core, text generation is a sequential prediction problem. Given a sequence of tokens so far, the model learns to predict the most likely next token."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Sequential prediction problem",
+            "Predict next token",
+            "Uses previous context",
+            "Similar to autocomplete"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "RNN BASED MODELS",
+      "content": [
+        {
+          "type": "text",
+          "value": "Early text generation systems relied heavily on Recurrent Neural Networks."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Processes sequence step-by-step",
+            "Maintains hidden state",
+            "Acts like short-term memory"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "LSTM AND GRU",
+      "content": [
+        {
+          "type": "text",
+          "value": "LSTMs and GRUs solve long-term dependency problems."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "Model",
+            "Key Feature",
+            "Advantage"
+          ],
+          "rows": [
+            [
+              "LSTM",
+              "Input, Forget, Output gates",
+              "Handles long dependencies"
+            ],
+            [
+              "GRU",
+              "Reset & Update gates",
+              "Simpler and faster"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "TRANSFORMER MODELS",
+      "content": [
+        {
+          "type": "text",
+          "value": "Transformer models are the most advanced approach for text generation."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Pre-trained on large datasets",
+            "Use attention mechanism",
+            "GPT: autoregressive",
+            "T5: text-to-text"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "TOKENIZATION AND DECODING",
+      "content": [
+        {
+          "type": "text",
+          "value": "Tokenization splits text into smaller units."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Subword tokenization",
+            "Handles rare words",
+            "Balances vocabulary size"
+          ]
+        },
+        {
+          "type": "table",
+          "headers": [
+            "Strategy",
+            "Effect",
+            "Use Case",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Low Temperature",
+              "Deterministic output",
+              "Factual tasks",
+              "Summarization and translation"
+            ],
+            [
+              "High Temperature",
+              "Creative but random",
+              "Creative tasks",
+              "Creative writing and brainstorming"
+            ],
+            [
+              "Repetition Penalty",
+              "Avoids repeated text",
+              "Text generation",
+              "Story generation and dialogue systems"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "EVALUATION METRICS",
+      "content": [
+        {
+          "type": "text",
+          "value": "Evaluation requires specialized metrics."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "Metric",
+            "Use Case",
+            "Focus"
+          ],
+          "rows": [
+            [
+              "BLEU",
+              "Translation",
+              "n-gram precision"
+            ],
+            [
+              "ROUGE",
+              "Summarization",
+              "Recall"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "FUTURE DIRECTIONS",
+      "content": [
+        {
+          "type": "formula",
+          "value": "P(x) = \\prod_{t=1}^{T} P(x_t | x_{<t})"
+        }
+      ]
+    },
+    {
+      "title": "SAMPLE CODE",
+      "content": [
+        {
+          "type": "code",
+          "value": "from transformers import GPT2LMHeadModel, GPT2Tokenizer\n\n# Load pre-trained model and tokenizer\nmodel_name = 'gpt2'\ntokenizer = GPT2Tokenizer.from_pretrained(model_name)\nmodel = GPT2LMHeadModel.from_pretrained(model_name)\n\n# Encode input prompt\nprompt = 'Once upon a time'\ninput_ids = tokenizer.encode(prompt, return_tensors='pt')\n\n# Generate text\noutput = model.generate(input_ids, max_length=50, num_return_sequences=1)\n\n# Decode and print generated text\ngenerated_text = tokenizer.decode(output[0], skip_special_tokens=True)\nprint(generated_text)"
+        }
+      ]
+    }
+  ],
+  "quiz": {
+    "1": {
+      "que": "What is the primary purpose of regularization in machine learning?",
+      "ans": "To prevent overfitting and improve generalization",
+      "options": [
+        "To prevent overfitting and improve generalization",
+        "To increase model complexity",
+        "To remove training data noise completely",
+        "To eliminate the need for validation data"
+      ]
+    },
+    "2": {
+      "que": "Which regularization technique can shrink some coefficients exactly to zero?",
+      "ans": "Lasso Regression (L1)",
+      "options": [
+        "Lasso Regression (L1)",
+        "Ridge Regression (L2)",
+        "Elastic Net",
+        "Batch Normalization"
+      ]
+    },
+    "3": {
+      "que": "Which regularization method is best suited for handling multicollinearity?",
+      "ans": "Ridge Regression (L2)",
+      "options": [
+        "Ridge Regression (L2)",
+        "Lasso Regression (L1)",
+        "Dropout",
+        "Early Stopping"
+      ]
+    },
+    "4": {
+      "que": "What does Elastic Net combine?",
+      "ans": "Both L1 and L2 regularization",
+      "options": [
+        "Both L1 and L2 regularization",
+        "Feature scaling and normalization",
+        "Bagging and boosting",
+        "Dimensionality reduction techniques"
+      ]
+    },
+    "5": {
+      "que": "What happens if regularization strength is set too high?",
+      "ans": "The model may underfit the data",
+      "options": [
+        "The model may underfit the data",
+        "The model will always overfit",
+        "Training time becomes zero",
+        "The model memorizes the dataset"
+      ]
+    }
+  },
+  "facts": "Regularization is essential for preventing overfitting in machine learning models. L1 regularization enables feature selection by forcing coefficients to zero. L2 regularization stabilizes models by shrinking correlated coefficients. Elastic Net balances the strengths of L1 and L2. Regularization is widely used in linear models and neural networks.",
+  "summary": "Regularization is a technique that improves machine learning model generalization by penalizing complexity. Common methods include Lasso (L1), Ridge (L2), and Elastic Net, each offering different ways to control model behavior and stability.",
+  "key_notes": {
+    "1": "Regularization reduces overfitting by penalizing large model weights.",
+    "2": "Lasso performs feature selection by shrinking coefficients to zero.",
+    "3": "Ridge handles multicollinearity by shrinking correlated features.",
+    "4": "Elastic Net combines L1 and L2 penalties for flexibility.",
+    "5": "Proper tuning of regularization strength is critical for performance."
+  },
+  "imageUrl": "https://studzee-assets.s3.ap-south-1.amazonaws.com/images/69c96eda40bca6613e65bd5d.png",
+  "pdfUrl": [
+    {
+      "name": "today.pdf",
+      "url": "https://studzee-assets.s3.ap-south-1.amazonaws.com/pdfs/regularization-in-machine-learning-concepts-and-techniques.pdf",
+      "uploadedAt": {
+        "$date": "2026-03-29T18:26:35.163Z"
+      },
+      "size": 113318
+    }
+  ]
+}

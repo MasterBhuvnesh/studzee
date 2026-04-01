@@ -1,0 +1,15 @@
+Flask==3.0.3
+dotenv
+pymongo[srv]
+boto3
+langchain-aws
+langchain
+langchain-community
+langchain-anthropic
+langchain-core
+pypdf
+langchain-text-splitters
+faiss-cpu
+duckduckgo-search
+ddgs
+dnspython

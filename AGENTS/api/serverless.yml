@@ -1,0 +1,50 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: agent
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: serverless-application
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: flast-api
+
+custom:
+  wsgi:
+    app: app.app
+
+provider:
+  name: aws
+  runtime: python3.12
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "s3:PutObject"
+            - "s3:GetObject"
+            - "s3:DeleteObject"
+            - "s3:ListBucket"
+          Resource:
+            - "arn:aws:s3:::studzee-assets"
+            - "arn:aws:s3:::studzee-assets/*"
+        - Effect: "Allow"
+          Action:
+            - "textract:StartDocumentTextDetection"
+            - "textract:GetDocumentTextDetection"
+            - "bedrock:InvokeModel"
+          Resource: "*"
+  # Uncomment to easily set up a custom domain. Read the docs for more details:
+  # https://www.serverless.com/framework/docs/providers/aws/guide/domains
+  # domain: api.example.com
+
+functions:
+  api:
+    handler: wsgi_handler.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+      - http:
+          path: /{proxy+}
+          method: ANY
+
+plugins:
+  - serverless-wsgi
+  - serverless-python-requirements
