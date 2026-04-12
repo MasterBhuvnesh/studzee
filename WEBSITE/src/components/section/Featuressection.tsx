@@ -23,7 +23,7 @@ const features = [
 
 const Featuressection = () => {
   return (
-    <section className="relative w-full flex flex-col items-center justify-center px-4 md:px-6 py-32 mt-10">
+    <section id="features" className="relative w-full flex flex-col items-center justify-center px-4 md:px-6 py-32 mt-10">
       <div className="max-w-7xl w-full flex flex-col items-center gap-16 md:gap-24">
         {/* Header */}
         {/* Say goodbye to scattered studying */}

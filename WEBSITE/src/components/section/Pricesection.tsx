@@ -3,7 +3,7 @@ import { PLAY_STORE_URL } from '@/constants/store-link';
 
 const Pricesection = () => {
   return (
-    <section className="relative w-full flex flex-col items-center justify-center px-4 md:px-6 py-32 overflow-hidden">
+    <section id="pricing" className="relative w-full flex flex-col items-center justify-center px-4 md:px-6 py-32 overflow-hidden">
       <div className="z-10 max-w-7xl w-full flex flex-col items-center gap-16 md:gap-20">
         {/* Header & Toggle */}
         <div className="text-center space-y-6 flex flex-col items-center">

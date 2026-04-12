@@ -37,7 +37,7 @@ const details = [
 
 const Detailsection = () => {
   return (
-    <section className="relative w-full flex flex-col items-center justify-center px-4 md:px-6 py-32">
+    <section id="learn" className="relative w-full flex flex-col items-center justify-center px-4 md:px-6 py-32">
       <div className="max-w-7xl w-full flex flex-col items-center gap-16 md:gap-24">
         {/* Header */}
         <div className="text-center space-y-6">

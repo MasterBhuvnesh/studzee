@@ -121,19 +121,19 @@ const Footersection = () => {
           <div className="flex flex-wrap gap-x-16 gap-y-10 md:mr-10">
             <div className="flex flex-col gap-4">
               <Link
-                href="#"
+                href="#features"
                 className="text-muted-foreground hover:text-foreground text-[14px] transition-colors"
               >
                 Features
               </Link>
               <Link
-                href="#"
+                href="#pricing"
                 className="text-muted-foreground hover:text-foreground text-[14px] transition-colors"
               >
                 Pricing
               </Link>
               <Link
-                href="#"
+                href="#faq"
                 className="text-muted-foreground hover:text-foreground text-[14px] transition-colors"
               >
                 FAQ
@@ -141,13 +141,15 @@ const Footersection = () => {
             </div>
             <div className="flex flex-col gap-4">
               <Link
-                href="#"
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
                 className="text-muted-foreground hover:text-foreground text-[14px] transition-colors"
               >
                 GitHub
               </Link>
               <Link
-                href="#"
+                href="#contact"
                 className="text-muted-foreground hover:text-foreground text-[14px] transition-colors"
               >
                 Contact
