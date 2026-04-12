@@ -1,3 +1,4 @@
+import { PLAY_STORE_URL } from '@/constants/store-link';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { PlayCircleIcon } from '@heroicons/react/24/solid';
 
@@ -39,7 +40,12 @@ const Herosection = () => {
 
         {/* CTA */}
         <div className="flex flex-row items-center justify-center gap-4 pt-4">
-          <button className="group relative flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity shadow-sm">
+          <a
+            href={PLAY_STORE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="group relative flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity shadow-sm"
+          >
             <ArrowDownTrayIcon
               className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity"
               strokeWidth={2}
@@ -47,7 +53,7 @@ const Herosection = () => {
             <span className="opacity-70 group-hover:opacity-100 transition-opacity text-base">
               Try for free
             </span>
-          </button>
+          </a>
 
           <button className="group flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-transparent border-2 border-border text-foreground font-medium shadow-sm hover:bg-white/5 transition-colors">
             <PlayCircleIcon

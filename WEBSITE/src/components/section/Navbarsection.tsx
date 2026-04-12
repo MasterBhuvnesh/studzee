@@ -1,4 +1,5 @@
 import { NAV_LINKS } from '@/constants/nav-link';
+import { PLAY_STORE_URL } from '@/constants/store-link';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -62,7 +63,12 @@ const Navbarsection = () => {
 
       {/* CTA Side */}
       <div className="flex items-center gap-4">
-        <button className="group flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-transparent border-2 border-border text-foreground font-medium shadow-sm hover:bg-white/5 transition-colors">
+        <a
+          href={PLAY_STORE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="group flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-transparent border-2 border-border text-foreground font-medium shadow-sm hover:bg-white/5 transition-colors"
+        >
           <ArrowDownTrayIcon
             className="w-4 h-4 opacity-80 group-hover:opacity-100 transition-opacity"
             strokeWidth={2}
@@ -70,7 +76,7 @@ const Navbarsection = () => {
           <span className="opacity-70 group-hover:opacity-100 transition-opacity text-sm">
             Try for free
           </span>
-        </button>
+        </a>
       </div>
     </header>
   );

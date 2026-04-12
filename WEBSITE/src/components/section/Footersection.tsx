@@ -1,3 +1,4 @@
+import { GITHUB_URL, PLAY_STORE_URL } from '@/constants/store-link';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -80,7 +81,9 @@ const Footersection = () => {
                 </svg>
               </Link>
               <Link
-                href="#"
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
                 className="text-foreground hover:text-muted-foreground transition-colors p-3 bg-[#1f1f1f] rounded-xl hover:bg-white/10"
               >
                 <span className="sr-only">GitHub</span>
@@ -95,7 +98,9 @@ const Footersection = () => {
                 </svg>
               </Link>
               <Link
-                href="#"
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noreferrer"
                 className="text-foreground hover:text-muted-foreground transition-colors p-3 bg-[#1f1f1f] rounded-xl hover:bg-white/10"
               >
                 <span className="sr-only">Google Play Store</span>

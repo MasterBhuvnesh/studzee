@@ -1,4 +1,5 @@
-import Image from 'next/image';
+import { PLAY_STORE_URL } from '@/constants/store-link';
+// import Image from 'next/image';
 
 const Pricesection = () => {
   return (
@@ -137,10 +138,15 @@ const Pricesection = () => {
             </p>
           </div>
 
-          <button className="relative z-10 shrink-0 w-full sm:w-auto py-3 px-6 rounded-lg bg-white hover:bg-white/90 text-black font-medium text-sm transition-colors shadow-sm flex items-center justify-center gap-2">
-            <Image src="/icons/icon.png" alt="Studzee" width={20} height={20} />
+          <a
+            href={PLAY_STORE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="relative z-10 shrink-0 w-full sm:w-auto py-3 px-6 rounded-lg bg-white hover:bg-white/90 text-black font-medium text-sm transition-colors shadow-sm flex items-center justify-center gap-2"
+          >
+            {/* <Image src="/icons/icon.png" alt="Studzee" width={20} height={20} /> */}
             Try for free
-          </button>
+          </a>
         </div>
       </div>
     </section>
