@@ -1,7 +1,13 @@
 import type { ContentSection } from "@/types/api";
 import React from "react";
-import { ScrollView, Text, View } from "react-native";
-import { EnrichedMarkdownText } from "react-native-enriched-markdown";
+import { Platform, ScrollView, Text, View } from "react-native";
+
+const EnrichedMarkdownText =
+  Platform.OS !== "web"
+    ? require("react-native-enriched-markdown").EnrichedMarkdownText
+    : ({ markdown }: { markdown: string; flavor?: string }) => (
+        <Text>{markdown}</Text>
+      );
 
 type Props = {
   content: ContentSection[];
