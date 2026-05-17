@@ -13,7 +13,6 @@ import {
   ChevronRight,
   FileText,
   HelpCircle,
-  Lock,
   Mail,
   Menu,
   MessageCircle,
@@ -163,7 +162,7 @@ export default function SettingsPage() {
             />
 
             {/* Account Settings */}
-            <SettingCard
+            {/* <SettingCard
               title="Account"
               items={[
                 {
@@ -172,7 +171,7 @@ export default function SettingsPage() {
                   icon: Lock,
                 },
               ]}
-            />
+            /> */}
 
             {/* Sign Out Button */}
             <SignOutButton />
