@@ -1,0 +1,38 @@
+{
+  "name": "@studzee/notification",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@clerk/fastify": "^2.0.0",
+    "@prisma/client": "^6.2.0",
+    "@studzee/shared": "workspace:*",
+    "amqp-connection-manager": "^4.1.14",
+    "amqplib": "^0.10.5",
+    "expo-server-sdk": "^3.13.0",
+    "fastify": "^5.2.0",
+    "fastify-plugin": "^5.0.1",
+    "nodemailer": "^6.9.16",
+    "pino": "^9.5.0",
+    "prisma": "^6.2.0",
+    "svix": "^1.42.0"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.6",
+    "@types/node": "^22.10.0",
+    "@types/nodemailer": "^6.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

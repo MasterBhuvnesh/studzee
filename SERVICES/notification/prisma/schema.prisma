@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  clerkId    String   @unique
+  email      String   @unique
+  expoTokens String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  imageUrl  String?
+  sentBy    String
+  sentTo    String[]
+  sentToAll Boolean  @default(false)
+  status    String   @default("sent")
+  createdAt DateTime @default(now())
+
+  @@index([sentBy])
+  @@index([createdAt])
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  subject   String
+  message   String   @db.Text
+  pdfUrls   String[]
+  sentBy    String
+  sentTo    String[]
+  status    String   @default("sent")
+  createdAt DateTime @default(now())
+
+  @@index([sentBy])
+  @@index([createdAt])
+}
+
+model SystemLog {
+  id          String   @id @default(cuid())
+  event       String
+  description String   @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([event])
+  @@index([createdAt])
+}
