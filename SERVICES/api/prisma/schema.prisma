@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  articles     Article[]
+  chats        Chat[]
+  entitlements Entitlement[]
+  jobs         GenerationJob[]
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Article {
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  title         String
+  summary       String?
+  bodyMd        String        @db.Text
+  tags          String[]
+  status        ArticleStatus @default(DRAFT)
+  aiGenerated   Boolean       @default(false)
+  coverImageUrl String?
+  authorId      String?
+  publishedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  author        User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  quiz          Quiz?
+  assets        Asset[]
+  chats         Chat[]
+  generationJob GenerationJob?
+
+  @@index([status, publishedAt])
+  @@index([tags], type: Gin)
+}
+
+model Quiz {
+  id        String   @id @default(cuid())
+  articleId String   @unique
+  title     String?
+  questions Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+}
+
+enum AssetKind {
+  PDF
+  IMAGE
+}
+
+model Asset {
+  id        String    @id @default(cuid())
+  kind      AssetKind
+  title     String
+  s3Key     String
+  url       String
+  mime      String?
+  sizeBytes Int?
+  articleId String?
+  createdAt DateTime  @default(now())
+
+  article Article? @relation(fields: [articleId], references: [id], onDelete: SetNull)
+
+  @@index([kind, createdAt])
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  userId    String
+  articleId String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article  Article       @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@index([userId, articleId])
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  chatId    String
+  role      ChatRole
+  content   String   @db.Text
+  model     String?
+  createdAt DateTime @default(now())
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model GenerationJob {
+  id            String    @id @default(cuid())
+  topic         String
+  params        Json      @default("{}")
+  status        JobStatus @default(QUEUED)
+  attempts      Int       @default(0)
+  error         String?
+  articleId     String?   @unique
+  requestedById String?
+  createdAt     DateTime  @default(now())
+  startedAt     DateTime?
+  finishedAt    DateTime?
+
+  article     Article? @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  requestedBy User?    @relation(fields: [requestedById], references: [id], onDelete: SetNull)
+}
+
+model Entitlement {
+  id          String    @id @default(cuid())
+  userId      String
+  entitlement String
+  productId   String?
+  store       String?
+  isActive    Boolean
+  willRenew   Boolean?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entitlement])
+}
+
+model RevenuecatEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  type      String
+  payload   Json
+  createdAt DateTime @default(now())
+}

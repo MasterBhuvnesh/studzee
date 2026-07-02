@@ -1,0 +1,26 @@
+{
+  "name": "studzee",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
+  },
+  "scripts": {
+    "build": "pnpm -r --sort build",
+    "dev:api": "pnpm --filter @studzee/api dev",
+    "dev:notification": "pnpm --filter @studzee/notification dev",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
