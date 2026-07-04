@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+  labels:
+    app: notification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification
+  template:
+    metadata:
+      labels:
+        app: notification
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: notification
+          image: verma2904/studzee-notification:dev
+          imagePullPolicy: IfNotPresent
+          # ponytail: migrate-on-start is safe at replicas=1.
+          command: ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: studzee-config
+            - secretRef:
+                name: studzee-secrets
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: studzee-secrets
+                  key: NOTIFICATION_DATABASE_URL
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 160Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification
+  labels:
+    app: notification
+spec:
+  selector:
+    app: notification
+  ports:
+    - port: 80
+      targetPort: 3000

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: studzee-config
+data:
+  # Non-secret settings shared by every service. Service names resolve inside
+  # the cluster; the eks overlay patches these to managed endpoints.
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  PORT: "3000"
+  REDIS_URL: "redis://redis:6379"
+  RABBITMQ_URL: "amqp://studzee:studzee@rabbitmq:5672"
+  LLM_BASE_URL: "https://api.groq.com/openai/v1"
+  LLM_MODEL: "llama-3.3-70b-versatile"
+  AWS_REGION: "ap-south-1"
+  AWS_S3_BUCKET: "studzee-assets"
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  EMAIL_FROM: "Studzee <no-reply@studzee.in>"

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: verma2904/studzee-api:dev
+          imagePullPolicy: IfNotPresent
+          # Same image as the api, run as the AI generation consumer. The api
+          # owns migrations, so the worker just boots the consumer.
+          command: ["node", "dist/worker.js"]
+          envFrom:
+            - configMapRef:
+                name: studzee-config
+            - secretRef:
+                name: studzee-secrets
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: studzee-secrets
+                  key: API_DATABASE_URL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 384Mi
