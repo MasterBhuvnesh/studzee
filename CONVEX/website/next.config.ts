@@ -7,9 +7,7 @@ const projectRoot =
   typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
-  turbopack: { root: projectRoot },
-  outputFileTracingRoot: projectRoot,
+  output: 'standalone'
 };
 
 export default nextConfig;
