@@ -6,8 +6,69 @@ The service uses MongoDB for content, PostgreSQL for users and delivery logs, Re
 
 > **Merged service**: the standalone notification service was folded into this backend on 10-08-2026. Endpoints that used to live behind the `/noti/api` prefix are now served here under `/notifications`, `/admin` and `/webhooks`. See [Endpoints](#endpoints) for the mapping.
 
+## Quickstart
+
+**Already set up?** One command:
+
+```bash
+npm run dev                 # API on http://localhost:4000
+```
+
+**After a reboot, or once you have run `docker compose down`:**
+
+```bash
+docker compose up -d        # mongo, postgres, redis, minio, mailpit
+npm run dev
+```
+
+**First time on a machine:**
+
+```bash
+npm install
+cp .env.example .env        # then fill in the Clerk keys and storage credentials
+docker compose up -d        # buckets and databases are created for you
+npm run prisma:generate     # generate the Prisma client
+npm run prisma:migrate      # create the Postgres tables
+npm run seed                # load the sample documents
+npm run dev
+```
+
+**Confirm it is healthy:**
+
+```bash
+curl http://localhost:4000/health/readiness
+# {"status":"ready","checks":{"db":"ok","postgres":"ok","redis":"ok"}}
+```
+
+Any `"error"` in that response names the store that is not answering. It round trips all three rather than reading connection flags, so it will not report healthy while a dependency is down.
+
+**Dashboards, while the stack is running:**
+
+| What | Where |
+| ---- | ----- |
+| API | [http://localhost:4000](http://localhost:4000) |
+| Mail inbox (Mailpit) | [http://localhost:8025](http://localhost:8025) |
+| Mongo admin (Mongo Express) | [http://localhost:8081](http://localhost:8081) |
+| Object storage (MinIO console) | [http://localhost:9001](http://localhost:9001) |
+| Cache (RedisInsight) | [http://localhost:8001](http://localhost:8001) |
+| Postgres data (Prisma Studio) | `npm run prisma:studio` |
+
+**Authenticating locally**: set `NODE_ENV=development` and `DEV_TOKEN` in `.env`, then send `Authorization: Bearer <DEV_TOKEN>` to reach authenticated and admin routes without a Clerk session. It is ignored in every other environment.
+
+**If something will not start:**
+
+| Symptom | Cause |
+| ------- | ----- |
+| Server exits at boot naming a variable | The config schema validates at import time. Add the variable, see [Environment Variables](#environment-variables). |
+| `EADDRINUSE` on port 4000 | `ts-node-dev` can outlive its terminal. Kill the stray node process holding the port. |
+| Hangs with repeated Redis errors | `REDIS_URL` points somewhere unreachable. Use `redis://localhost:6379` for local work. |
+| `NoSuchBucket` on upload | The `minio-init` container did not run. `docker compose up -d minio-init`. |
+| `make` is not recognised | `make` is not installed here. Use the `docker compose` commands directly. |
+| `npm test` fails to start | Windows Defender may quarantine the esbuild binary Vitest needs. See [Testing](#testing). |
+
 ## Table of Contents
 
+- [Quickstart](#quickstart)
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
