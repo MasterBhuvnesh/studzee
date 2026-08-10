@@ -1,1 +1,4 @@
 node_modules/
+
+# Local agent and editor state. Machine specific, never committed.
+.claude/
