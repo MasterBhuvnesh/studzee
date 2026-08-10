@@ -64,25 +64,29 @@ The Clerk webhook is the one exception. It carries no user token and is authenti
 ### Readiness Check
 
 - **Route:** `GET /health/readiness`
-- **Description:** Checks whether MongoDB and Redis are connected and ready
+- **Description:** Checks every backing store the service needs to serve traffic: MongoDB for content, Postgres for users and notifications, and Redis for caching
 - **Protected:** No
 - **Response:**
-  - `200 OK` (all services healthy)
+  - `200 OK` (all stores healthy)
     ```json
     {
       "status": "ready",
-      "checks": { "db": "ok", "redis": "ok" }
+      "checks": { "db": "ok", "postgres": "ok", "redis": "ok" }
     }
     ```
   - `503 Service Unavailable` (one or more unhealthy)
     ```json
     {
       "status": "unavailable",
-      "checks": { "db": "error", "redis": "ok" }
+      "checks": { "db": "error", "postgres": "ok", "redis": "ok" }
     }
     ```
 
-> **Note:** readiness does not currently check Postgres. Only MongoDB and Redis are probed.
+> **Note:** `db` is MongoDB. The key kept its original name so existing probes that parse the body do not break.
+
+> **Note:** each check issues a real round trip, `admin().ping()` on MongoDB, `SELECT 1` on Postgres and `PING` on Redis, rather than reading a driver connection flag. A flag reports what the driver believes about its socket, which stays optimistic through a network partition or a server that has stopped answering. Probes run in parallel with a 2 second timeout each, so the endpoint always settles rather than hanging, and every failure is reported in one response rather than stopping at the first.
+
+> **Note:** liveness deliberately touches no dependency. A database outage should not get an otherwise healthy container restarted.
 
 ---
 

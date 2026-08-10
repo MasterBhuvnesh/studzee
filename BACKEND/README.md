@@ -689,9 +689,9 @@ For detailed API documentation, see [API.md](./API.md).
 
 #### Health Check Endpoints
 
-- **GET** `/health/liveness` - Check if application is running (Public)
+- **GET** `/health/liveness` - Check if the process is running, touches no dependency (Public)
 - **GET** `/healthcheck` - Simple health check for Render/production (Public)
-- **GET** `/health/readiness` - Check database and Redis connectivity (Public)
+- **GET** `/health/readiness` - Round trip probe of MongoDB, Postgres and Redis (Public)
 
 #### Content Endpoints
 
@@ -1185,8 +1185,8 @@ For hosting on Render (or similar platforms with automatic spin-down):
 
 ## Monitoring
 
-- **Liveness Probe**: Use `/health/liveness` for container health checks
-- **Readiness Probe**: Use `/health/readiness` for load balancer health checks
+- **Liveness Probe**: Use `/health/liveness` for container health checks. It touches no dependency, so a store outage does not restart an otherwise healthy container.
+- **Readiness Probe**: Use `/health/readiness` for load balancer health checks. It round trips MongoDB, Postgres and Redis in parallel with a 2 second timeout each, and returns 503 if any one of them fails.
 - **Logging**: Structured JSON logs via pino (check with `make logs`)
 - **Cache Metrics**: Monitor cache hit/miss rates in application logs
 
