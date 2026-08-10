@@ -18,4 +18,7 @@ One entry per unit of work, with the branch, what changed, and why.
 
 - Created the `feat/v2-architecture` working branch off `main`.
 - Added this worklog to track all subsequent v2 architecture work.
+- Added the `.docs` documentation set: `RULES.md` (agent rules), `RECORDS.md`
+  (feature implementation table), `FIXES.md` (problem and fix log), and
+  `TCSK.md` (things Claude should know about the project).
 
