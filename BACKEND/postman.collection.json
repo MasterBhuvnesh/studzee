@@ -2,13 +2,31 @@
 	"info": {
 		"_postman_id": "studzee-backend-api-collection",
 		"name": "Studzee Backend API",
-		"description": "Backend service for content delivery and notifications. Covers health checks, public content, PDF listing, device registration for push, the Clerk webhook, and the admin surface for documents, notifications, email and users.\n\nThe notification service was merged into this backend, so the endpoints that used to sit behind /noti/api are now served here under /notifications, /admin and /webhooks.",
+		"description": "Backend service for content delivery and notifications. Covers health checks, public content, PDF listing, device registration for push, the Clerk webhook, and the admin surface for documents, notifications, email and users.\n\nThe notification service was merged into this backend, so the endpoints that used to sit behind /noti/api are now served here under /notifications, /admin and /webhooks.\n\nSETUP\n\n1. Set baseUrl if the API is not on http://localhost:4000.\n2. For authenticated and admin routes, set clerkToken. Use a Clerk session JWT, or for local work paste the DEV_TOKEN value from BACKEND/.env, which grants admin rights and is ignored outside NODE_ENV=development.\n3. Run Get Paginated Content once. It saves the first document id into the documentId variable, so every request that needs an id works without copying values by hand.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
 			"name": "Health Check",
 			"item": [
+				{
+					"name": "Welcome",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Root route. Returns the service name and a map of the main endpoints, useful for confirming which build is deployed."
+					},
+					"response": []
+				},
 				{
 					"name": "Liveness Check",
 					"request": {
@@ -61,7 +79,7 @@
 								"readiness"
 							]
 						},
-						"description": "Checks if MongoDB and Redis are connected and ready."
+						"description": "Checks every backing store the service needs: MongoDB for content, Postgres for users and notifications, and Redis for caching.\n\nEach check issues a real round trip rather than reading a driver connection flag, so it cannot report healthy while a store has stopped answering. Probes run in parallel with a 2 second timeout each.\n\nReturns 200 with every check ok, or 503 naming the store that failed."
 					},
 					"response": []
 				}
@@ -115,7 +133,33 @@
 						},
 						"description": "Retrieve a paginated list of documents."
 					},
-					"response": []
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Saves the first document id into the documentId collection variable,",
+									"// so the requests that need an id work without copying values by hand.",
+									"const body = pm.response.json()",
+									"",
+									"pm.test(\"returns a paginated list\", function () {",
+									"    pm.response.to.have.status(200)",
+									"    pm.expect(body).to.have.property(\"data\")",
+									"    pm.expect(body).to.have.property(\"meta\")",
+									"})",
+									"",
+									"if (body.data && body.data.length > 0) {",
+									"    pm.collectionVariables.set(\"documentId\", body.data[0]._id)",
+									"    console.log(\"documentId set to \" + body.data[0]._id)",
+									"} else {",
+									"    console.log(\"no documents returned, run npm run seed first\")",
+									"}"
+								]
+							}
+						}
+					]
 				},
 				{
 					"name": "Get Document by ID",
@@ -144,8 +188,8 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "507f1f77bcf86cd799439011",
-									"description": "MongoDB document ID"
+									"value": "{{documentId}}",
+									"description": "Taken from the documentId collection variable, which Get Paginated Content sets for you."
 								}
 							]
 						},
@@ -323,7 +367,26 @@
 						},
 						"description": "Create a new document. Requires the admin role.\n\nNote that `content` is structured, either an array of sections or an object. It is not a plain string."
 					},
-					"response": []
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"document created\", function () {",
+									"    pm.response.to.have.status(201)",
+									"})",
+									"",
+									"const body = pm.response.json()",
+									"if (body.doc && body.doc._id) {",
+									"    pm.collectionVariables.set(\"documentId\", body.doc._id)",
+									"    console.log(\"documentId set to the new document \" + body.doc._id)",
+									"}"
+								]
+							}
+						}
+					]
 				},
 				{
 					"name": "Update Document",
@@ -362,7 +425,8 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "507f1f77bcf86cd799439011"
+									"value": "{{documentId}}",
+									"description": "Taken from the documentId collection variable, which Get Paginated Content sets for you."
 								}
 							]
 						},
@@ -398,7 +462,8 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "507f1f77bcf86cd799439011"
+									"value": "{{documentId}}",
+									"description": "Taken from the documentId collection variable, which Get Paginated Content sets for you."
 								}
 							]
 						},
@@ -446,7 +511,8 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "507f1f77bcf86cd799439011"
+									"value": "{{documentId}}",
+									"description": "Taken from the documentId collection variable, which Get Paginated Content sets for you."
 								}
 							]
 						},
@@ -494,7 +560,8 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "507f1f77bcf86cd799439011"
+									"value": "{{documentId}}",
+									"description": "Taken from the documentId collection variable, which Get Paginated Content sets for you."
 								}
 							]
 						},
@@ -829,13 +896,20 @@
 		{
 			"key": "baseUrl",
 			"value": "http://localhost:4000",
-			"type": "string"
+			"type": "string",
+			"description": "API root. Change this to point at a deployed environment."
 		},
 		{
 			"key": "clerkToken",
 			"value": "YOUR_CLERK_JWT_TOKEN",
 			"type": "string",
-			"description": "A Clerk session JWT. In development you can instead use the value of DEV_TOKEN, which grants admin access when NODE_ENV=development."
+			"description": "Bearer token for authenticated and admin routes. Paste a Clerk session JWT, or for local work paste the DEV_TOKEN value from BACKEND/.env, which grants admin rights and is ignored outside NODE_ENV=development."
+		},
+		{
+			"key": "documentId",
+			"value": "",
+			"type": "string",
+			"description": "Set automatically by Get Paginated Content and by Create Document. Used by every request that takes a document id."
 		}
 	]
 }
