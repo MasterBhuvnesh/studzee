@@ -88,6 +88,32 @@ services:
       retries: 5
       start_period: 30s
 
+  # Local SMTP catcher. Accepts every message and shows it in a web UI instead
+  # of delivering it, so development and tests never send real email.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: studzee_mailpit
+    restart: unless-stopped
+    ports:
+      - '${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '${MAILPIT_UI_PORT:-8025}:8025'
+    volumes:
+      - mailpit-data:/data
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      - studzee-network
+    healthcheck:
+      test:
+        ['CMD', 'wget', '-q', '-O', '-', 'http://localhost:8025/readyz']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
   mongo-express:
     image: mongo-express:latest
     container_name: studzee_mongo_express
@@ -116,6 +142,8 @@ volumes:
     name: studzee-redis-data
   minio-data:
     name: studzee-minio-data
+  mailpit-data:
+    name: studzee-mailpit-data
 
 networks:
   studzee-network:

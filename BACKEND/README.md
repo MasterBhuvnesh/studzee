@@ -180,6 +180,8 @@ Configuration is parsed and validated by Zod at import time. A missing or malfor
 4. Set up roles in Clerk and create an `admin` role for admin access
 5. Add a webhook endpoint pointing at `<your-host>/webhooks/clerk`, subscribe it to `user.created`, and copy the signing secret into `CLERK_WEBHOOK_SIGNING_SECRET`. This is what triggers the welcome email.
 
+> **Note**: `CLERK_WEBHOOK_SIGNING_SECRET` is optional in config, but the webhook route refuses every delivery with a 500 while it is unset, because the signature is that endpoint's only authentication. Leave it unset only if you are not using the webhook at all.
+
 ### MongoDB Setup
 
 1. Create a MongoDB cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) or use a local instance
@@ -203,10 +205,23 @@ PostgreSQL holds users, Expo push tokens, and the notification and email audit l
 
 ### SMTP Setup
 
+**Local development** needs no provider account. `docker-compose.yml` runs Mailpit, which catches every outbound message and shows it in a web UI rather than delivering it. The defaults in `.env.example` already point at it:
+
+```env
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_USER=dev
+SMTP_PASSWORD=dev
+EMAIL_FROM=Studzee <no-reply@studzee.local>
+```
+
+Start the stack with `make up`, then open [http://localhost:8025](http://localhost:8025) to read anything the service sends. Mailpit accepts any credentials, so `SMTP_USER` and `SMTP_PASSWORD` can be any value locally.
+
+**Deployed environments:**
+
 1. Obtain SMTP credentials from your mail provider
-2. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `EMAIL_FROM`
-3. For local development, point `SMTP_HOST` at a mail catcher such as MailHog or Mailpit on port 1025, which is what `.env.docker` assumes
-4. If you send email attachments, add every host they are served from to `EMAIL_ATTACHMENT_HOSTS`. Anything not on that list is rejected before the message is sent
+2. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `EMAIL_FROM`. Port 465 uses implicit TLS, anything else uses STARTTLS
+3. If you send email attachments, add every host they are served from to `EMAIL_ATTACHMENT_HOSTS`. Anything not on that list is rejected before the message is sent
 
 ### AWS S3 Setup
 
@@ -225,22 +240,37 @@ PostgreSQL holds users, Expo push tokens, and the notification and email audit l
 
 ### Development
 
-> **Note**: The current `docker-compose.yml` only runs MongoDB and Redis services. The API must be run separately for local development.
+> **Note**: `docker-compose.yml` runs the infrastructure only. The API is run separately for local development, so it hot reloads and can be debugged directly.
 
-**Start infrastructure services:**
+**1. Start infrastructure services:**
 
 ```bash
-# Start MongoDB and Redis
+# Starts Mongo, Postgres, Redis, MinIO, Mailpit and Mongo Express
 make up
 # Or manually:
 docker-compose up -d
 ```
 
-**Run the API:**
+**2. Apply the Postgres schema** (first run, or after a schema change):
+
+```bash
+npm run prisma:migrate
+```
+
+**3. Run the API:**
 
 ```bash
 npm run dev
 ```
+
+**4. Confirm every dependency is reachable:**
+
+```bash
+curl http://localhost:4000/health/readiness
+# {"status":"ready","checks":{"db":"ok","postgres":"ok","redis":"ok"}}
+```
+
+Any `"error"` in that response names the store that is not answering.
 
 This setup allows you to:
 
@@ -322,7 +352,19 @@ The `docker-compose.yml` defines **5 infrastructure services** that together pro
 - **Health Check**: Curls the MinIO health endpoint every 30 seconds
 - **Volume**: `studzee-minio-data` for object storage persistence
 
-#### 5. **Mongo Express (`mongo-express`)**
+#### 5. **Mailpit (`mailpit`)**
+
+- **Image**: `axllent/mailpit:latest`
+- **Purpose**: Local SMTP catcher. Accepts every message and displays it in a web UI instead of delivering it, so development and tests never send real email.
+- **Container Name**: `studzee_mailpit`
+- **Ports**:
+  - `1025`: SMTP endpoint the API sends through (configurable via `MAILPIT_SMTP_PORT`)
+  - `8025`: Web UI for reading caught messages (configurable via `MAILPIT_UI_PORT`)
+- **Auth**: Accepts any credentials, so `SMTP_USER` and `SMTP_PASSWORD` can be any value locally
+- **Health Check**: Polls the Mailpit readiness endpoint every 30 seconds
+- **Volume**: `studzee-mailpit-data` so caught messages survive a restart
+
+#### 6. **Mongo Express (`mongo-express`)**
 
 - **Image**: `mongo-express:latest`
 - **Purpose**: Web-based MongoDB admin interface
@@ -331,7 +373,7 @@ The `docker-compose.yml` defines **5 infrastructure services** that together pro
 - **Features**: Browse collections, run queries, manage documents
 - **Depends On**: MongoDB service must be healthy before starting
 
-#### 6. **API (`api`)**
+#### 7. **API (`api`)**
 
 - **Purpose**: Core backend application service
 - **Development Workflow**: Usually run locally via `npm run dev` to enable hot-reloading and easier debugging, while connecting to the containerized infrastructure.
@@ -350,6 +392,7 @@ The Docker Compose setup uses **named volumes** to persist data across container
 | `studzee-postgres-data` | PostgreSQL storage | Users, push tokens, notification and email logs |
 | `studzee-redis-data`    | Redis storage      | Cache data, persistence snapshots             |
 | `studzee-minio-data`    | MinIO storage      | Uploaded images, PDFs, and other objects      |
+| `studzee-mailpit-data`  | Mailpit storage    | Caught outbound email                         |
 
 **Volume Management**:
 
@@ -420,7 +463,9 @@ Complete reference of all exposed ports:
 | `27017` | MongoDB       | Content database       | `MONGO_PORT`         |
 | `5432`  | PostgreSQL    | Notification database  | `POSTGRES_PORT`      |
 | `6379`  | Redis         | Cache connection       | `REDIS_PORT`         |
+| `1025`  | Mailpit SMTP  | Local mail delivery    | `MAILPIT_SMTP_PORT`  |
 | `8001`  | RedisInsight  | Redis web dashboard    | `REDIS_INSIGHT_PORT` |
+| `8025`  | Mailpit UI    | Read caught email      | `MAILPIT_UI_PORT`    |
 | `8081`  | Mongo Express | MongoDB web admin      | `MONGO_EXPRESS_PORT` |
 | `9000`  | MinIO         | Object storage API     | `MINIO_PORT`         |
 | `9001`  | MinIO Console | MinIO web interface    | `MINIO_CONSOLE_PORT` |
@@ -431,6 +476,7 @@ Complete reference of all exposed ports:
 - MongoDB: `mongodb://localhost:27017`
 - PostgreSQL: `postgresql://postgres:postgres@localhost:5432/studzee_notifications`
 - Redis: `redis://localhost:6379`
+- Mailpit UI: `http://localhost:8025`
 - RedisInsight: `http://localhost:8001`
 - Mongo Express: `http://localhost:8081`
 - MinIO API: `http://localhost:9000`
@@ -511,6 +557,7 @@ All core services include health check configurations to ensure reliability:
 | PostgreSQL | `pg_isready -U $POSTGRES_USER`             | 10s      | 5s      | 5       | 10s          |
 | Redis      | `redis-cli ping`                           | 30s      | 10s     | 5       | 30s          |
 | MinIO      | `curl -f http://localhost:9001/health`     | 30s      | 10s     | 5       | 30s          |
+| Mailpit    | `wget -q -O - http://localhost:8025/readyz`| 30s      | 10s     | 5       | 10s          |
 
 **Health Check Benefits**:
 
@@ -567,8 +614,10 @@ docker-compose logs -f api
 
 # View logs for specific service
 docker-compose logs mongo
+docker-compose logs postgres
 docker-compose logs redis
 docker-compose logs minio
+docker-compose logs mailpit
 
 # Check service status
 docker-compose ps
@@ -589,6 +638,9 @@ docker-compose exec api npm run job:refresh-cache
 
 # Access MongoDB shell
 docker-compose exec mongo mongosh -u root -p password
+
+# Access the Postgres shell
+docker-compose exec postgres psql -U postgres -d studzee_notifications
 
 # Access Redis CLI
 docker-compose exec redis redis-cli
@@ -1065,6 +1117,18 @@ The development environment includes web-based admin dashboards:
 - **Setup**: Login with `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from `.env.docker`
 - **Features**: View files, manage buckets, monitor performance, debug queries
 
+#### Mail Inbox (Mailpit)
+
+- **URL**: [http://localhost:8025](http://localhost:8025)
+- **Setup**: None, no login required
+- **Features**: Read every message the service sends, inspect the rendered HTML, the raw source and any attachments
+- **Use it to verify**: the welcome email fired by the Clerk webhook, and anything sent through `POST /admin/emails/send`
+
+#### Postgres Data (Prisma Studio)
+
+- **Command**: `npm run prisma:studio` or `make prisma-studio`
+- **Features**: Browse and edit users, push tokens, notification history and email logs
+
 ### Development Authentication Bypass
 
 For easier local development, you can bypass Clerk authentication:
@@ -1244,6 +1308,23 @@ cat .env | grep CLERK_WEBHOOK_SIGNING_SECRET
 
 # A 500 with "Webhook secret not configured" means the variable is unset.
 # A 500 with "Webhook route misconfigured" means a body parser ran first.
+```
+
+**Email Not Arriving in Development**
+
+```bash
+# Mailpit catches everything locally, nothing reaches a real inbox by design.
+# Open the UI to see what was sent:
+#   http://localhost:8025
+
+# Check Mailpit is up
+docker-compose ps mailpit
+
+# Confirm the app is pointed at it, not a real provider
+cat .env | grep SMTP_
+
+# A 502 from /admin/emails/send with "not allowed" means an attachment host
+# is missing from EMAIL_ATTACHMENT_HOSTS, not a transport problem.
 ```
 
 **Push Notifications Not Arriving**
