@@ -19,7 +19,7 @@ Things Claude Should Know. This is what the user wants Claude to know about the 
 - `DESKTOP` is the Electron client.
 - `SERVICES` holds the extracted `api` and `notification` service layers.
 - `PACKAGES/shared` holds code shared across the clients and services.
-- `CONVEX` holds the Convex backend and its website.
+- `CONVEX` is being removed. Convex is out of scope and must not appear in the v2 architecture or implementation.
 - `AGENTS` is the home of the planned AI and content intelligence work.
 - `TERRAFORM` holds infrastructure pipelines for backend, notification, and website.
 - `K8S/secrets` holds Kubernetes secret material. Nothing sensitive is committed.
@@ -49,5 +49,8 @@ Things Claude Should Know. This is what the user wants Claude to know about the 
 
 ## NOTES
 
-- The current working branch is `feat/v2-architecture`. The scope of the v2 architecture work has not been defined yet and the user will describe it.
+- The current working branch is `feat/v2-architecture`. The entire codebase is being rewritten. The scope of the v2 design has not been defined yet and the user will describe it.
+- Convex is being removed from the project entirely. Do not consider it in any design or implementation.
+- The state of the existing modules is documented in [`V2-ARCHITECTURE-REVIEW.md`](V2-ARCHITECTURE-REVIEW.md). Read it before proposing v2 work.
+- `SERVICES` and `PACKAGES/shared` contain only compiled output from an abandoned Fastify rewrite. There is no source. Treat them as reference, not as working code.
 - Add things the user wants Claude to remember here as the project progresses.

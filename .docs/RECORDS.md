@@ -11,4 +11,5 @@ Date is the date the status last changed.
 | ------- | --------- | ------ | ---- |
 | Project documentation set under `.docs` (RULES, RECORDS, FIXES, TCSK) | BHUVNESH | DONE | 10-08-2026 |
 | Root `WORKLOG.md` running record | BHUVNESH | DONE | 10-08-2026 |
+| Architecture review of BACKEND, NOTIFICATION, MOBILE, DESKTOP | BHUVNESH | DONE | 10-08-2026 |
 | V2 architecture | BHUVNESH | PLANNED | 10-08-2026 |

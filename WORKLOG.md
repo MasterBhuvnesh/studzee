@@ -21,4 +21,7 @@ One entry per unit of work, with the branch, what changed, and why.
 - Added the `.docs` documentation set: `RULES.md` (agent rules), `RECORDS.md`
   (feature implementation table), `FIXES.md` (problem and fix log), and
   `TCSK.md` (things Claude should know about the project).
+- Reviewed BACKEND, NOTIFICATION, MOBILE, and DESKTOP ahead of the v2 rewrite
+  and recorded the findings in `.docs/V2-ARCHITECTURE-REVIEW.md`. Convex is out
+  of scope by decision of the repository owner and is excluded from v2.
 
