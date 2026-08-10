@@ -34,6 +34,10 @@ Rules the Claude agent must follow when working in this repository.
 
 ## VERSION CONTROL
 
+- **Never use `git stash`.** Every change gets a commit with a message. Nothing
+  is parked in the stash, hidden from the log, or verified by temporarily
+  reverting the working tree. If a check needs a comparison against unmodified
+  code, commit the change first and compare against the previous commit.
 - Do not commit directly to `main`. Branch first.
 - Branch naming follows the type of work, for example `feat/v2-architecture`, `fix/notification-retry`.
 - Every branch ends in a pull request. The repository owner merges. Never merge without being asked.

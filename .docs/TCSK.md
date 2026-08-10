@@ -55,6 +55,7 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 
 1. **Merge NOTIFICATION into BACKEND and keep BACKEND only.** NOTIFICATION stops existing as a separate service. Everything it owns moves into BACKEND: Expo push delivery, transactional email, the Clerk webhook, user and Expo token registration, and the notification and email logs.
 2. **Then work on the data storage layer.** A separate phase that starts only after the merge is complete.
+2a. **Backend first, frontend second.** Confirmed on 10-08-2026. Finish the backend before touching MOBILE or DESKTOP. Client work follows once the API it consumes is settled, so the clients are written against a stable contract rather than a moving one.
 3. **Keep both databases.** MongoDB stays for content, Postgres stays for the notification data. The user has explicitly confirmed this split is acceptable, so do not propose consolidating them onto one engine.
 4. **Update the docker compose file as part of the merge.** `BACKEND/docker-compose.yml` runs mongo, redis, minio and mongo-express today. It must gain the Postgres service currently defined in `NOTIFICATION/docker-compose.yml`, which is removed along with the folder.
 
