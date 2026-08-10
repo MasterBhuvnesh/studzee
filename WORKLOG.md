@@ -3,6 +3,25 @@
 Running record of work done on this repository. Newest entry first.
 One entry per unit of work, with the branch, what changed, and why.
 
+## PENDING
+
+Open items carried forward. Move each into a dated entry once it is done.
+
+- **Update everything under `.github` for the v2 tree.** The strip on 10-08-2026
+  left it describing modules that no longer exist. Known stale points:
+  - `README.md` documents the full old architecture, including the website,
+    the agentic AI folder, the Terraform and Kubernetes topology, and the
+    two deployment panels. It needs rewriting once the v2 design is settled.
+  - `workflows/docker-website.testing.yml` builds `./WEBSITE`, which is gone.
+    The workflow will fail on its `website-v*` tag trigger.
+  - `workflows/docker-backend.testing.yml` and
+    `workflows/docker-notification.testing.yml` still reflect the v1 services.
+  - `SECURITY.md` lists WEBSITE in the supported versions table.
+  - `CONTRIBUTING.md` lists `website` as a valid commit scope.
+  - `CODEOWNERS`, `CODE_OF_CONDUCT.md` and `assets` need a check for the same.
+  - `code.sh` at the repository root validates `website` as a service name and
+    should be narrowed to the four remaining modules.
+
 ## Conventions
 
 - Language: TypeScript for all new code.

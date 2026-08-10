@@ -13,4 +13,5 @@ Date is the date the status last changed.
 | Root `WORKLOG.md` running record | BHUVNESH | DONE | 10-08-2026 |
 | Architecture review of BACKEND, NOTIFICATION, MOBILE, DESKTOP | BHUVNESH | DONE | 10-08-2026 |
 | Repository stripped to the v2 working set | BHUVNESH | DONE | 10-08-2026 |
+| Update `.github` docs and workflows for the v2 tree | BHUVNESH | PLANNED | 10-08-2026 |
 | V2 architecture | BHUVNESH | PLANNED | 10-08-2026 |
