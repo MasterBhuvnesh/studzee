@@ -2,7 +2,7 @@
 
 A production-ready backend service built with TypeScript that provides document management and notification delivery. It exposes public content listing, authenticated document retrieval, device registration for push, a Clerk webhook, and an admin surface covering documents, notifications, email and users.
 
-The service uses MongoDB for content, PostgreSQL for users and delivery logs, Redis for caching, AWS S3 for file storage, and Clerk for authentication.
+The service uses MongoDB for content, PostgreSQL for users and delivery logs, Redis for caching, Supabase Storage for files, and Clerk for authentication.
 
 > **Merged service**: the standalone notification service was folded into this backend on 10-08-2026. Endpoints that used to live behind the `/noti/api` prefix are now served here under `/notifications`, `/admin` and `/webhooks`. See [Endpoints](#endpoints) for the mapping.
 
@@ -17,7 +17,7 @@ The service uses MongoDB for content, PostgreSQL for users and delivery logs, Re
   - [MongoDB Setup](#mongodb-setup)
   - [PostgreSQL Setup](#postgresql-setup)
   - [SMTP Setup](#smtp-setup)
-  - [AWS S3 Setup](#aws-s3-setup)
+  - [Object Storage Setup](#object-storage-setup)
 - [Usage](#usage)
   - [Development](#development)
   - [Production](#production)
@@ -63,7 +63,7 @@ The service uses MongoDB for content, PostgreSQL for users and delivery logs, Re
 - **MongoDB**: Content storage with Mongoose ODM
 - **PostgreSQL**: Users, Expo push tokens, and notification and email audit logs, through Prisma
 - **Redis Stack**: High-performance caching layer with RedisInsight dashboard
-- **AWS S3**: Scalable cloud file storage for images and PDFs
+- **Supabase Storage**: File storage for images and PDFs over the S3 protocol, with MinIO standing in locally
 - **Clerk**: Enterprise-grade authentication and user management, plus signed webhooks via `svix`
 - **Expo Push**: Batched push delivery with automatic pruning of retired device tokens
 - **Email**: Transactional email through `nodemailer` with an attachment host allowlist
@@ -85,8 +85,8 @@ The service uses MongoDB for content, PostgreSQL for users and delivery logs, Re
 - Clerk account for authentication
 - MongoDB Atlas account (or local MongoDB instance)
 - PostgreSQL instance (the Docker Compose file provides one)
-- AWS account with S3 bucket created
-- SMTP credentials for outbound email
+- Supabase project with a public storage bucket (local development can use the MinIO container instead)
+- SMTP credentials for outbound email (local development can use the Mailpit container instead)
 
 ## Installation
 
@@ -156,11 +156,12 @@ Configuration is parsed and validated by Zod at import time. A missing or malfor
 | `TODAY_CACHE_TTL`              | Today's content cache TTL in seconds                                             | No       | 3600                           |
 | `JOB_CRON`                     | Cron expression for cache refresh job (currently unused)                         | No       | 0 0 \* \* \*                   |
 | `LOG_LEVEL`                    | Logging level (info/debug/error)                                                 | No       | info                           |
-| `AWS_REGION`                   | AWS region for S3 (e.g., ap-south-1)                                             | Yes      | -                              |
-| `AWS_ACCESS_KEY_ID`            | AWS access key ID                                                                | Yes      | -                              |
-| `AWS_SECRET_ACCESS_KEY`        | AWS secret access key                                                            | Yes      | -                              |
-| `AWS_S3_BUCKET_NAME`           | S3 bucket name for file storage                                                  | Yes      | -                              |
-| `AWS_S3_BUCKET_ENDPOINT`       | Custom S3 endpoint, used in development to point at MinIO                        | No       | -                              |
+| `S3_REGION`                    | Storage region. Must match the Supabase project region exactly                   | Yes      | -                              |
+| `S3_ACCESS_KEY_ID`             | Storage access key ID                                                            | Yes      | -                              |
+| `S3_SECRET_ACCESS_KEY`         | Storage secret access key                                                        | Yes      | -                              |
+| `S3_BUCKET`                    | Bucket holding uploaded images and PDFs                                          | Yes      | -                              |
+| `S3_ENDPOINT`                  | S3 API endpoint, Supabase or MinIO                                               | Yes      | -                              |
+| `S3_PUBLIC_URL`                | Base public object URLs are built from, with the key appended                    | Yes      | -                              |
 | `SMTP_HOST`                    | SMTP server hostname                                                             | Yes      | -                              |
 | `SMTP_PORT`                    | SMTP port. Implicit TLS on 465, STARTTLS elsewhere                               | No       | 587                            |
 | `SMTP_USER`                    | SMTP username                                                                    | Yes      | -                              |
@@ -223,18 +224,37 @@ Start the stack with `make up`, then open [http://localhost:8025](http://localho
 2. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `EMAIL_FROM`. Port 465 uses implicit TLS, anything else uses STARTTLS
 3. If you send email attachments, add every host they are served from to `EMAIL_ATTACHMENT_HOSTS`. Anything not on that list is rejected before the message is sent
 
-### AWS S3 Setup
+### Object Storage Setup
 
-1. Create an AWS account at [AWS Console](https://aws.amazon.com/)
-2. Create an S3 bucket for file storage
-3. Create an IAM user with `S3` permissions:
-   - `s3:PutObject` - Upload files
-   - `s3:DeleteObject` - Delete files
-   - `s3:GetObject` - Read files (if needed)
-4. Generate access credentials for the IAM user
-5. Add AWS credentials to your `.env` file
+Storage is **Supabase Storage**, which speaks the S3 protocol, so the AWS SDK talks to it directly. MinIO is used for local development and speaks the same protocol, so a single code path serves both and only the endpoint and credentials change.
 
-> **Note**: Configure your S3 bucket policy or ACL settings to allow public read access to uploaded files if you want them to be publicly accessible. The application no longer sets ACL on individual objects by default.
+#### Supabase (deployed environments)
+
+1. Open your project in the [Supabase dashboard](https://supabase.com/dashboard)
+2. Create a **public** bucket for uploads, for example `studzee`. Uploaded images and PDFs go here under `images/` and `pdfs/` prefixes. The separate `assets` bucket only serves the brand banner and the application never writes to it.
+3. Go to **Project Settings > Storage** and generate an **S3 access key**. It yields an access key ID and a secret access key.
+4. Fill in the storage block of your `.env`:
+
+   ```env
+   S3_REGION=ap-northeast-2
+   S3_ACCESS_KEY_ID=<from the dashboard>
+   S3_SECRET_ACCESS_KEY=<from the dashboard>
+   S3_BUCKET=studzee
+   S3_ENDPOINT=https://<project-ref>.storage.supabase.co/storage/v1/s3
+   S3_PUBLIC_URL=https://<project-ref>.supabase.co/storage/v1/object/public/studzee
+   ```
+
+> **`S3_REGION` must match the project region exactly.** A mismatch fails request signing, and the error does not name the region as the cause.
+
+> **`S3_ENDPOINT` and `S3_PUBLIC_URL` are different hosts.** Supabase serves the S3 API from `<ref>.storage.supabase.co` and public objects from `<ref>.supabase.co`, so the public URL cannot be derived from the endpoint and is configured separately.
+
+> **`forcePathStyle` is always on.** Supabase and MinIO both address a bucket as a path segment. The AWS SDK defaults to virtual-hosted style, which neither resolves. The client sets it unconditionally, so nothing to configure.
+
+#### MinIO (local development)
+
+`docker-compose.yml` runs MinIO, so local work needs no Supabase credentials and cannot touch real files. The defaults in `.env.example` already point at it. Create the bucket once at [http://localhost:9001](http://localhost:9001), named to match `S3_BUCKET`.
+
+> **Note**: the upload bucket must allow public read, since the application stores a plain public URL on the document and the clients fetch it directly. No ACL is set per object.
 
 ## Usage
 
@@ -343,7 +363,7 @@ The `docker-compose.yml` defines **5 infrastructure services** that together pro
 #### 4. **MinIO (`minio`)**
 
 - **Image**: `minio/minio:latest`
-- **Purpose**: S3-compatible object storage for local development (alternative to AWS S3)
+- **Purpose**: S3-compatible object storage for local development, standing in for Supabase Storage
 - **Container Name**: `studzee_minio`
 - **Ports**:
   - `9000`: MinIO API endpoint (configurable via `MINIO_PORT`)
@@ -424,9 +444,9 @@ All services communicate through a dedicated Docker bridge network:
 
 The project supports two environment configurations:
 
-#### `.env` (Default - AWS S3)
+#### `.env` (Default)
 
-Used for local development with **real AWS S3**:
+Used for local development, pointed at whichever storage you configure:
 
 ```bash
 # Start with default .env
@@ -450,8 +470,8 @@ npm run dev
 
 **Key Differences**:
 
-- `.env`: Points to AWS S3 (`AWS_S3_BUCKET_NAME`, `AWS_REGION`)
-- `.env.docker`: Points to MinIO (`AWS_S3_BUCKET_ENDPOINT=http://localhost:9000`)
+- `.env`: whatever you point it at, Supabase or MinIO
+- `.env.docker`: pinned to MinIO (`S3_ENDPOINT=http://localhost:9000`)
 
 ### Port Mappings
 
@@ -484,7 +504,7 @@ Complete reference of all exposed ports:
 
 ### Using MinIO (Local S3)
 
-MinIO provides an S3-compatible storage solution for local development without requiring AWS credentials.
+MinIO provides an S3-compatible storage solution for local development without requiring Supabase credentials.
 
 #### Setup Steps
 
@@ -502,7 +522,7 @@ MinIO provides an S3-compatible storage solution for local development without r
 
 3. **Create Bucket**:
    - Click "Buckets" → "Create Bucket"
-   - Name: `studzee-assets` (matches `AWS_S3_BUCKET_NAME` in `.env.docker`)
+   - Name: `studzee` (must match `S3_BUCKET` in `.env.docker`)
    - Click "Create Bucket"
 
 4. **Configure Public Access** (Optional):
@@ -517,7 +537,7 @@ MinIO provides an S3-compatible storage solution for local development without r
            "Effect": "Allow",
            "Principal": { "AWS": ["*"] },
            "Action": ["s3:GetObject"],
-           "Resource": ["arn:aws:s3:::studzee-assets/*"]
+           "Resource": ["arn:aws:s3:::studzee/*"]
          }
        ]
      }
@@ -531,8 +551,8 @@ MinIO provides an S3-compatible storage solution for local development without r
 #### MinIO Features
 
 - **Browser-based UI**: Manage buckets, upload files, set permissions
-- **S3-Compatible API**: Works with AWS SDK without code changes
-- **Local Development**: No internet connection or AWS account required
+- **S3-Compatible API**: Works with the AWS SDK without code changes, exactly as Supabase Storage does
+- **Local Development**: No internet connection or Supabase account required
 - **Fast Testing**: Instant uploads without network latency
 
 #### Bucket Structure
@@ -711,7 +731,7 @@ src/
 
 - **Content Service**: Document listing and retrieval with caching
 - **Admin Service**: Document CRUD with cache invalidation
-- **Upload Service**: File uploads to AWS S3
+- **Upload Service**: File uploads to object storage
 - **User Service**: User records mirrored from Clerk, and Expo push token registration
 - **Expo Service**: Push delivery batched to the Expo limit of 100 messages per request, reporting retired tokens for pruning
 - **Email Service**: Transactional email with an attachment host allowlist and bcc recipients
@@ -978,7 +998,7 @@ model EmailLog {
 │   │   ├── mongo.ts        # MongoDB connection
 │   │   ├── postgres.ts     # Prisma client and connection
 │   │   ├── redis.ts        # Redis connection
-│   │   └── s3.ts           # AWS S3 configuration
+│   │   └── s3.ts           # Object storage client and URL helpers
 │   ├── data/               # Sample data
 │   │   ├── data.json
 │   │   ├── sample.data.json
@@ -1021,7 +1041,7 @@ model EmailLog {
 │   ├── schema.prisma       # User, Notification, EmailLog models
 │   └── migrations/         # Applied migration history
 ├── .dockerignore           # Docker ignore rules
-├── .env                    # Local environment (AWS S3)
+├── .env                    # Local environment
 ├── .env.docker             # Docker environment (MinIO)
 ├── .env.example            # Environment variables template
 ├── .eslintignore           # ESLint ignore rules
@@ -1184,16 +1204,18 @@ REDIS_URL=redis://localhost:6379
 CLERK_SECRET_KEY=sk_live_...
 CLERK_PUBLISHABLE_KEY=pk_live_...
 CLERK_WEBHOOK_SIGNING_SECRET=whsec_...
-AWS_REGION=ap-south-1
-AWS_ACCESS_KEY_ID=AKIA...
-AWS_SECRET_ACCESS_KEY=...
-AWS_S3_BUCKET_NAME=studzee-production
+S3_REGION=ap-northeast-2
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_BUCKET=studzee
+S3_ENDPOINT=https://<project-ref>.storage.supabase.co/storage/v1/s3
+S3_PUBLIC_URL=https://<project-ref>.supabase.co/storage/v1/object/public/studzee
 SMTP_HOST=smtp.provider.com
 SMTP_PORT=587
 SMTP_USER=...
 SMTP_PASSWORD=...
 EMAIL_FROM=Studzee <no-reply@studzee.in>
-EMAIL_ATTACHMENT_HOSTS=studzee-production.s3.ap-south-1.amazonaws.com
+EMAIL_ATTACHMENT_HOSTS=lammfakgegmrkxdkwukd.supabase.co
 LIST_CACHE_TTL=300
 DOC_CACHE_TTL=86400
 JOB_CRON=0 0 * * *

@@ -21,11 +21,23 @@ const configSchema = z.object({
   TODAY_CACHE_TTL: z.coerce.number().default(3600), // 1 hour
   JOB_CRON: z.string().default('0 0 * * *'),
   LOG_LEVEL: z.string().default('info'),
-  AWS_REGION: z.string().min(1, 'AWS region is required'),
-  AWS_ACCESS_KEY_ID: z.string().min(1, 'AWS access key ID is required'),
-  AWS_SECRET_ACCESS_KEY: z.string().min(1, 'AWS secret access key is required'),
-  AWS_S3_BUCKET_NAME: z.string().min(1, 'AWS S3 bucket name is required'),
-  AWS_S3_BUCKET_ENDPOINT: z.string().optional(),
+  // Object storage. Supabase Storage speaks the S3 protocol, so the same
+  // client serves it, MinIO locally, and AWS S3 if it is ever used again.
+  // The variables are named S3_* rather than AWS_* because the provider is no
+  // longer AWS.
+  S3_REGION: z.string().min(1, 'Storage region is required'),
+  S3_ACCESS_KEY_ID: z.string().min(1, 'Storage access key ID is required'),
+  S3_SECRET_ACCESS_KEY: z
+    .string()
+    .min(1, 'Storage secret access key is required'),
+  S3_BUCKET: z.string().min(1, 'Storage bucket name is required'),
+  // S3 API endpoint. Supabase exposes this at
+  // https://<project-ref>.storage.supabase.co/storage/v1/s3
+  S3_ENDPOINT: z.string().url('Storage endpoint must be a valid URL'),
+  // Base the public URL of an object is built from, with the object key
+  // appended. Supabase serves public objects from a different host to its S3
+  // endpoint, so this cannot be derived from S3_ENDPOINT.
+  S3_PUBLIC_URL: z.string().url('Storage public URL must be a valid URL'),
   DEV_TOKEN: z.string().optional(), // Optional token for development mode
 
   // Outbound email, moved in from the notification service.
@@ -42,14 +54,14 @@ const configSchema = z.object({
     .string()
     .url()
     .default(
-      'https://studzee-assets.s3.ap-south-1.amazonaws.com/assets/studzee_banner.png'
+      'https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/assets/studzee_banner.png'
     ),
 
   // Hosts an email attachment may be fetched from, comma separated. Anything
   // else is rejected, so an admin cannot make the mailer pull an arbitrary URL.
   EMAIL_ATTACHMENT_HOSTS: z
     .string()
-    .default('studzee-assets.s3.ap-south-1.amazonaws.com'),
+    .default('lammfakgegmrkxdkwukd.supabase.co'),
 
   // Render keepalive ping. Optional, the job is skipped when unset.
   HEALTHCHECK_URL: z.string().url().optional(),
@@ -71,4 +83,10 @@ export const config = parsedConfig.data
 export { connectDB, disconnectDB } from './mongo'
 export { connectPostgres, disconnectPostgres, prisma } from './postgres'
 export { connectRedis, disconnectRedis, redisClient } from './redis'
-export { s3Client, uploadToS3, deleteFromS3, getKeyFromUrl } from './s3'
+export {
+  s3Client,
+  uploadToS3,
+  deleteFromS3,
+  getKeyFromUrl,
+  getPublicUrl,
+} from './s3'

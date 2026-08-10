@@ -7,34 +7,54 @@ import {
 import { config } from '@/config'
 import logger from '@/utils/logger'
 
-// Initialize S3 client
+/**
+ * S3 protocol client for object storage.
+ *
+ * The backing store is Supabase Storage in deployed environments and MinIO
+ * locally. Both speak the S3 protocol, so one client and one code path serve
+ * both, selected purely by S3_ENDPOINT.
+ *
+ * forcePathStyle is required, not optional. Supabase and MinIO both address
+ * buckets as a path segment (endpoint/bucket/key). The AWS SDK defaults to
+ * virtual-hosted style (bucket.host/key), which neither resolves. This was
+ * previously applied only when NODE_ENV was development, which happened to
+ * work while the deployed store was real AWS and breaks against Supabase.
+ */
 const s3Client = new S3Client({
-  region: config.AWS_REGION,
-  ...(config.NODE_ENV === 'development' && {
-    endpoint: config.AWS_S3_BUCKET_ENDPOINT,
-    forcePathStyle: true,
-  }),
+  region: config.S3_REGION,
+  endpoint: config.S3_ENDPOINT,
+  forcePathStyle: true,
   credentials: {
-    accessKeyId: config.AWS_ACCESS_KEY_ID,
-    secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: config.S3_ACCESS_KEY_ID,
+    secretAccessKey: config.S3_SECRET_ACCESS_KEY,
   },
 })
 
-// No logging at module scope. src/config/index.ts re-exports this file, and the
-// logger imports config, so a top level logger call here fails whenever a
-// module reaches the logger before it reaches config. Import order stops
-// mattering once nothing logs during initialisation.
-
 export { s3Client }
 
+/** Public URL base without a trailing slash, so joins never double up. */
+const publicUrlBase = config.S3_PUBLIC_URL.replace(/\/+$/, '')
+
 /**
- * Upload a file to S3
- * @param fileBuffer - The file buffer to upload
- * @param folder - The folder to upload to (e.g., 'images' or 'pdfs')
- * @param filename - The desired filename (without extension)
- * @param contentType - The content type of the file
- * @param originalFilename - The original filename (optional)
- * @returns Upload result with URL, key (publicId), upload timestamp, size, and original filename
+ * Public URL of a stored object.
+ *
+ * Supabase serves public objects from a different host to its S3 endpoint
+ * (`<ref>.supabase.co/storage/v1/object/public/<bucket>` rather than
+ * `<ref>.storage.supabase.co/storage/v1/s3`), so this is configured rather
+ * than derived. The previous implementation hardcoded the AWS virtual-hosted
+ * form and produced unreachable URLs against any other provider.
+ */
+export const getPublicUrl = (key: string): string =>
+  `${publicUrlBase}/${key.replace(/^\/+/, '')}`
+
+/**
+ * Upload a file.
+ *
+ * @param fileBuffer - File contents
+ * @param folder - Key prefix, for example 'images' or 'pdfs'
+ * @param filename - Object filename, including extension
+ * @param contentType - MIME type stored against the object
+ * @param originalFilename - Filename as supplied by the uploader, kept for display
  */
 export const uploadToS3 = async (
   fileBuffer: Buffer,
@@ -49,98 +69,72 @@ export const uploadToS3 = async (
   size: number
   originalFilename?: string
 }> => {
+  const key = `${folder}/${filename}`
+
   try {
-    // Construct the S3 key (path)
-    const key = `${folder}/${filename}`
-
-    logger.info('Starting S3 upload', {
-      folder,
-      filename,
-      key,
-      contentType,
-      bufferSize: fileBuffer.length,
-    })
-
-    // Prepare upload parameters with public-read ACL
     const uploadParams: PutObjectCommandInput = {
-      Bucket: config.AWS_S3_BUCKET_NAME,
+      Bucket: config.S3_BUCKET,
       Key: key,
       Body: fileBuffer,
       ContentType: contentType,
     }
 
-    // Upload to S3
-    const command = new PutObjectCommand(uploadParams)
-    await s3Client.send(command)
+    await s3Client.send(new PutObjectCommand(uploadParams))
 
-    // Construct the public URL
-    const url = `https://${config.AWS_S3_BUCKET_NAME}.s3.${config.AWS_REGION}.amazonaws.com/${key}`
-
+    const url = getPublicUrl(key)
     const uploadedAt = new Date()
-    const size = fileBuffer.length
 
-    logger.info('S3 upload successful', {
-      url,
-      key,
-      uploadedAt,
-      size,
-    })
+    logger.info({ key, size: fileBuffer.length }, 'Object uploaded')
 
     return {
       url,
       publicId: key,
       uploadedAt,
-      size,
+      size: fileBuffer.length,
       originalFilename,
     }
   } catch (error) {
-    logger.error(error, 'S3 upload error', {
-      folder,
-      filename,
-    })
+    logger.error(error, `Upload failed for ${key}`)
     throw error
   }
 }
 
 /**
- * Delete a file from S3 by key
- * @param key - The S3 key of the file to delete (e.g., 'images/filename.jpg')
+ * Delete an object by key, for example 'images/507f1f77bcf86cd799439011.png'.
  */
 export const deleteFromS3 = async (key: string): Promise<void> => {
   try {
-    logger.info('Deleting file from S3', { key })
-
-    const command = new DeleteObjectCommand({
-      Bucket: config.AWS_S3_BUCKET_NAME,
-      Key: key,
-    })
-
-    await s3Client.send(command)
-
-    logger.info('Deleted file from S3', { key })
+    await s3Client.send(
+      new DeleteObjectCommand({ Bucket: config.S3_BUCKET, Key: key })
+    )
+    logger.info({ key }, 'Object deleted')
   } catch (error) {
-    logger.error(error, `Failed to delete file from S3: ${key}`)
+    logger.error(error, `Delete failed for ${key}`)
     throw error
   }
 }
 
 /**
- * Extract S3 key from S3 URL
- * @param url - The S3 URL
- * @returns S3 key
+ * Recover the object key from a stored public URL.
+ *
+ * Stripping the configured public base is the only reliable approach. Taking
+ * the URL path, as this used to, yields `storage/v1/object/public/<bucket>/...`
+ * on Supabase rather than the key, so every delete would target the wrong
+ * object or fail.
  */
 export const getKeyFromUrl = (url: string): string => {
-  try {
-    // Example URL: https://bucket-name.s3.region.amazonaws.com/folder/filename.ext
-    // Extract: folder/filename.ext
-    const urlObj = new URL(url)
-    // Remove leading slash
-    const key = urlObj.pathname.substring(1)
-
-    logger.info('Extracted S3 key from URL', { url, key })
-    return key
-  } catch (error) {
-    logger.error(error, 'Failed to extract S3 key from URL', { url })
-    throw error
+  if (url.startsWith(publicUrlBase)) {
+    return url.slice(publicUrlBase.length).replace(/^\/+/, '')
   }
+
+  // A URL stored under a previous provider. Fall back to the trailing
+  // <folder>/<filename> pair, which has been the key shape throughout.
+  const segments = new URL(url).pathname.split('/').filter(Boolean)
+  if (segments.length >= 2) {
+    const key = segments.slice(-2).join('/')
+    logger.warn({ url, key }, 'Object URL is not on the configured host')
+    return key
+  }
+
+  throw new Error(`Cannot derive an object key from URL: ${url}`)
 }

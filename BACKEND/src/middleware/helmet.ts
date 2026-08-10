@@ -2,20 +2,19 @@ import helmet from 'helmet'
 import { config } from '@/config'
 
 /**
- * Public base URL of the asset bucket, derived from validated config.
+ * Origin that serves stored images, derived from the configured public URL.
  *
  * This previously read process.env.AWS_S3_BUCKET_URL, a variable defined
  * nowhere, so the image directive resolved to the literal string "undefined".
+ * Deriving it keeps the policy correct across storage providers.
  */
-const bucketUrl =
-  config.AWS_S3_BUCKET_ENDPOINT ??
-  `https://${config.AWS_S3_BUCKET_NAME}.s3.${config.AWS_REGION}.amazonaws.com`
+const storageOrigin = new URL(config.S3_PUBLIC_URL).origin
 
 export const helmetConfig = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", bucketUrl],
+      imgSrc: ["'self'", storageOrigin],
     },
   },
   hsts: {

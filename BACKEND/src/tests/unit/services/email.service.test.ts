@@ -14,7 +14,7 @@ import {
   generateWelcomeEmailTemplate,
 } from '@/utils/mail'
 
-const ALLOWED_HOST = 'studzee-assets.s3.ap-south-1.amazonaws.com'
+const ALLOWED_HOST = 'lammfakgegmrkxdkwukd.supabase.co'
 
 describe('email attachment allowlist', () => {
   it('rejects an attachment hosted off the allowlist', async () => {
