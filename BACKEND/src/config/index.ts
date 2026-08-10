@@ -30,11 +30,15 @@ const configSchema = z.object({
   S3_SECRET_ACCESS_KEY: z
     .string()
     .min(1, 'Storage secret access key is required'),
-  S3_BUCKET: z.string().min(1, 'Storage bucket name is required'),
+  // Uploads are separated by type into their own buckets, matching how the
+  // Supabase project is laid out. The assets bucket is not listed here because
+  // the application never writes to it, it only serves the brand banner.
+  S3_BUCKET_IMAGES: z.string().min(1, 'Images bucket name is required'),
+  S3_BUCKET_PDFS: z.string().min(1, 'PDFs bucket name is required'),
   // S3 API endpoint. Supabase exposes this at
   // https://<project-ref>.storage.supabase.co/storage/v1/s3
   S3_ENDPOINT: z.string().url('Storage endpoint must be a valid URL'),
-  // Base the public URL of an object is built from, with the object key
+  // Base the public URL of an object is built from, with the bucket and key
   // appended. Supabase serves public objects from a different host to its S3
   // endpoint, so this cannot be derived from S3_ENDPOINT.
   S3_PUBLIC_URL: z.string().url('Storage public URL must be a valid URL'),
@@ -87,6 +91,7 @@ export {
   s3Client,
   uploadToS3,
   deleteFromS3,
-  getKeyFromUrl,
+  getObjectRef,
   getPublicUrl,
 } from './s3'
+export type { ObjectRef } from './s3'

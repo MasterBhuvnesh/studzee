@@ -35,30 +35,36 @@ export { s3Client }
 /** Public URL base without a trailing slash, so joins never double up. */
 const publicUrlBase = config.S3_PUBLIC_URL.replace(/\/+$/, '')
 
+/** An object identified by the bucket holding it and its key within it. */
+export interface ObjectRef {
+  bucket: string
+  key: string
+}
+
 /**
  * Public URL of a stored object.
  *
  * Supabase serves public objects from a different host to its S3 endpoint
- * (`<ref>.supabase.co/storage/v1/object/public/<bucket>` rather than
- * `<ref>.storage.supabase.co/storage/v1/s3`), so this is configured rather
+ * (`<ref>.supabase.co/storage/v1/object/public` rather than
+ * `<ref>.storage.supabase.co/storage/v1/s3`), so the base is configured rather
  * than derived. The previous implementation hardcoded the AWS virtual-hosted
  * form and produced unreachable URLs against any other provider.
  */
-export const getPublicUrl = (key: string): string =>
-  `${publicUrlBase}/${key.replace(/^\/+/, '')}`
+export const getPublicUrl = (bucket: string, key: string): string =>
+  `${publicUrlBase}/${bucket}/${key.replace(/^\/+/, '')}`
 
 /**
  * Upload a file.
  *
  * @param fileBuffer - File contents
- * @param folder - Key prefix, for example 'images' or 'pdfs'
- * @param filename - Object filename, including extension
+ * @param bucket - Destination bucket, images or pdfs
+ * @param filename - Object key within the bucket, including extension
  * @param contentType - MIME type stored against the object
  * @param originalFilename - Filename as supplied by the uploader, kept for display
  */
 export const uploadToS3 = async (
   fileBuffer: Buffer,
-  folder: string,
+  bucket: string,
   filename: string,
   contentType: string,
   originalFilename?: string
@@ -69,11 +75,11 @@ export const uploadToS3 = async (
   size: number
   originalFilename?: string
 }> => {
-  const key = `${folder}/${filename}`
+  const key = filename.replace(/^\/+/, '')
 
   try {
     const uploadParams: PutObjectCommandInput = {
-      Bucket: config.S3_BUCKET,
+      Bucket: bucket,
       Key: key,
       Body: fileBuffer,
       ContentType: contentType,
@@ -81,60 +87,68 @@ export const uploadToS3 = async (
 
     await s3Client.send(new PutObjectCommand(uploadParams))
 
-    const url = getPublicUrl(key)
-    const uploadedAt = new Date()
-
-    logger.info({ key, size: fileBuffer.length }, 'Object uploaded')
+    logger.info({ bucket, key, size: fileBuffer.length }, 'Object uploaded')
 
     return {
-      url,
+      url: getPublicUrl(bucket, key),
       publicId: key,
-      uploadedAt,
+      uploadedAt: new Date(),
       size: fileBuffer.length,
       originalFilename,
     }
   } catch (error) {
-    logger.error(error, `Upload failed for ${key}`)
+    logger.error(error, `Upload failed for ${bucket}/${key}`)
     throw error
   }
 }
 
 /**
- * Delete an object by key, for example 'images/507f1f77bcf86cd799439011.png'.
+ * Delete an object.
  */
-export const deleteFromS3 = async (key: string): Promise<void> => {
+export const deleteFromS3 = async ({
+  bucket,
+  key,
+}: ObjectRef): Promise<void> => {
   try {
-    await s3Client.send(
-      new DeleteObjectCommand({ Bucket: config.S3_BUCKET, Key: key })
-    )
-    logger.info({ key }, 'Object deleted')
+    await s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+    logger.info({ bucket, key }, 'Object deleted')
   } catch (error) {
-    logger.error(error, `Delete failed for ${key}`)
+    logger.error(error, `Delete failed for ${bucket}/${key}`)
     throw error
   }
 }
 
 /**
- * Recover the object key from a stored public URL.
+ * Recover the bucket and key from a stored public URL.
  *
  * Stripping the configured public base is the only reliable approach. Taking
- * the URL path, as this used to, yields `storage/v1/object/public/<bucket>/...`
- * on Supabase rather than the key, so every delete would target the wrong
- * object or fail.
+ * the whole URL path, as this used to, yields
+ * `storage/v1/object/public/<bucket>/...` on Supabase rather than the key, so
+ * every delete would target the wrong object or fail.
  */
-export const getKeyFromUrl = (url: string): string => {
-  if (url.startsWith(publicUrlBase)) {
-    return url.slice(publicUrlBase.length).replace(/^\/+/, '')
+export const getObjectRef = (url: string): ObjectRef => {
+  const remainder = url.startsWith(publicUrlBase)
+    ? url.slice(publicUrlBase.length)
+    : null
+
+  if (remainder !== null) {
+    const [bucket, ...rest] = remainder.replace(/^\/+/, '').split('/')
+    if (bucket && rest.length > 0) {
+      return { bucket, key: rest.join('/') }
+    }
   }
 
-  // A URL stored under a previous provider. Fall back to the trailing
-  // <folder>/<filename> pair, which has been the key shape throughout.
+  // A URL written under a previous provider or a different host. The last two
+  // path segments have been the bucket and key shape throughout.
   const segments = new URL(url).pathname.split('/').filter(Boolean)
   if (segments.length >= 2) {
-    const key = segments.slice(-2).join('/')
-    logger.warn({ url, key }, 'Object URL is not on the configured host')
-    return key
+    const ref = {
+      bucket: segments[segments.length - 2],
+      key: segments[segments.length - 1],
+    }
+    logger.warn({ url, ...ref }, 'Object URL is not on the configured host')
+    return ref
   }
 
-  throw new Error(`Cannot derive an object key from URL: ${url}`)
+  throw new Error(`Cannot derive an object reference from URL: ${url}`)
 }

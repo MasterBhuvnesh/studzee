@@ -178,11 +178,11 @@ The Clerk webhook is the one exception. It carries no user token and is authenti
       ],
       "summary": "A comprehensive guide to TypeScript basics",
       "facts": "TypeScript was developed by Microsoft",
-      "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/studzee/images/507f1f77bcf86cd799439011.png",
+      "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/507f1f77bcf86cd799439011.png",
       "pdfUrl": [
         {
           "name": "typescript-guide.pdf",
-          "url": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/studzee/pdfs/introduction-to-typescript.pdf",
+          "url": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/introduction-to-typescript.pdf",
           "uploadedAt": "2026-08-10T10:30:00.000Z",
           "size": 1234567
         }
@@ -234,7 +234,7 @@ The Clerk webhook is the one exception. It carries no user token and is authenti
           "documentId": "507f1f77bcf86cd799439011",
           "title": "Introduction to TypeScript",
           "pdfName": "typescript-guide.pdf",
-          "pdfUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/studzee/pdfs/introduction-to-typescript.pdf",
+          "pdfUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/introduction-to-typescript.pdf",
           "uploadedAt": "2026-08-10T10:30:00.000Z",
           "size": 1234567
         }
@@ -428,7 +428,7 @@ Common failures on all admin routes:
     ```json
     {
       "message": "Image uploaded successfully",
-      "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/studzee/images/507f1f77bcf86cd799439011.png",
+      "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/507f1f77bcf86cd799439011.png",
       "documentId": "507f1f77bcf86cd799439011"
     }
     ```
@@ -455,7 +455,7 @@ Common failures on all admin routes:
       "message": "PDF uploaded successfully",
       "pdf": {
         "name": "document.pdf",
-        "url": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/studzee/pdfs/introduction-to-typescript.pdf",
+        "url": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/introduction-to-typescript.pdf",
         "uploadedAt": "2026-08-10T10:30:00.000Z",
         "size": 1234567
       },
@@ -478,7 +478,7 @@ Common failures on all admin routes:
   {
     "title": "New notes published",
     "message": "System Design chapter 4 is now available.",
-    "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/studzee/images/banner.png",
+    "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/banner.png",
     "sendToAll": true,
     "emails": ["learner@example.com"]
   }
@@ -554,9 +554,9 @@ Common failures on all admin routes:
     "subject": "New notes are available",
     "title": "New notes are available",
     "body": "<p>Chapter 4 of System Design is published.</p>",
-    "banner": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/studzee/assets/banner.png",
+    "banner": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/assets/banner.png",
     "footer": "This is an automated email from Studzee.",
-    "pdfUrls": ["https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/studzee/pdfs/system-design.pdf"]
+    "pdfUrls": ["https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/system-design.pdf"]
   }
   ```
   - `emails` (array of emails, required, min 1)

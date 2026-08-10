@@ -45,9 +45,10 @@ const testDefaults: Record<string, string> = {
   S3_REGION: 'ap-northeast-2',
   S3_ACCESS_KEY_ID: 'test-access-key',
   S3_SECRET_ACCESS_KEY: 'test-secret-key',
-  S3_BUCKET: 'studzee',
+  S3_BUCKET_IMAGES: 'images',
+  S3_BUCKET_PDFS: 'pdfs',
   S3_ENDPOINT: 'http://localhost:9000',
-  S3_PUBLIC_URL: 'http://localhost:9000/studzee',
+  S3_PUBLIC_URL: 'http://localhost:9000',
   // Pinned so the attachment allowlist tests do not depend on the schema default.
   EMAIL_ATTACHMENT_HOSTS: 'lammfakgegmrkxdkwukd.supabase.co',
   SMTP_HOST: 'smtp.test.local',

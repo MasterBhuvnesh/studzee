@@ -159,9 +159,10 @@ Configuration is parsed and validated by Zod at import time. A missing or malfor
 | `S3_REGION`                    | Storage region. Must match the Supabase project region exactly                   | Yes      | -                              |
 | `S3_ACCESS_KEY_ID`             | Storage access key ID                                                            | Yes      | -                              |
 | `S3_SECRET_ACCESS_KEY`         | Storage secret access key                                                        | Yes      | -                              |
-| `S3_BUCKET`                    | Bucket holding uploaded images and PDFs                                          | Yes      | -                              |
+| `S3_BUCKET_IMAGES`             | Public bucket holding uploaded images                                            | Yes      | -                              |
+| `S3_BUCKET_PDFS`               | Public bucket holding uploaded PDFs                                              | Yes      | -                              |
 | `S3_ENDPOINT`                  | S3 API endpoint, Supabase or MinIO                                               | Yes      | -                              |
-| `S3_PUBLIC_URL`                | Base public object URLs are built from, with the key appended                    | Yes      | -                              |
+| `S3_PUBLIC_URL`                | Base public object URLs are built from, bucket and key appended                  | Yes      | -                              |
 | `SMTP_HOST`                    | SMTP server hostname                                                             | Yes      | -                              |
 | `SMTP_PORT`                    | SMTP port. Implicit TLS on 465, STARTTLS elsewhere                               | No       | 587                            |
 | `SMTP_USER`                    | SMTP username                                                                    | Yes      | -                              |
@@ -231,7 +232,7 @@ Storage is **Supabase Storage**, which speaks the S3 protocol, so the AWS SDK ta
 #### Supabase (deployed environments)
 
 1. Open your project in the [Supabase dashboard](https://supabase.com/dashboard)
-2. Create a **public** bucket for uploads, for example `studzee`. Uploaded images and PDFs go here under `images/` and `pdfs/` prefixes. The separate `assets` bucket only serves the brand banner and the application never writes to it.
+2. Create two **public** buckets, `images` and `pdfs`. Uploads are separated by type rather than sharing one bucket with key prefixes. A third bucket, `assets`, serves the brand banner used by the email templates; the application never writes to it, so it needs no configuration.
 3. Go to **Project Settings > Storage** and generate an **S3 access key**. It yields an access key ID and a secret access key.
 4. Fill in the storage block of your `.env`:
 
@@ -239,10 +240,13 @@ Storage is **Supabase Storage**, which speaks the S3 protocol, so the AWS SDK ta
    S3_REGION=ap-northeast-2
    S3_ACCESS_KEY_ID=<from the dashboard>
    S3_SECRET_ACCESS_KEY=<from the dashboard>
-   S3_BUCKET=studzee
+   S3_BUCKET_IMAGES=images
+   S3_BUCKET_PDFS=pdfs
    S3_ENDPOINT=https://<project-ref>.storage.supabase.co/storage/v1/s3
-   S3_PUBLIC_URL=https://<project-ref>.supabase.co/storage/v1/object/public/studzee
+   S3_PUBLIC_URL=https://<project-ref>.supabase.co/storage/v1/object/public
    ```
+
+> **`S3_PUBLIC_URL` ends at `/public`, with no bucket.** The bucket and key are appended per object, because uploads span two buckets.
 
 > **`S3_REGION` must match the project region exactly.** A mismatch fails request signing, and the error does not name the region as the cause.
 
@@ -522,7 +526,7 @@ MinIO provides an S3-compatible storage solution for local development without r
 
 3. **Create Bucket**:
    - Click "Buckets" → "Create Bucket"
-   - Name: `studzee` (must match `S3_BUCKET` in `.env.docker`)
+   - Create two buckets, `images` and `pdfs`, matching `S3_BUCKET_IMAGES` and `S3_BUCKET_PDFS`
    - Click "Create Bucket"
 
 4. **Configure Public Access** (Optional):
@@ -537,7 +541,7 @@ MinIO provides an S3-compatible storage solution for local development without r
            "Effect": "Allow",
            "Principal": { "AWS": ["*"] },
            "Action": ["s3:GetObject"],
-           "Resource": ["arn:aws:s3:::studzee/*"]
+           "Resource": ["arn:aws:s3:::images/*", "arn:aws:s3:::pdfs/*"]
          }
        ]
      }
@@ -560,11 +564,12 @@ MinIO provides an S3-compatible storage solution for local development without r
 When using the application, files are organized as:
 
 ```
-studzee-assets/
-├── images/
-│   └── <document-id>.<extension>  (e.g., 507f1f77bcf86cd799439011.png)
-└── pdfs/
-    └── <document-title>.pdf       (e.g., introduction-to-typescript.pdf)
+images/
+└── <document-id>.<extension>   (e.g. 507f1f77bcf86cd799439011.png)
+pdfs/
+└── <document-title>.pdf        (e.g. introduction-to-typescript.pdf)
+assets/
+└── studzee_banner.png          (email banner, never written by the app)
 ```
 
 ### Health Checks
@@ -1207,9 +1212,10 @@ CLERK_WEBHOOK_SIGNING_SECRET=whsec_...
 S3_REGION=ap-northeast-2
 S3_ACCESS_KEY_ID=...
 S3_SECRET_ACCESS_KEY=...
-S3_BUCKET=studzee
+S3_BUCKET_IMAGES=images
+S3_BUCKET_PDFS=pdfs
 S3_ENDPOINT=https://<project-ref>.storage.supabase.co/storage/v1/s3
-S3_PUBLIC_URL=https://<project-ref>.supabase.co/storage/v1/object/public/studzee
+S3_PUBLIC_URL=https://<project-ref>.supabase.co/storage/v1/object/public
 SMTP_HOST=smtp.provider.com
 SMTP_PORT=587
 SMTP_USER=...
