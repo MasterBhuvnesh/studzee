@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "studzee-backend-api-collection",
 		"name": "Studzee Backend API",
-		"description": "Production-ready backend service for document management. Includes health checks, content retrieval, and admin management endpoints.",
+		"description": "Backend service for content delivery and notifications. Covers health checks, public content, PDF listing, device registration for push, the Clerk webhook, and the admin surface for documents, notifications, email and users.\n\nThe notification service was merged into this backend, so the endpoints that used to sit behind /noti/api are now served here under /notifications, /admin and /webhooks.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -42,7 +42,7 @@
 								"healthcheck"
 							]
 						},
-						"description": "Simple health check endpoint for Render or other hosting platforms."
+						"description": "Simple health check endpoint for Render or other hosting platforms. This is the URL the heartbeat job pings."
 					},
 					"response": []
 				},
@@ -61,7 +61,7 @@
 								"readiness"
 							]
 						},
-						"description": "Checks if database and Redis are connected and ready."
+						"description": "Checks if MongoDB and Redis are connected and ready."
 					},
 					"response": []
 				}
@@ -85,7 +85,7 @@
 								"today"
 							]
 						},
-						"description": "Retrieve documents created today (IST timezone)."
+						"description": "Retrieve documents created during the current IST day, which runs from 18:30 UTC to 18:30 UTC."
 					},
 					"response": []
 				},
@@ -182,14 +182,110 @@
 								}
 							]
 						},
-						"description": "Retrieve a paginated list of all documents with uploaded PDFs."
+						"description": "Retrieve a paginated list of documents with uploaded PDFs, flattened to one entry per PDF."
 					},
 					"response": []
 				}
 			]
 		},
 		{
-			"name": "Admin",
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Register Device",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clerkToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"learner@example.com\",\n  \"expoToken\": \"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notifications/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications",
+								"register"
+							]
+						},
+						"description": "Register the caller's device for push notifications, or attach another device token to an existing registration. The Clerk identity comes from the bearer token, never from the body. Tokens are deduplicated, so re-registering the same device does not create a second entry.\n\nReplaces POST /noti/api/register from the old notification service.\n\nRate limit: 10 requests per minute."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Webhooks",
+			"item": [
+				{
+					"name": "Clerk Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "svix-id",
+								"value": "msg_xxxxxxxxxxxxxxxx",
+								"description": "Supplied by Clerk on every delivery"
+							},
+							{
+								"key": "svix-timestamp",
+								"value": "1700000000",
+								"description": "Supplied by Clerk on every delivery"
+							},
+							{
+								"key": "svix-signature",
+								"value": "v1,xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+								"description": "Supplied by Clerk on every delivery"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"user.created\",\n  \"data\": {\n    \"id\": \"user_xxxxxxxxxxxxxxxx\",\n    \"email_addresses\": [\n      { \"id\": \"idn_xxxxxxxx\", \"email_address\": \"learner@example.com\" }\n    ],\n    \"first_name\": \"Learner\",\n    \"last_name\": null,\n    \"username\": null\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/webhooks/clerk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks",
+								"clerk"
+							]
+						},
+						"description": "Receives Clerk events. Only user.created is acted on, which sends the welcome email.\n\nThis endpoint takes no user token. The svix signature is its only authentication, and the handler verifies the raw request bytes. A request sent from Postman without valid svix headers signed by CLERK_WEBHOOK_SIGNING_SECRET will correctly return 400. Use the Clerk dashboard's webhook tester for a real end to end check.\n\nThe endpoint always answers 2xx once the signature verifies, including when the welcome email fails, because a non 2xx makes Clerk redeliver and resend the email."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin - Documents",
 			"item": [
 				{
 					"name": "Create Document",
@@ -208,7 +304,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"New Tutorial\",\n  \"content\": \"Complete tutorial content goes here...\",\n  \"summary\": \"Optional summary of the content\",\n  \"facts\": \"Optional interesting facts\",\n  \"quiz\": {\n    \"q1\": {\n      \"que\": \"Sample question?\",\n      \"ans\": \"Correct answer\",\n      \"options\": [\"Option 1\", \"Option 2\", \"Correct answer\", \"Option 4\"]\n    }\n  },\n  \"key_notes\": {\n    \"note1\": \"Important point 1\",\n    \"note2\": \"Important point 2\"\n  }\n}",
+							"raw": "{\n  \"title\": \"New Tutorial\",\n  \"content\": [\n    {\n      \"title\": \"Introduction\",\n      \"content\": [\n        { \"type\": \"text\", \"value\": \"Opening paragraph.\" },\n        { \"type\": \"list\", \"items\": [\"First point\", \"Second point\"] }\n      ]\n    }\n  ],\n  \"summary\": \"Optional summary of the content\",\n  \"facts\": \"Optional interesting facts\",\n  \"quiz\": {\n    \"q1\": {\n      \"que\": \"Sample question?\",\n      \"ans\": \"Correct answer\",\n      \"options\": [\"Option 1\", \"Option 2\", \"Correct answer\", \"Option 4\"]\n    }\n  },\n  \"key_notes\": {\n    \"note1\": \"Important point 1\",\n    \"note2\": \"Important point 2\"\n  }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -225,7 +321,7 @@
 								"documents"
 							]
 						},
-						"description": "Create a new document. Requires Admin role."
+						"description": "Create a new document. Requires the admin role.\n\nNote that `content` is structured, either an array of sections or an object. It is not a plain string."
 					},
 					"response": []
 				},
@@ -270,7 +366,7 @@
 								}
 							]
 						},
-						"description": "Update an existing document. Requires Admin role."
+						"description": "Update an existing document. Requires the admin role.\n\nThe body is a partial document validated against the same schema as create, so any subset of the document fields is accepted and at least one field is required."
 					},
 					"response": []
 				},
@@ -306,7 +402,7 @@
 								}
 							]
 						},
-						"description": "Delete a document by its ID. Requires Admin role."
+						"description": "Delete a document by its ID. Requires the admin role."
 					},
 					"response": []
 				},
@@ -354,7 +450,7 @@
 								}
 							]
 						},
-						"description": "Upload an image for a document. Requires Admin role."
+						"description": "Upload the cover image for a document. Replaces any existing image. Requires the admin role."
 					},
 					"response": []
 				},
@@ -402,7 +498,307 @@
 								}
 							]
 						},
-						"description": "Upload a PDF for a document. Requires Admin role."
+						"description": "Attach a PDF to a document. Documents hold an array of PDFs, so this appends rather than replaces. Requires the admin role."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin - Notifications",
+			"item": [
+				{
+					"name": "Send Push Notification (All Users)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clerkToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"New notes published\",\n  \"message\": \"System Design chapter 4 is now available.\",\n  \"imageUrl\": \"https://studzee-assets.s3.ap-south-1.amazonaws.com/images/banner.png\",\n  \"sendToAll\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/notifications/send",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"notifications",
+								"send"
+							]
+						},
+						"description": "Broadcast a push notification to every registered device. Requires the admin role.\n\nMessages are chunked to the Expo limit of 100 per request, so a broadcast larger than that is split across several calls. Tokens Expo reports as DeviceNotRegistered are pruned immediately.\n\nReturns 200 when every message was accepted and 207 when the broadcast was only partially delivered, with sent, failed and prunedTokens counts in the body.\n\nReplaces POST /noti/api/admin/notification/send.\n\nRate limit: 20 requests per minute."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Push Notification (Named Users)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clerkToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Your quiz result\",\n  \"message\": \"You scored 8 out of 10.\",\n  \"sendToAll\": false,\n  \"emails\": [\"learner@example.com\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/notifications/send",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"notifications",
+								"send"
+							]
+						},
+						"description": "Send to the devices belonging to a named set of users. `emails` is required and must be non empty whenever `sendToAll` is false, which the schema enforces. Returns 404 when none of the named users have a registered device."
+					},
+					"response": []
+				},
+				{
+					"name": "List Sent Notifications",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clerkToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/notifications?page=1&limit=20&sortBy=createdAt&order=desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "sortBy",
+									"value": "createdAt",
+									"description": "One of createdAt, status, sentBy. Anything else falls back to createdAt."
+								},
+								{
+									"key": "order",
+									"value": "desc",
+									"description": "asc or desc"
+								}
+							]
+						},
+						"description": "Paginated history of sent notifications. Requires the admin role.\n\nReplaces GET /noti/api/admin/notifications.\n\nRate limit: 30 requests per minute."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin - Email",
+			"item": [
+				{
+					"name": "Send Email",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clerkToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"emails\": [\"learner@example.com\"],\n  \"subject\": \"New notes are available\",\n  \"title\": \"New notes are available\",\n  \"body\": \"<p>Chapter 4 of System Design is published.</p>\",\n  \"footer\": \"This is an automated email from Studzee.\",\n  \"pdfUrls\": [\n    \"https://studzee-assets.s3.ap-south-1.amazonaws.com/pdfs/system-design.pdf\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/emails/send",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"emails",
+								"send"
+							]
+						},
+						"description": "Send a transactional email. Requires the admin role.\n\n`body` is an HTML fragment composed by the caller and dropped into the shared template. Recipients are sent as bcc, so one broadcast does not disclose the list to everyone on it.\n\nAttachments are fetched by the mail transport at send time, so every entry in `pdfUrls` must be https on a host listed in EMAIL_ATTACHMENT_HOSTS, with at most 10 per message. Anything else returns a failure without sending.\n\nReturns 502 when the transport rejects the message. Replaces POST /noti/api/admin/email/send.\n\nRate limit: 10 requests per minute."
+					},
+					"response": []
+				},
+				{
+					"name": "List Email Logs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clerkToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/emails/logs?page=1&limit=20&sortBy=createdAt&order=desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"emails",
+								"logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "sortBy",
+									"value": "createdAt",
+									"description": "One of createdAt, status, sentBy"
+								},
+								{
+									"key": "order",
+									"value": "desc",
+									"description": "asc or desc"
+								}
+							]
+						},
+						"description": "Paginated history of sent emails. Requires the admin role.\n\nReplaces GET /noti/api/admin/email/logs.\n\nRate limit: 30 requests per minute."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin - Users",
+			"item": [
+				{
+					"name": "List Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clerkToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/users?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Paginated list of registered users. Requires the admin role.\n\nReplaces GET /noti/api/admin/users.\n\nRate limit: 30 requests per minute."
+					},
+					"response": []
+				},
+				{
+					"name": "List User Emails",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clerkToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/users/emails",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"emails"
+							]
+						},
+						"description": "Every registered email address, for populating a recipient picker. Requires the admin role.\n\nReplaces GET /noti/api/admin/emails.\n\nRate limit: 30 requests per minute."
 					},
 					"response": []
 				}
@@ -438,7 +834,8 @@
 		{
 			"key": "clerkToken",
 			"value": "YOUR_CLERK_JWT_TOKEN",
-			"type": "string"
+			"type": "string",
+			"description": "A Clerk session JWT. In development you can instead use the value of DEV_TOKEN, which grants admin access when NODE_ENV=development."
 		}
 	]
 }

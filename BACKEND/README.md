@@ -1,6 +1,10 @@
 # Studzee API
 
-A production-ready backend service built with TypeScript that provides comprehensive document management. It exposes public content listing, authenticated document retrieval, and admin management endpoints. The service leverages MongoDB for persistent storage, Redis for high-performance caching, AWS S3 for file storage, and Clerk for secure authentication.
+A production-ready backend service built with TypeScript that provides document management and notification delivery. It exposes public content listing, authenticated document retrieval, device registration for push, a Clerk webhook, and an admin surface covering documents, notifications, email and users.
+
+The service uses MongoDB for content, PostgreSQL for users and delivery logs, Redis for caching, AWS S3 for file storage, and Clerk for authentication.
+
+> **Merged service**: the standalone notification service was folded into this backend on 10-08-2026. Endpoints that used to live behind the `/noti/api` prefix are now served here under `/notifications`, `/admin` and `/webhooks`. See [Endpoints](#endpoints) for the mapping.
 
 ## Table of Contents
 
@@ -11,6 +15,8 @@ A production-ready backend service built with TypeScript that provides comprehen
   - [Environment Variables](#environment-variables)
   - [Clerk Setup](#clerk-setup)
   - [MongoDB Setup](#mongodb-setup)
+  - [PostgreSQL Setup](#postgresql-setup)
+  - [SMTP Setup](#smtp-setup)
   - [AWS S3 Setup](#aws-s3-setup)
 - [Usage](#usage)
   - [Development](#development)
@@ -54,18 +60,21 @@ A production-ready backend service built with TypeScript that provides comprehen
 ## Features
 
 - **Express.js**: Modern TypeScript-based web framework
-- **MongoDB**: Document storage with Mongoose ODM
+- **MongoDB**: Content storage with Mongoose ODM
+- **PostgreSQL**: Users, Expo push tokens, and notification and email audit logs, through Prisma
 - **Redis Stack**: High-performance caching layer with RedisInsight dashboard
-- **AWS S3**: Scalable cloud file storage for documents and PDFs
-- **Clerk**: Enterprise-grade authentication and user management
+- **AWS S3**: Scalable cloud file storage for images and PDFs
+- **Clerk**: Enterprise-grade authentication and user management, plus signed webhooks via `svix`
+- **Expo Push**: Batched push delivery with automatic pruning of retired device tokens
+- **Email**: Transactional email through `nodemailer` with an attachment host allowlist
 - **Zod**: Runtime type validation and schema enforcement
-- **Scheduled Jobs**: Automated cache warming and health monitoring with `node-cron`
+- **Scheduled Jobs**: Cache warming, token cleanup, and heartbeat monitoring with `node-cron`
 - **Structured Logging**: Production-ready logging with `pino`
 - **File Uploads**: Multipart file upload support with `multer`
 - **Security**: Helmet security headers, CORS, compression, and rate limiting
 - **Docker**: Fully containerized development environment with Docker Compose
 - **Developer Tools**: ESLint, Prettier, Makefile automation, and development auth bypass
-- **Testing**: Comprehensive test suite with `vitest`
+- **Testing**: Test suite with `vitest`
 - **Production Ready**: Health checks, heartbeat monitoring for Render deployment
 
 ## Prerequisites
@@ -75,7 +84,9 @@ A production-ready backend service built with TypeScript that provides comprehen
 - `make` (optional, for convenience commands)
 - Clerk account for authentication
 - MongoDB Atlas account (or local MongoDB instance)
+- PostgreSQL instance (the Docker Compose file provides one)
 - AWS account with S3 bucket created
+- SMTP credentials for outbound email
 
 ## Installation
 
@@ -106,31 +117,60 @@ A production-ready backend service built with TypeScript that provides comprehen
    make up
    ```
 
+5. **Generate the Prisma client and apply migrations**
+
+   ```bash
+   npm run prisma:generate
+   npm run prisma:migrate
+   ```
+
+   `npm run build` runs `prisma generate` for you, and the Docker image runs
+   `prisma migrate deploy` on start. These commands are for local development
+   before the first run.
+
 ## Configuration
 
 ### Environment Variables
 
-| Variable                | Description                                                      | Required | Default      |
-| ----------------------- | ---------------------------------------------------------------- | -------- | ------------ |
-| `NODE_ENV`              | Environment (development/production/test)                        | Yes      | development  |
-| `PORT`                  | Server port                                                      | No       | 4000         |
-| `MONGO_URI`             | MongoDB connection string                                        | Yes      | -            |
-| `MONGO_ROOT_USER`       | MongoDB root username (Docker only)                              | Yes      | -            |
-| `MONGO_ROOT_PASSWORD`   | MongoDB root password (Docker only)                              | Yes      | -            |
-| `REDIS_URL`             | Redis connection URL                                             | Yes      | -            |
-| `CLERK_SECRET_KEY`      | Clerk authentication secret key                                  | Yes      | -            |
-| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key                                            | Yes      | -            |
-| `LIST_CACHE_TTL`        | List cache TTL in seconds                                        | No       | 300          |
-| `DOC_CACHE_TTL`         | Document cache TTL in seconds                                    | No       | 86400        |
-| `TODAY_CACHE_TTL`       | Today's content cache TTL in seconds                             | No       | 3600         |
-| `JOB_CRON`              | Cron expression for cache refresh job (currently unused)         | No       | 0 0 \* \* \* |
-| `LOG_LEVEL`             | Logging level (info/debug/error)                                 | No       | info         |
-| `AWS_REGION`            | AWS region for S3 (e.g., us-east-1)                              | Yes      | -            |
-| `AWS_ACCESS_KEY_ID`     | AWS access key ID                                                | Yes      | -            |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret access key                                            | Yes      | -            |
-| `AWS_S3_BUCKET_NAME`    | S3 bucket name for file storage                                  | Yes      | -            |
-| `DEV_TOKEN`             | Development auth bypass token (bypasses Clerk authentication)    | No       | -            |
-| `HEALTHCHECK_URL`       | URL for heartbeat job to ping (production only, for Render etc.) | No       | -            |
+Configuration is parsed and validated by Zod at import time. A missing or malformed required variable throws before the server starts, rather than failing on the first request that needs it.
+
+| Variable                       | Description                                                                      | Required | Default                        |
+| ------------------------------ | -------------------------------------------------------------------------------- | -------- | ------------------------------ |
+| `NODE_ENV`                     | Environment (development/production/test)                                        | Yes      | development                    |
+| `PORT`                         | Server port                                                                      | No       | 4000                           |
+| `MONGO_URI`                    | MongoDB connection string                                                        | Yes      | -                              |
+| `DB_NAME`                      | MongoDB database name                                                            | No       | Studzee_Database               |
+| `MONGO_ROOT_USER`              | MongoDB root username (Docker only)                                              | Yes      | -                              |
+| `MONGO_ROOT_PASSWORD`          | MongoDB root password (Docker only)                                              | Yes      | -                              |
+| `DATABASE_URL`                 | PostgreSQL connection string used by Prisma                                      | Yes      | -                              |
+| `POSTGRES_USER`                | Postgres username (Docker only)                                                  | No       | postgres                       |
+| `POSTGRES_PASSWORD`            | Postgres password (Docker only)                                                  | No       | postgres                       |
+| `POSTGRES_DB`                  | Postgres database name (Docker only)                                             | No       | studzee_notifications          |
+| `POSTGRES_PORT`                | Postgres host port (Docker only)                                                 | No       | 5432                           |
+| `REDIS_URL`                    | Redis connection URL                                                             | Yes      | -                              |
+| `CLERK_SECRET_KEY`             | Clerk authentication secret key                                                  | Yes      | -                              |
+| `CLERK_PUBLISHABLE_KEY`        | Clerk publishable key                                                            | Yes      | -                              |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Signing secret for `/webhooks/clerk`. The webhook returns 500 without it          | No       | -                              |
+| `LIST_CACHE_TTL`               | List cache TTL in seconds                                                        | No       | 300                            |
+| `DOC_CACHE_TTL`                | Document cache TTL in seconds                                                    | No       | 86400                          |
+| `TODAY_CACHE_TTL`              | Today's content cache TTL in seconds                                             | No       | 3600                           |
+| `JOB_CRON`                     | Cron expression for cache refresh job (currently unused)                         | No       | 0 0 \* \* \*                   |
+| `LOG_LEVEL`                    | Logging level (info/debug/error)                                                 | No       | info                           |
+| `AWS_REGION`                   | AWS region for S3 (e.g., ap-south-1)                                             | Yes      | -                              |
+| `AWS_ACCESS_KEY_ID`            | AWS access key ID                                                                | Yes      | -                              |
+| `AWS_SECRET_ACCESS_KEY`        | AWS secret access key                                                            | Yes      | -                              |
+| `AWS_S3_BUCKET_NAME`           | S3 bucket name for file storage                                                  | Yes      | -                              |
+| `AWS_S3_BUCKET_ENDPOINT`       | Custom S3 endpoint, used in development to point at MinIO                        | No       | -                              |
+| `SMTP_HOST`                    | SMTP server hostname                                                             | Yes      | -                              |
+| `SMTP_PORT`                    | SMTP port. Implicit TLS on 465, STARTTLS elsewhere                               | No       | 587                            |
+| `SMTP_USER`                    | SMTP username                                                                    | Yes      | -                              |
+| `SMTP_PASSWORD`                | SMTP password                                                                    | Yes      | -                              |
+| `EMAIL_FROM`                   | Sender address on outbound email                                                 | Yes      | -                              |
+| `SITE_URL`                     | Public site URL used in email templates                                          | No       | https://studzee.in             |
+| `EMAIL_BANNER_URL`             | Banner image used in email templates                                             | No       | the S3 brand banner            |
+| `EMAIL_ATTACHMENT_HOSTS`       | Comma separated hosts an email attachment may be fetched from                    | No       | the S3 asset bucket            |
+| `DEV_TOKEN`                    | Development auth bypass token (bypasses Clerk authentication)                    | No       | -                              |
+| `HEALTHCHECK_URL`              | URL for the heartbeat job to ping. The job is skipped when unset                 | No       | -                              |
 
 ### Clerk Setup
 
@@ -138,12 +178,35 @@ A production-ready backend service built with TypeScript that provides comprehen
 2. Navigate to API Keys and copy your Secret Key and Publishable Key
 3. Add the keys to your `.env` file
 4. Set up roles in Clerk and create an `admin` role for admin access
+5. Add a webhook endpoint pointing at `<your-host>/webhooks/clerk`, subscribe it to `user.created`, and copy the signing secret into `CLERK_WEBHOOK_SIGNING_SECRET`. This is what triggers the welcome email.
 
 ### MongoDB Setup
 
 1. Create a MongoDB cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) or use a local instance
 2. Get your connection string
 3. Add connection details to your `.env` file
+
+### PostgreSQL Setup
+
+PostgreSQL holds users, Expo push tokens, and the notification and email audit logs. Content stays in MongoDB.
+
+1. Use the `postgres` service in `docker-compose.yml` for local work, or provision a managed instance
+2. Set `DATABASE_URL` in your `.env` file
+3. Apply the schema:
+
+   ```bash
+   npm run prisma:migrate     # development, creates and applies migrations
+   npm run prisma:deploy      # production, applies existing migrations only
+   ```
+
+4. Inspect the data with `npm run prisma:studio` if needed
+
+### SMTP Setup
+
+1. Obtain SMTP credentials from your mail provider
+2. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `EMAIL_FROM`
+3. For local development, point `SMTP_HOST` at a mail catcher such as MailHog or Mailpit on port 1025, which is what `.env.docker` assumes
+4. If you send email attachments, add every host they are served from to `EMAIL_ATTACHMENT_HOSTS`. Anything not on that list is rejected before the message is sent
 
 ### AWS S3 Setup
 
@@ -213,7 +276,7 @@ The project includes a comprehensive Docker Compose setup for local development 
 
 ### Service Architecture
 
-The `docker-compose.yml` defines **5 services** that work together to provide a complete development environment:
+The `docker-compose.yml` defines **5 infrastructure services** that together provide a complete development environment. The API itself is normally run outside Docker with `npm run dev`.
 
 #### 1. **MongoDB (`mongo`)**
 
@@ -225,7 +288,18 @@ The `docker-compose.yml` defines **5 services** that work together to provide a 
 - **Health Check**: Uses `mongosh` to ping the database every 30 seconds
 - **Volume**: `studzee-mongo-data` for data persistence
 
-#### 2. **Redis Stack (`redis`)**
+#### 2. **PostgreSQL (`postgres`)**
+
+- **Image**: `postgres:16-alpine`
+- **Purpose**: Users, Expo push tokens, and the notification and email audit logs
+- **Container Name**: `studzee_postgres`
+- **Port**: `5432` (configurable via `POSTGRES_PORT`)
+- **Credentials**: Set via `POSTGRES_USER` and `POSTGRES_PASSWORD`, database via `POSTGRES_DB`
+- **Health Check**: Uses `pg_isready` every 10 seconds
+- **Volume**: `studzee-postgres-data` for data persistence
+- **Schema**: Managed by Prisma, see `prisma/schema.prisma` and `prisma/migrations`
+
+#### 3. **Redis Stack (`redis`)**
 
 - **Image**: `redis/redis-stack:latest`
 - **Purpose**: High-performance caching layer with built-in RedisInsight dashboard
@@ -236,7 +310,7 @@ The `docker-compose.yml` defines **5 services** that work together to provide a 
 - **Health Check**: Uses `redis-cli ping` every 30 seconds
 - **Volume**: `studzee-redis-data` for cache persistence
 
-#### 3. **MinIO (`minio`)**
+#### 4. **MinIO (`minio`)**
 
 - **Image**: `minio/minio:latest`
 - **Purpose**: S3-compatible object storage for local development (alternative to AWS S3)
@@ -248,7 +322,7 @@ The `docker-compose.yml` defines **5 services** that work together to provide a 
 - **Health Check**: Curls the MinIO health endpoint every 30 seconds
 - **Volume**: `studzee-minio-data` for object storage persistence
 
-#### 4. **Mongo Express (`mongo-express`)**
+#### 5. **Mongo Express (`mongo-express`)**
 
 - **Image**: `mongo-express:latest`
 - **Purpose**: Web-based MongoDB admin interface
@@ -257,7 +331,7 @@ The `docker-compose.yml` defines **5 services** that work together to provide a 
 - **Features**: Browse collections, run queries, manage documents
 - **Depends On**: MongoDB service must be healthy before starting
 
-#### 5. **API (`api`)**
+#### 6. **API (`api`)**
 
 - **Purpose**: Core backend application service
 - **Development Workflow**: Usually run locally via `npm run dev` to enable hot-reloading and easier debugging, while connecting to the containerized infrastructure.
@@ -270,11 +344,12 @@ The `docker-compose.yml` defines **5 services** that work together to provide a 
 
 The Docker Compose setup uses **named volumes** to persist data across container restarts:
 
-| Volume Name          | Purpose         | Data Stored                                   |
-| -------------------- | --------------- | --------------------------------------------- |
-| `studzee-mongo-data` | MongoDB storage | Database collections, indexes, configurations |
-| `studzee-redis-data` | Redis storage   | Cache data, persistence snapshots             |
-| `studzee-minio-data` | MinIO storage   | Uploaded images, PDFs, and other objects      |
+| Volume Name             | Purpose            | Data Stored                                   |
+| ----------------------- | ------------------ | --------------------------------------------- |
+| `studzee-mongo-data`    | MongoDB storage    | Content collections, indexes, configurations  |
+| `studzee-postgres-data` | PostgreSQL storage | Users, push tokens, notification and email logs |
+| `studzee-redis-data`    | Redis storage      | Cache data, persistence snapshots             |
+| `studzee-minio-data`    | MinIO storage      | Uploaded images, PDFs, and other objects      |
 
 **Volume Management**:
 
@@ -339,20 +414,22 @@ npm run dev
 
 Complete reference of all exposed ports:
 
-| Port    | Service       | Purpose             | Environment Variable |
-| ------- | ------------- | ------------------- | -------------------- |
-| `4000`  | API           | Application server  | `PORT`               |
-| `27017` | MongoDB       | Database connection | `MONGO_PORT`         |
-| `6379`  | Redis         | Cache connection    | `REDIS_PORT`         |
-| `8001`  | RedisInsight  | Redis web dashboard | `REDIS_INSIGHT_PORT` |
-| `8081`  | Mongo Express | MongoDB web admin   | `MONGO_EXPRESS_PORT` |
-| `9000`  | MinIO         | Object storage API  | `MINIO_PORT`         |
-| `9001`  | MinIO Console | MinIO web interface | `MINIO_CONSOLE_PORT` |
+| Port    | Service       | Purpose                | Environment Variable |
+| ------- | ------------- | ---------------------- | -------------------- |
+| `4000`  | API           | Application server     | `PORT`               |
+| `27017` | MongoDB       | Content database       | `MONGO_PORT`         |
+| `5432`  | PostgreSQL    | Notification database  | `POSTGRES_PORT`      |
+| `6379`  | Redis         | Cache connection       | `REDIS_PORT`         |
+| `8001`  | RedisInsight  | Redis web dashboard    | `REDIS_INSIGHT_PORT` |
+| `8081`  | Mongo Express | MongoDB web admin      | `MONGO_EXPRESS_PORT` |
+| `9000`  | MinIO         | Object storage API     | `MINIO_PORT`         |
+| `9001`  | MinIO Console | MinIO web interface    | `MINIO_CONSOLE_PORT` |
 
 **Accessing Services**:
 
 - API: `http://localhost:4000` (when running)
 - MongoDB: `mongodb://localhost:27017`
+- PostgreSQL: `postgresql://postgres:postgres@localhost:5432/studzee_notifications`
 - Redis: `redis://localhost:6379`
 - RedisInsight: `http://localhost:8001`
 - Mongo Express: `http://localhost:8081`
@@ -428,11 +505,12 @@ studzee-assets/
 
 All core services include health check configurations to ensure reliability:
 
-| Service | Check Command                              | Interval | Timeout | Retries | Start Period |
-| ------- | ------------------------------------------ | -------- | ------- | ------- | ------------ |
-| MongoDB | `mongosh --eval "db.adminCommand('ping')"` | 30s      | 10s     | 5       | 30s          |
-| Redis   | `redis-cli ping`                           | 30s      | 10s     | 5       | 30s          |
-| MinIO   | `curl -f http://localhost:9001/health`     | 30s      | 10s     | 5       | 30s          |
+| Service    | Check Command                              | Interval | Timeout | Retries | Start Period |
+| ---------- | ------------------------------------------ | -------- | ------- | ------- | ------------ |
+| MongoDB    | `mongosh --eval "db.adminCommand('ping')"` | 30s      | 10s     | 5       | 30s          |
+| PostgreSQL | `pg_isready -U $POSTGRES_USER`             | 10s      | 5s      | 5       | 10s          |
+| Redis      | `redis-cli ping`                           | 30s      | 10s     | 5       | 30s          |
+| MinIO      | `curl -f http://localhost:9001/health`     | 30s      | 10s     | 5       | 30s          |
 
 **Health Check Benefits**:
 
@@ -550,40 +628,48 @@ make test
 The service follows a clean architecture pattern with clear separation of concerns:
 
 ```
+prisma/                 # Postgres schema and migration history
 src/
 ├── api/                # HTTP layer
-│   ├── controllers/    # Request handlers (admin, content, pdf, upload)
-│   └── routes/         # Route definitions (admin, auth, content, health, pdf)
+│   ├── controllers/    # admin, content, email, notification, pdf, upload, user, webhook
+│   └── routes/         # admin, content, health, healthcheck, notification, pdf, webhook
 ├── cli/                # Command-line tools
 │   ├── seeds/          # Database seeding scripts
 │   └── tools/          # Utility tools (cache refresh, etc.)
-├── config/             # Configuration (DB, Redis, S3, env)
-├── core/               # Core domain logic (deprecated, use services/)
+├── config/             # Configuration (env, mongo, postgres, redis, s3)
 ├── data/               # Sample data files (JSON, test images/PDFs)
-├── jobs/               # Scheduled background jobs (cache refresh, heartbeat)
-├── middleware/         # Express middleware (auth, error handling, upload)
-├── models/             # Data models and schemas (Mongoose + Zod)
+├── jobs/               # Scheduled jobs (cache refresh, heartbeat, token cleanup)
+├── middleware/         # auth, errorHandler, helmet, rateLimit, upload, validation
+├── models/             # Mongoose models and Zod schemas
 ├── services/           # Business logic layer
-│   ├── admin.service.ts    # Admin operations
-│   ├── content.service.ts  # Content retrieval
-│   ├── pdf.service.ts      # PDF listing
-│   └── upload.service.ts   # File uploads to S3
+│   ├── admin.service.ts         # Document CRUD
+│   ├── content.service.ts       # Content retrieval and caching
+│   ├── email.service.ts         # Transactional email
+│   ├── expo.service.ts          # Expo push delivery
+│   ├── notification.service.ts  # Notification and email audit logs
+│   ├── pdf.service.ts           # PDF listing
+│   ├── upload.service.ts        # File uploads to S3
+│   └── user.service.ts          # Users and push token registration
 ├── tests/              # Test suite (vitest)
 ├── types/              # TypeScript type definitions
-└── utils/              # Helper functions (cache, logger)
+└── utils/              # Helper functions (cache, logger, mail templates)
 ```
 
 ### Key Components
 
-- **Content Service**: Handles document listing and retrieval with caching
-- **Admin Service**: Manages document CRUD operations with cache invalidation
-- **Upload Service**: Handles file uploads to AWS S3
-- **Cache Layer**: Redis-based caching with automatic invalidation
+- **Content Service**: Document listing and retrieval with caching
+- **Admin Service**: Document CRUD with cache invalidation
+- **Upload Service**: File uploads to AWS S3
+- **User Service**: User records mirrored from Clerk, and Expo push token registration
+- **Expo Service**: Push delivery batched to the Expo limit of 100 messages per request, reporting retired tokens for pruning
+- **Email Service**: Transactional email with an attachment host allowlist and bcc recipients
+- **Notification Service**: Audit logs for notifications and email
+- **Cache Layer**: Redis caching with `SCAN` based invalidation
 - **Authentication**: Clerk middleware with role-based access control and development bypass
-- **Security Middleware**: Helmet, CORS, compression, and rate limiting (100 req/15min)
-- **Scheduled Jobs**: Daily cache refresh and production heartbeat monitoring
+- **Security Middleware**: Helmet, CORS, compression, `trust proxy`, a global rate limit of 100 req/15min, and tighter per route limits on the expensive admin endpoints
+- **Scheduled Jobs**: Daily cache refresh, daily token cleanup, and heartbeat monitoring
 - **Error Handling**: Centralized error handling middleware
-- **Validation**: Zod schemas for request/response validation
+- **Validation**: Zod schemas for request and response validation
 
 ## API Documentation
 
@@ -617,15 +703,59 @@ For detailed API documentation, see [API.md](./API.md).
 
 - **GET** `/pdfs` - Get paginated list of documents with PDFs (Public)
 
+#### Notification Endpoints
+
+- **POST** `/notifications/register` - Register the caller's device for push, or attach another device token to an existing registration (Authenticated, 10 req/min)
+
+#### Webhook Endpoints
+
+- **POST** `/webhooks/clerk` - Receive Clerk events. Only `user.created` is acted on, which sends the welcome email (Public, authenticated by svix signature)
+
+This router is mounted ahead of the JSON body parser so the signature is verified against the raw request bytes. It requires `CLERK_WEBHOOK_SIGNING_SECRET` and returns 500 without it, since the signature is its only authentication.
+
 #### Admin Endpoints
 
+Documents:
+
 - **POST** `/admin/documents` - Create new document (Admin)
-- **PUT** `/admin/documents/:id` - Update document (Admin)
+- **PUT** `/admin/documents/:id` - Update document, accepts a partial document (Admin)
 - **DELETE** `/admin/documents/:id` - Delete document (Admin)
 - **POST** `/admin/documents/:id/upload-image` - Upload document image (Admin, max 10MB)
-- **POST** `/admin/documents/:id/upload-pdf` - Upload document PDF (Admin, max 50MB)
+- **POST** `/admin/documents/:id/upload-pdf` - Attach a PDF to a document (Admin, max 50MB)
 
-For full request/response examples and detailed documentation, refer to [API.md](./API.md).
+Notifications:
+
+- **POST** `/admin/notifications/send` - Broadcast a push notification to all users or to named users (Admin, 20 req/min)
+- **GET** `/admin/notifications` - Paginated history of sent notifications (Admin, 30 req/min)
+
+Email:
+
+- **POST** `/admin/emails/send` - Send a transactional email, optionally with PDF attachments (Admin, 10 req/min)
+- **GET** `/admin/emails/logs` - Paginated history of sent emails (Admin, 30 req/min)
+
+Users:
+
+- **GET** `/admin/users` - Paginated list of registered users (Admin, 30 req/min)
+- **GET** `/admin/users/emails` - Every registered email address (Admin, 30 req/min)
+
+#### Migrated Endpoints
+
+The notification service was merged into this backend. Its endpoints moved as follows, and the old paths no longer exist:
+
+| Old path                                | New path                       |
+| --------------------------------------- | ------------------------------ |
+| `POST /noti/api/register`               | `POST /notifications/register` |
+| `POST /noti/api/admin/notification/send`| `POST /admin/notifications/send` |
+| `GET /noti/api/admin/notifications`     | `GET /admin/notifications`     |
+| `POST /noti/api/admin/email/send`       | `POST /admin/emails/send`      |
+| `GET /noti/api/admin/email/logs`        | `GET /admin/emails/logs`       |
+| `GET /noti/api/admin/users`             | `GET /admin/users`             |
+| `GET /noti/api/admin/emails`            | `GET /admin/users/emails`      |
+| `POST /noti/api/webhooks/clerk`         | `POST /webhooks/clerk`         |
+
+> **Deployment note**: any client already released against the old paths keeps calling them. Either rewrite them at the ingress or ship a client build that uses the new paths before the old service is retired.
+
+Import [postman.collection.json](./postman.collection.json) for ready made requests covering every endpoint above.
 
 ---
 
@@ -667,25 +797,33 @@ A scheduled background job runs daily at midnight UTC (hardcoded as `'0 0 * * *'
 npm run job:refresh-cache
 ```
 
-### Heartbeat Job (Production)
+### Heartbeat Job
 
-In production environments, an automated heartbeat job runs every 14 minutes to:
+An automated heartbeat job runs every 14 minutes to:
 
 - Ping the configured `HEALTHCHECK_URL`
 - Prevent services from spinning down due to inactivity (e.g., Render free tier)
 - Log health check results
 
-> **Note**: This job only runs when `NODE_ENV=production`. It is automatically skipped in development mode.
+> **Note**: The job is skipped only when `NODE_ENV=test`, and it needs `HEALTHCHECK_URL` to be set. It previously did the opposite, scheduling only under test, which meant the keepalive never ran in the one environment that needed it.
+
+### Token Cleanup Job
+
+A daily job at 02:00 UTC removes malformed Expo push tokens. The main pruning happens inline: every broadcast reads the Expo tickets and immediately deletes any token reported as `DeviceNotRegistered`, so tokens for uninstalled apps stop being counted as recipients.
+
+> **Note**: This job only runs when `NODE_ENV=production`.
 
 ## Database Schema
 
-### Document Model
+Content lives in MongoDB through Mongoose. Users, push tokens and delivery logs live in PostgreSQL through Prisma. There is no relation between the two, so per user content state is not representable today.
+
+### MongoDB: Document Model
 
 ```typescript
 interface Document {
   _id: ObjectId // Auto-generated MongoDB ID
   title: string // Document title (min 3 chars)
-  content: string // Full document content (min 10 chars)
+  content: ContentSection[] | Record<string, unknown> // Structured content, not a plain string
   summary?: string // Optional summary
   facts?: string // Optional facts
   quiz: Record<string, QuizItem> // Quiz questions (required)
@@ -712,6 +850,46 @@ interface PdfObject {
 
 > **Note**: The `imageUrl` and `pdfUrl` fields are optional. Images are replaced on new uploads, while PDFs are stored as an array allowing multiple files per document.
 
+### PostgreSQL: Notification Models
+
+Defined in [`prisma/schema.prisma`](./prisma/schema.prisma) and applied through the migrations in `prisma/migrations`.
+
+```prisma
+model User {
+  id         String   @id @default(cuid())
+  clerkId    String   @unique   // Identity from Clerk
+  email      String   @unique
+  expoTokens String[]           // One entry per registered device
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  imageUrl  String?
+  sentBy    String             // Clerk ID of the admin who sent it
+  sentTo    String[]           // Empty when the broadcast went to everyone
+  sentToAll Boolean  @default(false)
+  status    String   @default("sent")
+  createdAt DateTime @default(now())
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  subject   String
+  message   String   @db.Text
+  pdfUrls   String[]
+  sentBy    String
+  sentTo    String[]
+  status    String   @default("sent")
+  createdAt DateTime @default(now())
+}
+```
+
+> **Note**: a `SystemLog` model existed in the original schema but was never read or written, so it is dropped by the `20260810000000_drop_system_log` migration.
+
 ## Development
 
 ### Project Structure
@@ -723,15 +901,20 @@ interface PdfObject {
 │   │   ├── controllers/    # Request handlers
 │   │   │   ├── admin.controller.ts
 │   │   │   ├── content.controller.ts
+│   │   │   ├── email.controller.ts
+│   │   │   ├── notification.controller.ts
 │   │   │   ├── pdf.controller.ts
-│   │   │   └── upload.controller.ts
+│   │   │   ├── upload.controller.ts
+│   │   │   ├── user.controller.ts
+│   │   │   └── webhook.controller.ts
 │   │   └── routes/         # Route definitions
-│   │       ├── admin.ts
-│   │       ├── auth.ts
-│   │       ├── content.ts
-│   │       ├── health.ts
-│   │       ├── healthcheck.ts   # Render/production healthcheck
-│   │       └── pdf.ts
+│   │       ├── admin.route.ts        # Documents, notifications, email, users
+│   │       ├── content.route.ts
+│   │       ├── health.route.ts
+│   │       ├── healthcheck.route.ts  # Render/production healthcheck
+│   │       ├── notification.route.ts # Device registration
+│   │       ├── pdf.route.ts
+│   │       └── webhook.route.ts      # Clerk webhook, raw body
 │   ├── cli/                # Command-line tools
 │   │   ├── seeds/          # Database seeding
 │   │   │   ├── seed.ts         # Main seeding script
@@ -739,8 +922,9 @@ interface PdfObject {
 │   │   └── tools/          # Utility tools
 │   │       └── run-job.ts      # Job runner
 │   ├── config/             # App configuration
-│   │   ├── index.ts        # Environment variables
+│   │   ├── index.ts        # Environment variables, validated by Zod
 │   │   ├── mongo.ts        # MongoDB connection
+│   │   ├── postgres.ts     # Prisma client and connection
 │   │   ├── redis.ts        # Redis connection
 │   │   └── s3.ts           # AWS S3 configuration
 │   ├── data/               # Sample data
@@ -751,27 +935,39 @@ interface PdfObject {
 │   │   └── today.png
 │   ├── jobs/               # Scheduled jobs
 │   │   ├── cache-refresh.ts    # Daily cache warming
-│   │   └── heartbeat.ts        # Production health pings
+│   │   ├── heartbeat.ts        # Keepalive health pings
+│   │   └── token-cleanup.ts    # Daily push token pruning
 │   ├── middleware/         # Express middleware
 │   │   ├── auth.ts         # Clerk authentication + dev bypass
 │   │   ├── errorHandler.ts
 │   │   ├── helmet.ts       # Security headers
-│   │   └── upload.ts       # Multer file upload
+│   │   ├── rateLimit.ts    # Per route rate limiting
+│   │   ├── upload.ts       # Multer file upload
+│   │   └── validation.ts   # Zod body and query validation
 │   ├── models/             # Data models
-│   │   ├── document.model.ts    # Mongoose model
-│   │   └── document.schema.ts   # Zod schema
+│   │   ├── document.model.ts           # Mongoose model
+│   │   ├── document.validation.ts      # Zod schema for documents
+│   │   └── notification.validation.ts  # Zod schemas for push and email
 │   ├── services/           # Business logic layer
-│   │   ├── admin.service.ts     # Document CRUD operations
-│   │   ├── content.service.ts   # Content retrieval & caching
-│   │   ├── pdf.service.ts       # PDF listing
-│   │   └── upload.service.ts    # S3 file uploads
+│   │   ├── admin.service.ts        # Document CRUD operations
+│   │   ├── content.service.ts      # Content retrieval and caching
+│   │   ├── email.service.ts        # Transactional email
+│   │   ├── expo.service.ts         # Expo push delivery
+│   │   ├── notification.service.ts # Notification and email audit logs
+│   │   ├── pdf.service.ts          # PDF listing
+│   │   ├── upload.service.ts       # S3 file uploads
+│   │   └── user.service.ts         # Users and push tokens
 │   ├── tests/              # Test suite
 │   ├── types/              # TypeScript types
 │   │   └── express.d.ts
 │   ├── utils/              # Helper functions
 │   │   ├── cache.ts        # Cache utilities
-│   │   └── logger.ts       # Pino logger
+│   │   ├── logger.ts       # Pino logger
+│   │   └── mail.ts         # HTML email templates
 │   └── index.ts            # Application entry point
+├── prisma/                 # Postgres schema and migrations
+│   ├── schema.prisma       # User, Notification, EmailLog models
+│   └── migrations/         # Applied migration history
 ├── .dockerignore           # Docker ignore rules
 ├── .env                    # Local environment (AWS S3)
 ├── .env.docker             # Docker environment (MinIO)
@@ -785,6 +981,7 @@ interface PdfObject {
 ├── LICENSE                 # License file
 ├── Makefile                # Development commands
 ├── package.json            # Dependencies and scripts
+├── postman.collection.json # Importable request collection for every endpoint
 ├── prettier.config.js      # Prettier configuration
 ├── README.md               # This file
 └── tsconfig.json           # TypeScript configuration
@@ -813,6 +1010,12 @@ npm run seed:today        # Seed today's content (uses src/cli/seeds/today.seed.
 
 # Cache management
 npm run job:refresh-cache # Manually refresh cache (uses src/cli/tools/run-job.ts)
+
+# Postgres schema (Prisma)
+npm run prisma:generate   # Regenerate the Prisma client
+npm run prisma:migrate    # Create and apply a migration in development
+npm run prisma:deploy     # Apply existing migrations, used in production
+npm run prisma:studio     # Browse the Postgres data in a web UI
 
 # Release management
 npm run do-release        # Patch version bump
@@ -904,18 +1107,31 @@ Ensure all required environment variables are set in production:
 NODE_ENV=production
 PORT=4000
 MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/studzee
+DATABASE_URL=postgresql://user:password@host:5432/studzee_notifications
 REDIS_URL=redis://localhost:6379
 CLERK_SECRET_KEY=sk_live_...
 CLERK_PUBLISHABLE_KEY=pk_live_...
-AWS_REGION=us-east-1
+CLERK_WEBHOOK_SIGNING_SECRET=whsec_...
+AWS_REGION=ap-south-1
 AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=...
 AWS_S3_BUCKET_NAME=studzee-production
+SMTP_HOST=smtp.provider.com
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASSWORD=...
+EMAIL_FROM=Studzee <no-reply@studzee.in>
+EMAIL_ATTACHMENT_HOSTS=studzee-production.s3.ap-south-1.amazonaws.com
 LIST_CACHE_TTL=300
 DOC_CACHE_TTL=86400
 JOB_CRON=0 0 * * *
 LOG_LEVEL=info
+HEALTHCHECK_URL=https://your-app.onrender.com/healthcheck
 ```
+
+> **Breaking change from the merge**: `DATABASE_URL`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` and `EMAIL_FROM` are now required. The config schema throws at startup if any is missing, so add them before the next deploy.
+
+The container applies pending Postgres migrations on start with `prisma migrate deploy`, so no separate migration step is needed in the deployment pipeline.
 
 ### Docker Production Build
 
@@ -949,7 +1165,7 @@ For hosting on Render (or similar platforms with automatic spin-down):
    - `HEALTHCHECK_URL` - Set to your deployed app's healthcheck endpoint (e.g., `https://your-app.onrender.com/healthcheck`)
 
 2. **Heartbeat job** will automatically:
-   - Start when `NODE_ENV=production`
+   - Start whenever `HEALTHCHECK_URL` is set and `NODE_ENV` is not `test`
    - Ping `HEALTHCHECK_URL` every 14 minutes
    - Keep your service alive (prevents Render free tier spin-down)
    - Log health check status
@@ -983,6 +1199,22 @@ cat .env | grep MONGO_URI
 docker-compose logs mongo
 ```
 
+**PostgreSQL or Prisma Failures**
+
+```bash
+# Check Postgres is running and healthy
+docker-compose ps postgres
+
+# Verify the connection string
+cat .env | grep DATABASE_URL
+
+# "@prisma/client did not initialize yet" means the client was never generated
+npm run prisma:generate
+
+# Check which migrations have been applied
+npx prisma migrate status
+```
+
 **Redis Connection Failed**
 
 ```bash
@@ -991,6 +1223,31 @@ docker-compose ps redis
 
 # Test Redis connection
 docker-compose exec redis redis-cli ping
+```
+
+**Clerk Webhook Returns 400**
+
+```bash
+# The signature is verified against the raw request bytes, so the webhook
+# router must stay mounted before express.json() in src/index.ts.
+
+# Confirm the signing secret matches the endpoint in the Clerk dashboard
+cat .env | grep CLERK_WEBHOOK_SIGNING_SECRET
+
+# A 500 with "Webhook secret not configured" means the variable is unset.
+# A 500 with "Webhook route misconfigured" means a body parser ran first.
+```
+
+**Push Notifications Not Arriving**
+
+```bash
+# A 404 from /admin/notifications/send means no devices are registered
+# for the targeted users. Check the token table:
+npm run prisma:studio
+
+# The send response reports sent, failed and prunedTokens counts.
+# prunedTokens above zero means those devices uninstalled the app and
+# their tokens were deleted.
 ```
 
 **S3 Upload Failures**
