@@ -7,12 +7,17 @@ One entry per unit of work, with the branch, what changed, and why.
 
 Open items carried forward. Move each into a dated entry once it is done.
 
-- **Repoint the ingress so `/noti` reaches the merged backend, and update the
-  clients for the renamed routes.** The notification endpoints were renamespaced
-  during the merge, so `POST /noti/api/register` no longer exists. MOBILE 1.1.4
-  is already in users' hands and calls it. Either add a rewrite from
-  `/noti/api/register` to `/notifications/register` or ship a MOBILE build that
-  calls the new path. DESKTOP is unbuilt so it needs no coordination.
+- **Repoint the ingress so already installed apps keep working.** MOBILE source
+  now calls `/notifications/register`, but every device running the released
+  1.1.4 build still calls `POST /noti/api/register`, which no longer exists.
+  Those installs keep failing to register until either the ingress rewrites
+  `/noti/api/register` to `/notifications/register`, or every user updates.
+  DESKTOP makes no notification calls, so it needs no change.
+- **Fix `registerToken` missing from the mobile notification context.**
+  `hooks/useNotificationPermissions.ts` reads `registerToken` from the context,
+  but `contexts/NotificationContext.tsx` declares its own local interface
+  without it, so `tsc --noEmit` fails in MOBILE. This predates the merge and is
+  the only type error in the module.
 - **Data storage layer.** Starts now that the merge is complete. Not yet
   specified.
 - **Run the BACKEND test suite.** It could not be run on this machine, see the

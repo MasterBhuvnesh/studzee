@@ -16,7 +16,8 @@ Date is the date the status last changed.
 | Merge NOTIFICATION into BACKEND, keeping BACKEND only | BHUVNESH | DONE | 10-08-2026 |
 | Add Postgres to `BACKEND/docker-compose.yml` for the merged service | BHUVNESH | DONE | 10-08-2026 |
 | Point the ingress `/noti` prefix at the merged backend | BHUVNESH | PLANNED | 10-08-2026 |
-| Update MOBILE and DESKTOP for the renamed notification routes | BHUVNESH | PLANNED | 10-08-2026 |
+| Point MOBILE at `/notifications/register` on the merged backend | BHUVNESH | DONE | 10-08-2026 |
+| Fix `registerToken` missing from the mobile notification context | BHUVNESH | PLANNED | 10-08-2026 |
 | Data storage layer, after the merge | BHUVNESH | PLANNED | 10-08-2026 |
 | Update `.github` docs and workflows for the v2 tree | BHUVNESH | PLANNED | 10-08-2026 |
 | V2 architecture | BHUVNESH | PLANNED | 10-08-2026 |

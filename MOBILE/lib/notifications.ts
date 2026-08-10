@@ -5,11 +5,12 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import type { BackendTokenResponse } from '@/types/notification';
-import { EXPO_PUBLIC_NOTIFICATION_API_URL } from '@/utils/config';
+import { EXPO_PUBLIC_BACKEND_API_URL } from '@/utils/config';
 import logger from '@/utils/logger';
 
-// Backend API configuration
-const NOTIFICATION_API_URL = `${EXPO_PUBLIC_NOTIFICATION_API_URL}/api/register`;
+// Device registration endpoint on the backend. The notification service was
+// merged into the backend, which replaced /noti/api/register with this path.
+const NOTIFICATION_API_URL = `${EXPO_PUBLIC_BACKEND_API_URL}/notifications/register`;
 
 /**
  * Configures the default notification handler for the app
