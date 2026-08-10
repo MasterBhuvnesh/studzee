@@ -420,9 +420,11 @@ Common failures on all admin routes:
 #### Upload Document Image
 
 - **Route:** `POST /admin/documents/:id/upload-image`
-- **Description:** Uploads the cover image, replacing any existing one. The old object is deleted from S3.
+- **Description:** Uploads the cover image, replacing any existing one. The old object is deleted from storage.
 - **Content-Type:** `multipart/form-data`
 - **Body:** `file` (required) - JPG, PNG or WebP, max 10MB
+
+> **The form field must be named `file`.** Three mistakes produce a 400, each with its own message: sending a JSON body rather than `multipart/form-data`, naming the field something other than `file`, and sending multipart with no file attached. In Postman, a `file` row in the form-data tab is not enough on its own, you also have to pick a file with the Select Files button, otherwise nothing is sent.
 - **Response:**
   - `200 OK`
     ```json
@@ -432,9 +434,27 @@ Common failures on all admin routes:
       "documentId": "507f1f77bcf86cd799439011"
     }
     ```
-  - `400 Bad Request` - No file, invalid type, size exceeded, or malformed document ID
+  - `400 Bad Request` - Wrong content type, wrong field name, no file, invalid file type, size exceeded, or malformed document ID
+    ```json
+    {
+      "message": "Uploads must be sent as multipart/form-data",
+      "details": "Received Content-Type: application/json. Attach the file as a form field named \"file\" rather than sending a JSON body."
+    }
+    ```
+    ```json
+    {
+      "message": "Unexpected form field \"image\"",
+      "details": "The file must be sent in a form field named \"file\"."
+    }
+    ```
+    ```json
+    {
+      "message": "No file uploaded",
+      "details": "Please include a file in the request with field name \"file\""
+    }
+    ```
   - `404 Not Found` - Document does not exist
-  - `500 Internal Server Error` - S3 upload failure
+  - `500 Internal Server Error` - Storage upload failure
 - **Example:**
   ```bash
   curl -X POST http://localhost:4000/admin/documents/507f1f77bcf86cd799439011/upload-image \

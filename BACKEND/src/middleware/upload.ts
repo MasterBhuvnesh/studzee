@@ -71,13 +71,33 @@ const handleMulterError = (
   upload: (req: Request, res: Response, callback: (error: any) => void) => void
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
+    // Multer only parses multipart/form-data and ignores anything else, which
+    // reaches the controller as a missing file. Saying so here is more useful
+    // than the generic "no file uploaded" that follows, because the caller has
+    // sent the wrong kind of request rather than forgotten the field.
+    const contentType = req.headers['content-type'] ?? ''
+    if (!contentType.toLowerCase().startsWith('multipart/form-data')) {
+      return res.status(400).json({
+        message: 'Uploads must be sent as multipart/form-data',
+        details: `Received Content-Type: ${contentType || '(none)'}. Attach the file as a form field named "file" rather than sending a JSON body.`,
+      })
+    }
+
     upload(req, res, (err: Error | null) => {
       if (err instanceof multer.MulterError) {
-        // Multer-specific errors
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({
             message:
               'File size exceeded. Maximum allowed size is 10MB for images and 50MB for PDFs.',
+          })
+        }
+        // The commonest case is LIMIT_UNEXPECTED_FILE, which means the form
+        // field was named something other than "file". Multer's own message
+        // for it is just "Unexpected field", which does not say what to fix.
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+          return res.status(400).json({
+            message: `Unexpected form field "${err.field}"`,
+            details: 'The file must be sent in a form field named "file".',
           })
         }
         return res.status(400).json({ message: err.message })

@@ -450,7 +450,7 @@
 								}
 							]
 						},
-						"description": "Upload the cover image for a document. Replaces any existing image. Requires the admin role."
+						"description": "Upload the cover image for a document. Replaces any existing image. Requires the admin role.\n\nIMPORTANT: in the Body tab, the form-data row named file is only a placeholder. You must click Select Files and choose an actual file, otherwise Postman sends nothing and the request fails with 400 No file uploaded. The field name must be file."
 					},
 					"response": []
 				},
@@ -498,7 +498,7 @@
 								}
 							]
 						},
-						"description": "Attach a PDF to a document. Documents hold an array of PDFs, so this appends rather than replaces. Requires the admin role."
+						"description": "Attach a PDF to a document. Documents hold an array of PDFs, so this appends rather than replaces. Requires the admin role.\n\nIMPORTANT: in the Body tab, click Select Files on the form-data row named file and choose a real PDF. A row with no file attached sends nothing and fails with 400 No file uploaded. The field name must be file."
 					},
 					"response": []
 				}
