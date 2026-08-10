@@ -5,7 +5,7 @@ Rules the Claude agent must follow when working in this repository.
 ## COMMITS
 
 - Use Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, `build:`, `ci:`).
-- Keep the subject line short and imperative. Put the detail in the body, explaining what changed and why.
+- Commit messages are detailed. Keep the subject line short and imperative, then write a body that states what changed, why it changed, and anything a reviewer needs to know. A bare subject line is not acceptable.
 - Scope the commit to the service it touches when useful, for example `feat(backend):`, `fix(mobile):`, `docs(website):`.
 - Never add model or co-author trailers such as `Co-Authored-By: Claude ...`. No mention of Claude, Anthropic, or any model in commit messages.
 - Commit every change that is made. Do not leave work uncommitted.
@@ -14,7 +14,7 @@ Rules the Claude agent must follow when working in this repository.
 
 - Do not use em dashes.
 - Do not use emoji.
-- Use ALL CAPS for all titles and headings in every markdown file, including the README and any milestone docs.
+- Use ALL CAPS for all titles and headings in every markdown file, including the README.
 - Be concise.
 
 ## LANGUAGE
