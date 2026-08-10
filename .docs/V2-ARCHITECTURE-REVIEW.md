@@ -1,8 +1,27 @@
 # V2 ARCHITECTURE REVIEW
 
-Review of the existing BACKEND, NOTIFICATION, MOBILE, and DESKTOP modules, carried out on 10-08-2026 before the v2 rewrite. Convex is excluded by decision of the repository owner and is not considered anywhere in this document or in the v2 design.
+Review of the BACKEND, NOTIFICATION, MOBILE, and DESKTOP modules, carried out on 10-08-2026 before the v2 rewrite. Convex is excluded by decision of the repository owner and is not considered anywhere in this document or in the v2 design.
 
-This document describes what exists today, what it depends on, and what is broken or structurally wrong. It does not propose the v2 design. That comes after the owner defines the v2 scope.
+> ## STATUS, UPDATED 11-08-2026
+>
+> **This is a point in time record of the state before the rewrite. Do not read it as a list of open problems.** It is kept unedited so the starting point stays visible.
+>
+> What has changed since it was written:
+>
+> - **NOTIFICATION no longer exists.** It was merged into BACKEND on 10-08-2026 and the folder is deleted. Every finding in its section is either fixed or gone with it.
+> - **Every backend and notification defect listed here is fixed**, along with several found afterwards. The full list with causes is in [`FIXES.md`](FIXES.md).
+> - **Object storage moved from AWS S3 to Supabase** on 11-08-2026, which fixed a further set of problems in the S3 client that this review did not reach.
+> - **The abandoned Fastify build output in `SERVICES` and `PACKAGES` is gone**, removed with the repository strip.
+> - **The open questions at the end are answered**, except the deployment topology. One database or two: both are kept. One service or several: one. Storage: Supabase. Runtime: Node.
+>
+> Still open from this review, tracked in [`RECORDS.md`](RECORDS.md):
+>
+> - Everything in the MOBILE and DESKTOP sections. Client work starts after the backend is settled.
+> - The `.github` workflows and community docs.
+> - The API contract is still hand maintained in three places, since the clients have not been rewritten yet.
+> - Cron still runs in process, so a multi replica deploy duplicates every job.
+
+This document describes what existed at the time of the review, what it depended on, and what was broken or structurally wrong. It does not propose the v2 design.
 
 ## SCOPE OF THE REVIEW
 

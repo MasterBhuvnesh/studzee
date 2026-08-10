@@ -108,7 +108,10 @@ Taken from `docker-notification.testing.yml`. Same shape as above with a Bun too
 
 - The `.testing` suffix in the filenames is misleading. These workflows deploy, they do not test.
 - The website workflow builds `./WEBSITE`, which was removed on 10-08-2026. It will fail on any `website-v*` tag and should be deleted.
-- `code.sh` still accepts `website` as a service name and should be narrowed to the four remaining modules.
+- **The notification workflow is now dead too.** That service was merged into BACKEND on 10-08-2026 and its folder is gone, so `docker-notification.testing.yml` builds a directory that no longer exists.
+- `code.sh` still accepts `website` and `notification` as service names. Only `backend`, `mobile` and `desktop` remain.
+- **The backend image build needs a Prisma step.** `npm run build` now runs `prisma generate`, and the container runs `prisma migrate deploy` on start, so the deploy target needs `DATABASE_URL` reachable at boot.
+- **New required environment variables** since this sample was captured: `DATABASE_URL`, the `SMTP_*` block, `EMAIL_FROM`, and the `S3_*` block replacing the old `AWS_*` names. The config schema throws at startup if any is missing, so the deploy fails fast rather than misbehaving.
 - No workflow runs the BACKEND Vitest suite, and no lint or typecheck gate exists for any module. A v2 pipeline should gate the image build on those.
 - Image tags are mutable on `latest`. Pinning deploys to the version tag is safer.
 - `bug-reproduction-instructions.yml` is unrelated to deployment. It runs an AI inference step on newly opened issues labelled `bug` and comments when the report lacks reproduction detail. It is independent of the module layout and needs no change for v2.
