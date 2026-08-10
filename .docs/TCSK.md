@@ -93,5 +93,7 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 - Repoint the ingress so devices running the released MOBILE 1.1.4 keep registering. They still call `POST /noti/api/register`, which no longer exists.
 - Update everything under `.github`. The website workflow builds a deleted directory and will fail on a `website-v*` tag.
 - `hooks/useNotificationPermissions.ts` in MOBILE reads `registerToken` from a context that does not declare it, so `tsc` fails there. Predates the merge.
+- **Build out the backend test setup.** Asked for by the user on 11-08-2026. Vitest is configured but has never been run on this machine because Defender quarantines `esbuild.exe`, so there is no evidence any test passes. Decide whether to unblock Vitest or move to a runner that does not depend on esbuild, then write real coverage for the merged notification surface, the storage layer, and the cache invalidation paths.
+- **Test the backend once it is deployed.** Asked for by the user on 11-08-2026. Everything so far has been verified against localhost. After the next deploy, exercise the same routes against the deployed URL: readiness against the real Mongo, Postgres and Redis, an upload round trip against the real Supabase buckets, and push registration. The renamed and new environment variables have to be set in the deployed environment first or the service will not boot.
 
 - Add things the user wants Claude to remember here as the project progresses.
