@@ -24,4 +24,8 @@ One entry per unit of work, with the branch, what changed, and why.
 - Reviewed BACKEND, NOTIFICATION, MOBILE, and DESKTOP ahead of the v2 rewrite
   and recorded the findings in `.docs/V2-ARCHITECTURE-REVIEW.md`. Convex is out
   of scope by decision of the repository owner and is excluded from v2.
+- Stripped the repository to the v2 working set. Removed AGENTS, CONVEX, K8S,
+  PACKAGES, SERVICES, TERRAFORM, WEBSITE, and `.vscode`, along with the stray
+  root `package.json` and `package-lock.json`. Kept BACKEND, NOTIFICATION,
+  MOBILE, DESKTOP, `.github`, `code.sh`, `.docs`, and this worklog.
 

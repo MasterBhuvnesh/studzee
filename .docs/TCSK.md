@@ -12,18 +12,20 @@ Things Claude Should Know. This is what the user wants Claude to know about the 
 
 ## REPOSITORY LAYOUT
 
+The repository was stripped to the v2 working set on 10-08-2026. Only the following remain.
+
 - `BACKEND` is the core API (`studzee-api`). It owns business logic, content lifecycle, caching, and Clerk authentication.
-- `NOTIFICATION` is a Bun service (`studzee-notification-api`) for Expo push and transactional email, using Prisma over Postgres. It is event driven and owns no business logic or data.
-- `WEBSITE` is the Next.js web client.
+- `NOTIFICATION` is a Bun service (`studzee-notification-api`) for Expo push and transactional email, using Prisma over Postgres. It owns no business logic or content data.
 - `MOBILE` is the Expo client.
-- `DESKTOP` is the Electron client.
-- `SERVICES` holds the extracted `api` and `notification` service layers.
-- `PACKAGES/shared` holds code shared across the clients and services.
-- `CONVEX` is being removed. Convex is out of scope and must not appear in the v2 architecture or implementation.
-- `AGENTS` is the home of the planned AI and content intelligence work.
-- `TERRAFORM` holds infrastructure pipelines for backend, notification, and website.
-- `K8S/secrets` holds Kubernetes secret material. Nothing sensitive is committed.
+- `DESKTOP` is the Electron admin console.
 - `.github` holds the README, workflows, CODEOWNERS, and community docs.
+- `.docs` holds the process documentation for people and agents.
+- `code.sh` drives the per module version bump and release flow.
+- `WORKLOG.md` is the running record of work.
+
+Removed on 10-08-2026 and recoverable from git history before commit `9ba738d6`: `AGENTS`, `CONVEX`, `K8S`, `PACKAGES`, `SERVICES`, `TERRAFORM`, `WEBSITE`, `.vscode`, and the stray root `package.json`. Convex is out of scope permanently and must not appear in the v2 architecture or implementation.
+
+Gitignored local files from the removed folders were copied to `D:\Projects\Studzee-archive-2026-08-10` outside the repository before deletion. That archive holds the Terraform state for the backend infrastructure and three local env files. It is not tracked and will not survive a machine change.
 
 ## DATA AND INFRASTRUCTURE
 
