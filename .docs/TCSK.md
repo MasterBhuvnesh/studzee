@@ -49,10 +49,21 @@ Gitignored local files from the removed folders were copied to `D:\Projects\Stud
 - Work happens on feature branches and is delivered through pull requests. The user merges, not the agent.
 - No em dashes, no emoji, ALL CAPS headings in markdown.
 
+## V2 PLAN
+
+Stated by the user on 10-08-2026. This is the agreed direction. Follow it in order and do not re-litigate the decisions in it.
+
+1. **Merge NOTIFICATION into BACKEND and keep BACKEND only.** NOTIFICATION stops existing as a separate service. Everything it owns moves into BACKEND: Expo push delivery, transactional email, the Clerk webhook, user and Expo token registration, and the notification and email logs.
+2. **Then work on the data storage layer.** A separate phase that starts only after the merge is complete.
+3. **Keep both databases.** MongoDB stays for content, Postgres stays for the notification data. The user has explicitly confirmed this split is acceptable, so do not propose consolidating them onto one engine.
+4. **Update the docker compose file as part of the merge.** `BACKEND/docker-compose.yml` runs mongo, redis, minio and mongo-express today. It must gain the Postgres service currently defined in `NOTIFICATION/docker-compose.yml`, which is removed along with the folder.
+
+Open decision the merge forces and which the user has not answered yet: BACKEND runs on Node 22 with a `tsc` build, NOTIFICATION runs on Bun with no build step. One runtime has to win. Ask before choosing.
+
 ## NOTES
 
-- The current working branch is `feat/v2-architecture`. The entire codebase is being rewritten. The scope of the v2 design has not been defined yet and the user will describe it.
+- The current working branch is `feat/v2-architecture`. The entire codebase is being rewritten.
 - Convex is being removed from the project entirely. Do not consider it in any design or implementation.
 - The state of the existing modules is documented in [`V2-ARCHITECTURE-REVIEW.md`](V2-ARCHITECTURE-REVIEW.md). Read it before proposing v2 work.
-- `SERVICES` and `PACKAGES/shared` contain only compiled output from an abandoned Fastify rewrite. There is no source. Treat them as reference, not as working code.
+- The v1 CI pattern is preserved in [`WORKFLOW-SAMPLE.md`](WORKFLOW-SAMPLE.md) for reference when `.github/workflows` is rewritten.
 - Add things the user wants Claude to remember here as the project progresses.

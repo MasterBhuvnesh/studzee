@@ -7,6 +7,18 @@ One entry per unit of work, with the branch, what changed, and why.
 
 Open items carried forward. Move each into a dated entry once it is done.
 
+- **Merge NOTIFICATION into BACKEND, keeping BACKEND only.** Agreed with the
+  user on 10-08-2026. See the V2 PLAN section of [`.docs/TCSK.md`](.docs/TCSK.md).
+  Scope of the move: Expo push delivery, transactional email and its templates,
+  the Clerk webhook, user and Expo token registration, and the notification and
+  email logs. Both databases stay, MongoDB for content and Postgres for the
+  notification data. `NOTIFICATION/docker-compose.yml` is folded into
+  `BACKEND/docker-compose.yml`, which must gain the Postgres service alongside
+  the existing mongo, redis, minio and mongo-express services. Blocked on one
+  decision: BACKEND runs Node 22 with a `tsc` build and NOTIFICATION runs Bun
+  with no build step, so one runtime has to win.
+- **Data storage layer.** Starts only after the merge is complete. Not yet
+  specified.
 - **Update everything under `.github` for the v2 tree.** The strip on 10-08-2026
   left it describing modules that no longer exist. Known stale points:
   - `README.md` documents the full old architecture, including the website,
