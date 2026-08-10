@@ -989,17 +989,25 @@ model EmailLog {
 
 ### Available Commands (Makefile)
 
-| Command              | Description                          |
-| -------------------- | ------------------------------------ |
-| `make up`            | Start MongoDB and Redis containers   |
-| `make down`          | Stop all services                    |
-| `make logs`          | View API container logs (if running) |
-| `make test`          | Run test suite with vitest           |
-| `make lint`          | Lint codebase with ESLint            |
-| `make fmt`           | Format code with Prettier            |
-| `make seed`          | Populate database with sample data   |
-| `make refresh-cache` | Manually trigger cache warming job   |
-| `make build`         | Build TypeScript project             |
+| Command                 | Description                                          |
+| ----------------------- | ---------------------------------------------------- |
+| `make up`               | Start the infrastructure containers                  |
+| `make env-up`           | Same, using `.env.docker` (MinIO instead of S3)      |
+| `make down`             | Stop all services                                    |
+| `make env-down`         | Stop all services started with `.env.docker`         |
+| `make logs`             | View API container logs (if running)                 |
+| `make test`             | Run test suite with vitest                           |
+| `make lint`             | Lint codebase with ESLint                            |
+| `make fmt`              | Format code with Prettier                            |
+| `make seed`             | Populate database with sample data                   |
+| `make refresh-cache`    | Manually trigger cache warming job                   |
+| `make build`            | Build TypeScript project                             |
+| `make prisma-generate`  | Regenerate the Prisma client after a schema change   |
+| `make prisma-migrate`   | Create and apply a migration in development          |
+| `make prisma-deploy`    | Apply existing migrations, used in production        |
+| `make prisma-studio`    | Browse the Postgres data in a web UI                 |
+| `make prisma-status`    | Show which migrations have been applied              |
+| `make db-reset`         | Drop and recreate the Postgres schema, destroys data |
 
 ### Additional npm Scripts
 
