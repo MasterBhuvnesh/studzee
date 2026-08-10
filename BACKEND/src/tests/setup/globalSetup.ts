@@ -34,6 +34,30 @@ process.env.REDIS_URL =
   'redis://localhost:6379/1'
 
 /**
+ * The config schema validates at import time and throws on anything missing,
+ * so every required variable needs a value here. These defaults let the suite
+ * run on a checkout with no .env at all. A real .env still wins where set.
+ */
+const testDefaults: Record<string, string> = {
+  CLERK_SECRET_KEY: 'sk_test_placeholder',
+  CLERK_PUBLISHABLE_KEY: 'pk_test_placeholder',
+  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/studzee_test',
+  AWS_REGION: 'ap-south-1',
+  AWS_ACCESS_KEY_ID: 'test-access-key',
+  AWS_SECRET_ACCESS_KEY: 'test-secret-key',
+  AWS_S3_BUCKET_NAME: 'studzee-assets',
+  SMTP_HOST: 'smtp.test.local',
+  SMTP_PORT: '587',
+  SMTP_USER: 'test-user',
+  SMTP_PASSWORD: 'test-password',
+  EMAIL_FROM: 'Studzee <no-reply@studzee.in>',
+}
+
+for (const [key, value] of Object.entries(testDefaults)) {
+  process.env[key] = process.env[key] || value
+}
+
+/**
  * MOCK THE LOGGER
  *
  * What is mocking?

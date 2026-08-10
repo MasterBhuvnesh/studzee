@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VITEST CONFIGURATION
  *
  * This file configures how Vitest runs our tests.
@@ -51,7 +51,6 @@ export default defineConfig({
 
         // Routes with no business logic
         '**/src/api/routes/admin.route.ts',
-        '**/src/api/routes/auth.route.ts',
 
         // Middleware (infra-heavy)
         '**/src/middleware/upload.ts',

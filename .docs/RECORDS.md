@@ -13,8 +13,10 @@ Date is the date the status last changed.
 | Root `WORKLOG.md` running record | BHUVNESH | DONE | 10-08-2026 |
 | Architecture review of BACKEND, NOTIFICATION, MOBILE, DESKTOP | BHUVNESH | DONE | 10-08-2026 |
 | Repository stripped to the v2 working set | BHUVNESH | DONE | 10-08-2026 |
-| Merge NOTIFICATION into BACKEND, keeping BACKEND only | BHUVNESH | PLANNED | 10-08-2026 |
-| Add Postgres to `BACKEND/docker-compose.yml` for the merged service | BHUVNESH | PLANNED | 10-08-2026 |
+| Merge NOTIFICATION into BACKEND, keeping BACKEND only | BHUVNESH | DONE | 10-08-2026 |
+| Add Postgres to `BACKEND/docker-compose.yml` for the merged service | BHUVNESH | DONE | 10-08-2026 |
+| Point the ingress `/noti` prefix at the merged backend | BHUVNESH | PLANNED | 10-08-2026 |
+| Update MOBILE and DESKTOP for the renamed notification routes | BHUVNESH | PLANNED | 10-08-2026 |
 | Data storage layer, after the merge | BHUVNESH | PLANNED | 10-08-2026 |
 | Update `.github` docs and workflows for the v2 tree | BHUVNESH | PLANNED | 10-08-2026 |
 | V2 architecture | BHUVNESH | PLANNED | 10-08-2026 |

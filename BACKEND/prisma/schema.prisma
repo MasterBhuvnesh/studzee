@@ -1,0 +1,57 @@
+// Postgres schema for the notification side of the backend.
+// Content lives in MongoDB and is modelled with Mongoose under src/models.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A registered app user, mirrored from Clerk on first token registration.
+/// One user can hold several Expo push tokens, one per device.
+model User {
+  id         String   @id @default(cuid())
+  clerkId    String   @unique
+  email      String   @unique
+  expoTokens String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+/// Audit record of a push notification broadcast.
+/// sentTo is empty when the broadcast targeted every registered user.
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  imageUrl  String?
+  sentBy    String
+  sentTo    String[]
+  sentToAll Boolean  @default(false)
+  status    String   @default("sent")
+  createdAt DateTime @default(now())
+
+  @@index([sentBy])
+  @@index([createdAt])
+}
+
+/// Audit record of an outbound transactional email.
+model EmailLog {
+  id        String   @id @default(cuid())
+  subject   String
+  message   String   @db.Text
+  pdfUrls   String[]
+  sentBy    String
+  sentTo    String[]
+  status    String   @default("sent")
+  createdAt DateTime @default(now())
+
+  @@index([sentBy])
+  @@index([createdAt])
+}

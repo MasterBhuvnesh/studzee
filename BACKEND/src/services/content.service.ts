@@ -106,26 +106,27 @@ export const getTodayContent = async () => {
 
   logger.info(`CACHE MISS for ${cacheKey}`)
 
-  // Get current time in IST (UTC+5:30)
-  const now = new Date()
-  const istOffset = 5.5 * 60 * 60 * 1000 // 5 hours 30 minutes in milliseconds
-  const istNow = new Date(now.getTime() + istOffset)
+  // The IST day runs from 18:30 UTC the previous day to 18:30 UTC today.
+  // Shifting a date forward by the offset and then calling setUTCHours on the
+  // shifted value, as this used to, conflates the two clocks. Working out the
+  // day number in IST and converting the boundaries straight back to UTC is
+  // both correct and readable.
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000
+  const nowInIst = new Date(Date.now() + IST_OFFSET_MS)
 
-  // Start of today in IST
-  const startOfDay = new Date(istNow)
-  startOfDay.setUTCHours(0, 0, 0, 0)
-
-  // End of today in IST
-  const endOfDay = new Date(istNow)
-  endOfDay.setUTCHours(23, 59, 59, 999)
+  const startOfIstDayUtc = new Date(
+    Date.UTC(
+      nowInIst.getUTCFullYear(),
+      nowInIst.getUTCMonth(),
+      nowInIst.getUTCDate()
+    ) - IST_OFFSET_MS
+  )
+  const endOfIstDayUtc = new Date(
+    startOfIstDayUtc.getTime() + 24 * 60 * 60 * 1000 - 1
+  )
 
   const documents = await DocumentModel.find(
-    {
-      createdAt: {
-        $gte: new Date(startOfDay.getTime() - istOffset),
-        $lte: new Date(endOfDay.getTime() - istOffset),
-      },
-    },
+    { createdAt: { $gte: startOfIstDayUtc, $lte: endOfIstDayUtc } },
     'title summary createdAt'
   )
     .sort({ createdAt: -1 })
@@ -134,7 +135,7 @@ export const getTodayContent = async () => {
   const response = {
     data: documents.map((doc) => ({ ...doc, id: doc._id })),
     meta: {
-      date: istNow.toISOString().split('T')[0],
+      date: nowInIst.toISOString().split('T')[0],
       total: documents.length,
     },
   }

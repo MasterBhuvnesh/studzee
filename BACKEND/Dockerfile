@@ -11,15 +11,19 @@ RUN npm ci
 FROM base AS build
 COPY . .
 RUN npm install
+# Generates the Prisma client into node_modules before tsc compiles against it.
 RUN npm run build
 
 # Production Stage
 FROM node:22-alpine AS production
 WORKDIR /usr/src/app
 
-# Copy dependencies and build artifacts
-COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+# Copy dependencies and build artifacts. The generated Prisma client lives in
+# node_modules, so that layer comes from the build stage rather than the
+# dependency stage, which never ran prisma generate.
+COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /usr/src/app/prisma ./prisma
 COPY package*.json ./
 
 # Create a non-root user
@@ -33,5 +37,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Expose port 
 EXPOSE 3000
 
-# Run the app
-CMD [ "node", "dist/index.js" ]
+# Apply any pending Postgres migrations, then run the app.
+CMD [ "sh", "-c", "npx prisma migrate deploy && node dist/index.js" ]

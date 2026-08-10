@@ -7,18 +7,16 @@ One entry per unit of work, with the branch, what changed, and why.
 
 Open items carried forward. Move each into a dated entry once it is done.
 
-- **Merge NOTIFICATION into BACKEND, keeping BACKEND only.** Agreed with the
-  user on 10-08-2026. See the V2 PLAN section of [`.docs/TCSK.md`](.docs/TCSK.md).
-  Scope of the move: Expo push delivery, transactional email and its templates,
-  the Clerk webhook, user and Expo token registration, and the notification and
-  email logs. Both databases stay, MongoDB for content and Postgres for the
-  notification data. `NOTIFICATION/docker-compose.yml` is folded into
-  `BACKEND/docker-compose.yml`, which must gain the Postgres service alongside
-  the existing mongo, redis, minio and mongo-express services. Blocked on one
-  decision: BACKEND runs Node 22 with a `tsc` build and NOTIFICATION runs Bun
-  with no build step, so one runtime has to win.
-- **Data storage layer.** Starts only after the merge is complete. Not yet
+- **Repoint the ingress so `/noti` reaches the merged backend, and update the
+  clients for the renamed routes.** The notification endpoints were renamespaced
+  during the merge, so `POST /noti/api/register` no longer exists. MOBILE 1.1.4
+  is already in users' hands and calls it. Either add a rewrite from
+  `/noti/api/register` to `/notifications/register` or ship a MOBILE build that
+  calls the new path. DESKTOP is unbuilt so it needs no coordination.
+- **Data storage layer.** Starts now that the merge is complete. Not yet
   specified.
+- **Run the BACKEND test suite.** It could not be run on this machine, see the
+  10-08-2026 entry below.
 - **Update everything under `.github` for the v2 tree.** The strip on 10-08-2026
   left it describing modules that no longer exist. Known stale points:
   - `README.md` documents the full old architecture, including the website,
@@ -55,6 +53,23 @@ Open items carried forward. Move each into a dated entry once it is done.
 - Reviewed BACKEND, NOTIFICATION, MOBILE, and DESKTOP ahead of the v2 rewrite
   and recorded the findings in `.docs/V2-ARCHITECTURE-REVIEW.md`. Convex is out
   of scope by decision of the repository owner and is excluded from v2.
+- Merged the NOTIFICATION service into BACKEND and deleted the folder. BACKEND
+  now owns content and notifications, on Node 22 with the existing `tsc` build.
+  Bun is gone. Postgres joins MongoDB, Redis and S3 as a backing store, wired
+  through Prisma and added to `BACKEND/docker-compose.yml`.
+  - Notification routes were renamespaced to fit the backend conventions:
+    `/notifications/register`, `/admin/notifications`, `/admin/emails`,
+    `/admin/users` and `/webhooks/clerk`.
+  - Eleven defects from the architecture review were fixed during the move.
+    They are listed in [`.docs/FIXES.md`](.docs/FIXES.md).
+  - Verification: `tsc --noEmit` exits 0 and ESLint reports 0 errors. The Vitest
+    suite could **not** be run on this machine, because Windows Defender
+    quarantines `node_modules/@esbuild/win32-x64/esbuild.exe` as a false
+    positive and Vitest cannot load its config without it. The new logic was
+    instead verified by executing the same assertions under `ts-node`, which
+    does not use esbuild, and all eight checks passed. Those assertions are now
+    committed as Vitest tests under `src/tests/unit/services`. Run
+    `npm test` on a machine without the Defender block to confirm.
 - Stripped the repository to the v2 working set. Removed AGENTS, CONVEX, K8S,
   PACKAGES, SERVICES, TERRAFORM, WEBSITE, and `.vscode`, along with the stray
   root `package.json` and `package-lock.json`. Kept BACKEND, NOTIFICATION,

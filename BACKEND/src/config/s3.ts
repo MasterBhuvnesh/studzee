@@ -20,10 +20,10 @@ const s3Client = new S3Client({
   },
 })
 
-logger.info('S3 client configured', {
-  region: config.AWS_REGION,
-  bucket: config.AWS_S3_BUCKET_NAME,
-})
+// No logging at module scope. src/config/index.ts re-exports this file, and the
+// logger imports config, so a top level logger call here fails whenever a
+// module reaches the logger before it reaches config. Import order stops
+// mattering once nothing logs during initialisation.
 
 export { s3Client }
 

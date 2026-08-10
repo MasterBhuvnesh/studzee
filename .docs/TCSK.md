@@ -58,7 +58,7 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 3. **Keep both databases.** MongoDB stays for content, Postgres stays for the notification data. The user has explicitly confirmed this split is acceptable, so do not propose consolidating them onto one engine.
 4. **Update the docker compose file as part of the merge.** `BACKEND/docker-compose.yml` runs mongo, redis, minio and mongo-express today. It must gain the Postgres service currently defined in `NOTIFICATION/docker-compose.yml`, which is removed along with the folder.
 
-Open decision the merge forces and which the user has not answered yet: BACKEND runs on Node 22 with a `tsc` build, NOTIFICATION runs on Bun with no build step. One runtime has to win. Ask before choosing.
+**Runtime decided on 10-08-2026: keep what BACKEND already has.** Node 22 with the `tsc` plus `tsc-alias` build, `ts-node-dev` in development, Vitest for tests, and the existing Node Dockerfile. Bun is dropped, along with `bun.lock` and the Bun based Dockerfile. Prisma runs on Node without change, so the Postgres layer moves across as is.
 
 ## NOTES
 
