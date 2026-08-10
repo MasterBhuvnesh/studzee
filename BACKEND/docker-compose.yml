@@ -88,6 +88,30 @@ services:
       retries: 5
       start_period: 30s
 
+  # Creates the buckets MinIO needs and makes them publicly readable, so local
+  # storage matches the Supabase project without a manual console step. MinIO
+  # creates nothing on its own, so without this every upload fails with
+  # NoSuchBucket. Runs once and exits.
+  minio-init:
+    image: minio/mc:latest
+    container_name: studzee_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - studzee-network
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set local http://minio:9000 "${MINIO_ROOT_USER:-minioadmin}" "${MINIO_ROOT_PASSWORD:-miniopassword}"
+        for bucket in "${S3_BUCKET_IMAGES:-images}" "${S3_BUCKET_PDFS:-pdfs}" assets; do
+          mc mb --ignore-existing "local/$$bucket"
+          mc anonymous set download "local/$$bucket"
+        done
+        mc ls local
+        echo "minio buckets ready"
+
   # Local SMTP catcher. Accepts every message and shows it in a web UI instead
   # of delivering it, so development and tests never send real email.
   mailpit:

@@ -256,7 +256,9 @@ Storage is **Supabase Storage**, which speaks the S3 protocol, so the AWS SDK ta
 
 #### MinIO (local development)
 
-`docker-compose.yml` runs MinIO, so local work needs no Supabase credentials and cannot touch real files. The defaults in `.env.example` already point at it. Create the bucket once at [http://localhost:9001](http://localhost:9001), named to match `S3_BUCKET`.
+`docker-compose.yml` runs MinIO, so local work needs no Supabase credentials and cannot touch real files. The defaults in `.env.example` already point at it.
+
+A one-shot `minio-init` container creates the `images`, `pdfs` and `assets` buckets and marks them publicly readable as soon as MinIO reports healthy, so the local layout matches the Supabase project with no manual step. MinIO creates nothing on its own, so without it every upload fails with `NoSuchBucket`. The container runs once and exits; `docker compose ps -a` shows it as `exited (0)`, which is expected.
 
 > **Note**: the upload bucket must allow public read, since the application stores a plain public URL on the document and the clients fetch it directly. No ACL is set per object.
 
@@ -524,15 +526,9 @@ MinIO provides an S3-compatible storage solution for local development without r
      - Username: `minioadmin` (or your `MINIO_ROOT_USER`)
      - Password: `miniopassword` (or your `MINIO_ROOT_PASSWORD`)
 
-3. **Create Bucket**:
-   - Click "Buckets" → "Create Bucket"
-   - Create two buckets, `images` and `pdfs`, matching `S3_BUCKET_IMAGES` and `S3_BUCKET_PDFS`
-   - Click "Create Bucket"
+3. **Buckets**: nothing to do. The `minio-init` container has already created `images`, `pdfs` and `assets` and set them to public read. Use the console only to inspect them or to add another bucket.
 
-4. **Configure Public Access** (Optional):
-   - Select the bucket → "Manage" → "Access Rules"
-   - Add policy to allow public read access if needed
-   - Example policy for public read:
+4. **Public Access**: also already applied by `minio-init`, which runs `mc anonymous set download` on each bucket. This is required, not optional, because the application stores a plain public URL on the document and the clients fetch it directly. The equivalent policy, for reference:
      ```json
      {
        "Version": "2012-10-17",
