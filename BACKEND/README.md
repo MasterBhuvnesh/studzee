@@ -377,15 +377,17 @@ npm start
 ### Docker Deployment
 
 ```bash
-# Build and start all services
-make up
+# Start the infrastructure containers
+docker compose up -d
 
-# Stop all services
-make down
+# Stop them
+docker compose down
 
-# View logs
-make logs
+# View logs for a service
+docker compose logs -f mongo
 ```
+
+To run the API itself in a container rather than on the host, see [Environment Files](#environment-files) for the `.env.container` invocation.
 
 ## Docker Compose Guide
 
@@ -527,36 +529,54 @@ All services communicate through a dedicated Docker bridge network:
 
 ### Environment Files
 
-The project supports two environment configurations:
+The project has three environment files. The difference that matters is **where the API process runs**, because that decides how it must address the databases.
 
-#### `.env` (Default)
+| File | Read by | Dependency hosts | Tracked |
+| ---- | ------- | ---------------- | ------- |
+| `.env` | The API on your host | `localhost` | No, gitignored |
+| `.env.docker` | `docker compose`, and the API on your host | `localhost` | Yes |
+| `.env.container` | The API inside a container | Compose service names | Yes |
 
-Used for local development, pointed at whichever storage you configure:
+> **`.env.docker` does not mean "for running in Docker".** It means "for talking to the Docker stack" from outside it. Both it and `.env` use `localhost`, which is correct for a host process, because every container publishes its ports to the host.
+
+#### `.env` (default)
+
+Local development, pointed at whichever storage you configure:
 
 ```bash
-# Start with default .env
-make up
-
-# Run API locally
+docker compose up -d
 npm run dev
 ```
 
-#### `.env.docker` (Docker - MinIO)
+#### `.env.docker` (host process, pinned to MinIO)
 
-Used for Docker development with **local MinIO** (S3-compatible):
+Same as above but with no cloud account needed, and it is also the file `make env-up` feeds to compose for variable substitution:
 
 ```bash
-# Start with .env.docker
-make env-up
-
-# Run API locally with MinIO
+make env-up      # docker compose --env-file .env.docker up -d
 npm run dev
 ```
 
-**Key Differences**:
+#### `.env.container` (the API inside a container)
 
-- `.env`: whatever you point it at, Supabase or MinIO
-- `.env.docker`: pinned to MinIO (`S3_ENDPOINT=http://localhost:9000`)
+The only file that addresses dependencies as `mongo`, `postgres`, `redis`, `minio` and `mailpit`. Inside a container `localhost` is the container itself, so the other two files fail at boot with `P1001: Can't reach database server at localhost:5432` from `prisma migrate deploy`, before the application starts.
+
+```bash
+docker build -t studzee-api:local .
+docker compose up -d
+docker run --rm --name studzee_api \
+  --network studzee_network \
+  --env-file .env.container \
+  -p 4000:3000 \
+  studzee-api:local
+```
+
+Two details in that file are deliberate and easy to get wrong:
+
+- **`PORT=3000`, not 4000.** The Dockerfile declares `EXPOSE 3000` and its `HEALTHCHECK` probes port 3000, so the app has to listen there or the container is reported `unhealthy` while serving traffic perfectly well. Publishing `-p 4000:3000` keeps the usual `http://localhost:4000` from outside.
+- **`S3_ENDPOINT` and `S3_PUBLIC_URL` point at different hosts.** Uploads go to `http://minio:9000` from inside the network, while the URL stored on the document stays `http://localhost:9000` because a browser or mobile client on the host is what fetches it later and cannot resolve `minio`. This mirrors Supabase, where the two are also different hosts.
+
+> **Known limitation**: email attachments are fetched by the API at send time, and stored PDF URLs use `S3_PUBLIC_URL`, so they read `localhost:9000` and the container cannot fetch them. `pdfUrls` on `POST /admin/emails/send` therefore fails from inside Docker. Email without attachments is unaffected.
 
 ### Port Mappings
 
@@ -1122,8 +1142,9 @@ model EmailLog {
 │   ├── schema.prisma       # User, Notification, EmailLog models
 │   └── migrations/         # Applied migration history
 ├── .dockerignore           # Docker ignore rules
-├── .env                    # Local environment
-├── .env.docker             # Docker environment (MinIO)
+├── .env                    # Local environment, host process, gitignored
+├── .env.docker             # Host process against the compose stack, MinIO
+├── .env.container          # The API running inside a container
 ├── .env.example            # Environment variables template
 ├── .eslintignore           # ESLint ignore rules
 ├── .eslintrc.js            # ESLint configuration
@@ -1336,9 +1357,24 @@ The container applies pending Postgres migrations on start with `prisma migrate 
 # Build production image
 docker build -t studzee-api:latest .
 
-# Run production container
-docker run -p 4000:4000 --env-file .env studzee-api:latest
+# Run it against the local compose stack
+docker run --rm --name studzee_api \
+  --network studzee_network \
+  --env-file .env.container \
+  -p 4000:3000 \
+  studzee-api:latest
 ```
+
+> **Use `.env.container`, not `.env`.** `.env` addresses everything as `localhost`, which inside a container means the container itself. See [Environment Files](#environment-files).
+
+> **Publish to container port 3000.** The image listens on whatever `PORT` says, and `.env.container` sets 3000 to match the Dockerfile's `EXPOSE` and `HEALTHCHECK`. `-p 4000:3000` keeps the API on `http://localhost:4000` from outside.
+
+For a real deployment, supply the same variables from your platform's secret store with the managed hostnames rather than shipping an env file. The container runs `prisma migrate deploy` before starting, so pending migrations are applied on boot.
+
+**Known issues with the current image**, worth fixing before this is used in production:
+
+- The image is around 830MB because `node_modules` is copied from the build stage, so `typescript`, `vitest` and `ts-node-dev` all ship with it.
+- The `dependencies` stage runs `npm ci` and is then discarded, since production copies from the `build` stage instead. That stage ran `npm install`, so the lockfile is not enforced in the layer that actually ships.
 
 ### Docker Compose Production
 

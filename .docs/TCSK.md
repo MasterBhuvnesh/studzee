@@ -32,6 +32,16 @@ Gitignored local files from the removed folders were copied to `D:\Projects\Stud
 - **Redis** is the read cache, using the cache aside pattern with `SCAN` based invalidation.
 - **Supabase Storage** holds uploaded files, spoken to over the S3 protocol with the AWS SDK. Project ref `lammfakgegmrkxdkwukd`, region `ap-northeast-2`. Three public buckets: `images` and `pdfs` for uploads, and `assets` for the email banner, which the application never writes to. The S3 endpoint and the public URL are different hosts, and `forcePathStyle` is required.
 - **MinIO** stands in for Supabase locally, and **Mailpit** stands in for the mail provider. A `minio-init` container creates the same three buckets and marks them public, so local behaviour matches the real project.
+- **There is no `api` service in `docker-compose.yml`.** The stack is infrastructure only. The API runs on the host with `npm run dev`, or in a container started by hand from the image.
+
+### ENVIRONMENT FILES
+
+Three of them, and the distinction is where the API process runs, not what storage it uses. Getting this wrong fails at boot with `P1001` from `prisma migrate deploy`, before any application code runs.
+
+- `.env` and `.env.docker` address every dependency as `localhost`. Correct for a host process, because the containers publish their ports to the host. `.env.docker` is also what `make env-up` feeds to compose for variable substitution. Despite the name, it is not for running inside Docker.
+- `.env.container` addresses them by compose service name, `mongo`, `postgres`, `redis`, `minio` and `mailpit`. It is the only file that works for a containerized API. Added 12-08-2026.
+- `.env.container` sets `PORT=3000`, unlike the other two, because the Dockerfile declares `EXPOSE 3000` and probes port 3000 in its `HEALTHCHECK`. Publish it as `-p 4000:3000`. With `PORT=4000` the container serves traffic correctly and still reports `unhealthy` forever.
+- In `.env.container` only, `S3_ENDPOINT` and `S3_PUBLIC_URL` point at different hosts on purpose: uploads go to `http://minio:9000`, while the URL stored on the document stays `http://localhost:9000` because a client outside Docker fetches it later and cannot resolve `minio`.
 - Authentication is centralized through **Clerk** and reaches the clients through the backend.
 - Terraform and Kubernetes were removed with the strip, so the deployed topology is being redecided as part of v2. Validate changes locally before pushing to production branches.
 
@@ -94,6 +104,7 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 - Update everything under `.github`. The website workflow builds a deleted directory and will fail on a `website-v*` tag.
 - `hooks/useNotificationPermissions.ts` in MOBILE reads `registerToken` from a context that does not declare it, so `tsc` fails there. Predates the merge.
 - **Build out the backend test setup.** Asked for by the user on 11-08-2026. Vitest is configured but has never been run on this machine because Defender quarantines `esbuild.exe`, so there is no evidence any test passes. Decide whether to unblock Vitest or move to a runner that does not depend on esbuild, then write real coverage for the merged notification surface, the storage layer, and the cache invalidation paths.
+- **Slim the production Docker image.** It is around 830MB because `node_modules` is copied wholesale from the build stage, so `typescript`, `vitest` and `ts-node-dev` ship in it. The `dependencies` stage runs `npm ci` and is then discarded, since production copies from `build`, which ran `npm install`, so the lockfile is not enforced in the layer that ships. The awkward part is that the generated Prisma client lives in `node_modules`, which is why the shortcut was taken.
 - **Test the backend once it is deployed.** Asked for by the user on 11-08-2026. Everything so far has been verified against localhost. After the next deploy, exercise the same routes against the deployed URL: readiness against the real Mongo, Postgres and Redis, an upload round trip against the real Supabase buckets, and push registration. The renamed and new environment variables have to be set in the deployed environment first or the service will not boot.
 
 - Add things the user wants Claude to remember here as the project progresses.

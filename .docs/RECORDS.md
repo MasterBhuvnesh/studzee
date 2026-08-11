@@ -33,6 +33,9 @@ Date is the date the status last changed.
 | Move object storage from AWS S3 to Supabase over the S3 protocol | BHUVNESH | DONE | 11-08-2026 |
 | Split uploads across the `images` and `pdfs` buckets | BHUVNESH | DONE | 11-08-2026 |
 | Create the MinIO buckets automatically so local matches Supabase | BHUVNESH | DONE | 11-08-2026 |
+| Build the Docker image and run the API in a container | BHUVNESH | DONE | 12-08-2026 |
+| Add `.env.container` so the API can address the stack from inside Docker | BHUVNESH | DONE | 12-08-2026 |
+| Slim the production image and enforce the lockfile in it | BHUVNESH | PLANNED | 12-08-2026 |
 | Data storage layer, database design | BHUVNESH | PLANNED | 10-08-2026 |
 | Run the Vitest suite, blocked by Defender quarantining esbuild | BHUVNESH | BLOCKED | 10-08-2026 |
 
@@ -45,6 +48,8 @@ Date is the date the status last changed.
 | Rebuild `BACKEND/postman.collection.json` for the merged surface | BHUVNESH | DONE | 10-08-2026 |
 | Add Prisma targets to the `Makefile` | BHUVNESH | DONE | 10-08-2026 |
 | Give the env files a documented section layout | BHUVNESH | DONE | 10-08-2026 |
+| Correct the readme claims that no longer match the stack | BHUVNESH | DONE | 12-08-2026 |
+| Document the root route and the environment dependent file URLs | BHUVNESH | DONE | 12-08-2026 |
 
 ## CLIENTS
 
