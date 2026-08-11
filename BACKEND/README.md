@@ -17,7 +17,7 @@ npm run dev                 # API on http://localhost:4000
 **After a reboot, or once you have run `docker compose down`:**
 
 ```bash
-docker compose up -d        # mongo, postgres, redis, minio, mailpit
+docker compose up -d        # mongo, postgres, redis, minio, mailpit, mongo-express
 npm run dev
 ```
 
@@ -141,8 +141,8 @@ Any `"error"` in that response names the store that is not answering. It round t
 ## Prerequisites
 
 - [Docker](https://www.docker.com/) and Docker Compose
-- [Node.js](https://nodejs.org/) (v18+) and npm
-- `make` (optional, for convenience commands)
+- [Node.js](https://nodejs.org/) 22 and npm. The Dockerfile builds on `node:22-alpine`, so 22 is what the deployed image runs
+- `make` (optional, and three of its targets are broken, see [Available Commands](#available-commands-makefile))
 - Clerk account for authentication
 - MongoDB Atlas account (or local MongoDB instance)
 - PostgreSQL instance (the Docker Compose file provides one)
@@ -365,7 +365,7 @@ This setup allows you to:
 - Use your local Node.js environment
 - Easily debug the application
 
-> **Tip**: To run the entire stack (API + MongoDB + Redis + MinIO (S3)) in Docker, uncomment the `api` service section in `docker-compose.yml`.
+> **Note**: there is no `api` service in `docker-compose.yml` to enable. Running the API in Docker means building the image from the `Dockerfile` and adding a service yourself, see [Docker Production Build](#docker-production-build).
 
 ### Production
 
@@ -393,7 +393,9 @@ The project includes a comprehensive Docker Compose setup for local development 
 
 ### Service Architecture
 
-The `docker-compose.yml` defines **5 infrastructure services** that together provide a complete development environment. The API itself is normally run outside Docker with `npm run dev`.
+The `docker-compose.yml` defines **7 infrastructure services** that together provide a complete development environment. Six are long running and one, `minio-init`, runs once and exits.
+
+> **There is no `api` service in the compose file.** The API always runs on the host with `npm run dev` or `npm start`. Nothing in the stack builds or serves the application itself.
 
 #### 1. **MongoDB (`mongo`)**
 
@@ -439,7 +441,17 @@ The `docker-compose.yml` defines **5 infrastructure services** that together pro
 - **Health Check**: Curls the MinIO health endpoint every 30 seconds
 - **Volume**: `studzee-minio-data` for object storage persistence
 
-#### 5. **Mailpit (`mailpit`)**
+#### 5. **MinIO Init (`minio-init`)**
+
+- **Image**: `minio/mc:latest`
+- **Purpose**: Creates the `images`, `pdfs` and `assets` buckets and marks them publicly readable, so local storage matches the Supabase project with no manual console step
+- **Container Name**: `studzee_minio_init`
+- **Ports**: None, it is not a server
+- **Depends On**: MinIO must report healthy before it starts
+- **Lifecycle**: Runs once and exits. `docker compose ps -a` shows it as `exited (0)`, which is success, not a failure
+- **Why it is required**: MinIO creates no buckets on its own, so without this every upload fails with `NoSuchBucket`
+
+#### 6. **Mailpit (`mailpit`)**
 
 - **Image**: `axllent/mailpit:latest`
 - **Purpose**: Local SMTP catcher. Accepts every message and displays it in a web UI instead of delivering it, so development and tests never send real email.
@@ -451,7 +463,7 @@ The `docker-compose.yml` defines **5 infrastructure services** that together pro
 - **Health Check**: Polls the Mailpit readiness endpoint every 30 seconds
 - **Volume**: `studzee-mailpit-data` so caught messages survive a restart
 
-#### 6. **Mongo Express (`mongo-express`)**
+#### 7. **Mongo Express (`mongo-express`)**
 
 - **Image**: `mongo-express:latest`
 - **Purpose**: Web-based MongoDB admin interface
@@ -460,14 +472,20 @@ The `docker-compose.yml` defines **5 infrastructure services** that together pro
 - **Features**: Browse collections, run queries, manage documents
 - **Depends On**: MongoDB service must be healthy before starting
 
-#### 7. **API (`api`)**
+#### The API itself
 
-- **Purpose**: Core backend application service
-- **Development Workflow**: Usually run locally via `npm run dev` to enable hot-reloading and easier debugging, while connecting to the containerized infrastructure.
-- **Management Dashboards**:
-  - **Mongo Express**: [http://localhost:8081](http://localhost:8081) — Web UI for MongoDB management.
-  - **RedisInsight**: [http://localhost:8001](http://localhost:8001) — GUI for monitoring and interacting with Redis.
-  - **MinIO Console**: [http://localhost:9001](http://localhost:9001) — Interface for managing S3-compatible object storage.
+The API is **not** a compose service. It runs on the host with `npm run dev`, which hot reloads and can be attached to a debugger, and connects to the containers above over `localhost`.
+
+This has a consequence worth knowing before you reach for the Makefile: any target that shells into an `api` container cannot work. `make seed`, `make logs` and `make refresh-cache` all run `docker-compose exec api ...` or `docker-compose logs -f api`, which fails with `service "api" is not running`. Run the npm scripts on the host instead:
+
+```bash
+npm run seed              # instead of make seed
+npm run job:refresh-cache # instead of make refresh-cache
+```
+
+There is no equivalent of `make logs`, because the API logs to the terminal running `npm run dev`.
+
+Management dashboards for the containers are listed under [Accessing Dashboards](#accessing-dashboards).
 
 ### Volumes & Data Persistence
 
@@ -823,6 +841,7 @@ For detailed API documentation, see [API.md](./API.md).
 
 #### Health Check Endpoints
 
+- **GET** `/` - Service name and a map of the main endpoints, useful for confirming which build is answering (Public)
 - **GET** `/health/liveness` - Check if the process is running, touches no dependency (Public)
 - **GET** `/healthcheck` - Simple health check for Render/production (Public)
 - **GET** `/health/readiness` - Round trip probe of MongoDB, Postgres and Redis (Public)
@@ -1129,12 +1148,12 @@ model EmailLog {
 | `make env-up`           | Same, using `.env.docker` (MinIO instead of S3)      |
 | `make down`             | Stop all services                                    |
 | `make env-down`         | Stop all services started with `.env.docker`         |
-| `make logs`             | View API container logs (if running)                 |
+| `make logs`             | Broken, targets an `api` container that does not exist |
 | `make test`             | Run test suite with vitest                           |
 | `make lint`             | Lint codebase with ESLint                            |
 | `make fmt`              | Format code with Prettier                            |
-| `make seed`             | Populate database with sample data                   |
-| `make refresh-cache`    | Manually trigger cache warming job                   |
+| `make seed`             | Broken, use `npm run seed` instead                   |
+| `make refresh-cache`    | Broken, use `npm run job:refresh-cache` instead      |
 | `make build`            | Build TypeScript project                             |
 | `make prisma-generate`  | Regenerate the Prisma client after a schema change   |
 | `make prisma-migrate`   | Create and apply a migration in development          |
@@ -1142,6 +1161,8 @@ model EmailLog {
 | `make prisma-studio`    | Browse the Postgres data in a web UI                 |
 | `make prisma-status`    | Show which migrations have been applied              |
 | `make db-reset`         | Drop and recreate the Postgres schema, destroys data |
+
+> **Three targets are broken.** `make seed`, `make logs` and `make refresh-cache` were written when the API was expected to run as a compose service. It does not, so they fail with `service "api" is not running`. The npm equivalents in the next section work. `make` is also not installed on every development machine, in which case use the `docker compose` and npm commands directly.
 
 ### Additional npm Scripts
 
@@ -1178,26 +1199,32 @@ npm run fmt:check         # Check formatting without changes
 
 The development environment includes web-based admin dashboards:
 
+> **Where the logins come from.** These containers read their credentials from the environment, and `.env` does not currently set any of them, so the defaults in `docker-compose.yml` apply. If you add `MONGO_ROOT_USER`, `MONGO_ROOT_PASSWORD`, `MINIO_ROOT_USER` or `MINIO_ROOT_PASSWORD` to `.env`, use those values instead. Changing them after the volumes exist does not rewrite the stored credentials, so reset the volume as well.
+
 #### MongoDB Dashboard (Mongo Express)
 
 - **URL**: [http://localhost:8081](http://localhost:8081)
-- **Credentials**: Use `MONGO_ROOT_USER` and `MONGO_ROOT_PASSWORD` from `.env`
+- **Credentials**: `root` / `password` by default. The page answers 401 with a browser auth prompt before you log in, which is expected rather than a fault
 - **Features**: Browse collections, run queries, manage documents
 
 #### Redis Dashboard (RedisInsight)
 
 - **URL**: [http://localhost:8001](http://localhost:8001)
-- **Setup**: On first launch, add a database connection
-  - Host: `localhost`
+- **Setup**: No login. On first launch, add a database connection
+  - Host: `127.0.0.1`
   - Port: `6379`
+  - Password: none
   - Name: Any descriptive name
 - **Features**: View cache keys, monitor performance, debug queries
+
+> **Note**: Redis and RedisInsight are the same `redis/redis-stack` container, which is why one service exposes both 6379 and 8001.
 
 #### MinIO Dashboard (MinIO Console)
 
 - **URL**: [http://localhost:9001](http://localhost:9001)
-- **Setup**: Login with `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from `.env.docker`
+- **Credentials**: `minioadmin` / `miniopassword` by default
 - **Features**: View files, manage buckets, monitor performance, debug queries
+- **Buckets**: `images`, `pdfs` and `assets` are already created and public read. This is where local uploads land, so it is the fastest way to confirm an upload actually stored an object
 
 #### Mail Inbox (Mailpit)
 
@@ -1250,6 +1277,19 @@ npm run test:watch
 # Run specific test file
 npm test -- document.test.ts
 ```
+
+### If `npm test` will not start
+
+Vitest compiles through esbuild, and Windows Defender has been observed quarantining `node_modules/@esbuild/win32-x64/esbuild.exe` as a false positive. Vitest cannot load its config without that binary, so the run fails before a single test executes.
+
+```bash
+# Confirm the binary is actually there
+ls node_modules/@esbuild/win32-x64/esbuild.exe
+```
+
+If it is missing, restore it from the Defender protection history and add an exclusion for the path, or reinstall with `npm install` once the exclusion is in place. Reinstalling without the exclusion just gets the file quarantined again.
+
+> **The suite has not been run on the current machine for this reason.** Logic changed during the v2 work was verified by executing the same assertions under `ts-node`, which does not use esbuild, and by driving the running service with Newman and curl. Treat the vitest suite as unproven until someone reports a green run, and say so rather than implying coverage that has not executed.
 
 ## Deployment
 
@@ -1424,17 +1464,26 @@ npm run prisma:studio
 # their tokens were deleted.
 ```
 
-**S3 Upload Failures**
+**Storage Upload Failures**
 
 ```bash
-# Verify AWS credentials
-cat .env | grep AWS
+# Verify the storage settings. The variables are S3_* and there are no AWS_*
+# variables any more, so grepping for AWS returns nothing.
+cat .env | grep S3_
 
-# Check IAM user permissions in AWS Console
-# Ensure bucket exists and is in the correct region
+# NoSuchBucket means the buckets were never created. Locally that is minio-init
+# not having run:
+docker compose up -d minio-init
+docker compose logs minio-init      # ends with "minio buckets ready"
 
-# Review application logs for detailed error messages
-make logs
+# SignatureDoesNotMatch usually means S3_REGION does not match the Supabase
+# project region. The error never names the region as the cause.
+
+# A 200 upload whose URL will not open means S3_PUBLIC_URL is wrong, or the
+# bucket is not public read. S3_ENDPOINT and S3_PUBLIC_URL are different hosts
+# on Supabase and must both be set.
+
+# Application logs go to the terminal running npm run dev, not to a container.
 ```
 
 **Authentication Errors**
