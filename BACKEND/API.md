@@ -7,6 +7,7 @@ Every response body below is what the handler actually returns. Import [postman.
 ## Contents
 
 - [Authentication](#authentication)
+- [File URLs](#file-urls)
 - [Health Check Endpoints](#health-check-endpoints)
 - [Content Endpoints](#content-endpoints)
 - [PDF Endpoints](#pdf-endpoints)
@@ -34,7 +35,48 @@ The Clerk webhook is the one exception. It carries no user token and is authenti
 
 ---
 
+## File URLs
+
+Every `imageUrl`, `pdfUrl` and `banner` in this document is shown with a Supabase host, because that is what a deployed environment returns. The host is not fixed. Uploads are stored over the S3 protocol and the URL written onto the document is built from `S3_PUBLIC_URL`, so it changes with the environment:
+
+| Environment | `S3_PUBLIC_URL` | Example URL |
+| --- | --- | --- |
+| Deployed | `https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public` | `.../public/pdfs/introduction-to-typescript.pdf` |
+| Local | `http://localhost:9000` | `http://localhost:9000/pdfs/introduction-to-typescript.pdf` |
+
+Local development runs MinIO with the same three buckets, `images`, `pdfs` and `assets`, all public read. Clients must treat these as opaque absolute URLs and never rebuild them from a hardcoded host.
+
+> **Note:** the URL is persisted at upload time, not generated on read. A document uploaded against one `S3_PUBLIC_URL` keeps that host after the setting changes, so a database that has been through a storage switch can return a mix of hosts from the same endpoint. Existing rows have to be rewritten to move them.
+
+---
+
 ## Health Check Endpoints
+
+### Welcome
+
+- **Route:** `GET /`
+- **Description:** Root route. Returns the service name and a map of the main endpoints, which is the quickest way to confirm which build is answering on a host.
+- **Protected:** No
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "message": "Studzee Backend API",
+      "status": "running",
+      "endpoints": {
+        "health": "/healthcheck",
+        "liveness": "/health/liveness",
+        "readiness": "/health/readiness",
+        "content": "/content",
+        "pdfs": "/pdfs",
+        "notifications": "/notifications/register",
+        "admin": "/admin",
+        "webhooks": "/webhooks/clerk"
+      }
+    }
+    ```
+
+> **Note:** the map is written by hand in `src/index.ts` rather than derived from the router, so it lists the main entry points rather than every route. Treat this document as the complete list.
 
 ### Liveness Check
 
@@ -713,11 +755,21 @@ Errors carry a `message`, and validation failures add an `errors` object keyed b
 }
 ```
 
+A request to a path that matches no route returns 404 with the path echoed back:
+
+```json
+{ "message": "Not Found - /unknown" }
+```
+
 Unhandled errors return a generic message, with a `stack` field added only when `NODE_ENV=development`:
 
 ```json
 { "message": "Internal Server Error" }
 ```
+
+> **Note:** the message is only replaced with the generic text on a 500. Errors carrying an explicit status code, such as the 404 above, return their real message. The `stack` field is attached to every error response in development, so do not rely on its absence to detect a particular status.
+
+`GET /favicon.ico` is answered with `204 No Content` before the not found handler runs, so a browser hitting the API root does not fill the log with 404s.
 
 Common status codes:
 
