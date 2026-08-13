@@ -13,6 +13,7 @@ import { NextFunction, Request, Response } from 'express'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as NotificationController from '@/api/controllers/notification.controller'
 import * as ExpoService from '@/services/expo.service'
+import type { ExpoSendResult } from '@/services/expo.service'
 import * as NotificationService from '@/services/notification.service'
 import * as UserService from '@/services/user.service'
 
@@ -32,13 +33,24 @@ const requestWith = (body: unknown): Request =>
     auth: () => ({ userId: CLERK_ID }),
   }) as unknown as Request
 
-/** An Expo result that delivered to every token. */
-const delivered = (sent: number) => ({
+/**
+ * An Expo result with every field populated, so the fixtures satisfy
+ * ExpoSendResult rather than only the properties a given test cares about.
+ */
+const expoResult = (
+  overrides: Partial<ExpoSendResult> = {}
+): ExpoSendResult => ({
   success: true,
-  sent,
+  sent: 0,
   failed: 0,
-  invalidTokens: [] as string[],
+  ticketIds: [],
+  invalidTokens: [],
+  errors: [],
+  ...overrides,
 })
+
+/** An Expo result that delivered to every token. */
+const delivered = (sent: number) => expoResult({ sent })
 
 const validBody = {
   title: 'Exam update',
@@ -53,7 +65,8 @@ beforeEach(() => {
     status: vi.fn().mockReturnThis(),
     json: vi.fn(),
   }
-  mockNext = vi.fn()
+  // NextFunction is overloaded, so a bare mock does not match it structurally.
+  mockNext = vi.fn() as unknown as NextFunction
 
   // resolveSortField is an allowlist rather than a dependency, so the mocked
   // module needs it to behave like the real one for the listing tests.
@@ -212,12 +225,9 @@ describe('sendPushNotification', () => {
       'ExponentPushToken[a]',
       'ExponentPushToken[b]',
     ])
-    vi.mocked(ExpoService.sendExpoNotification).mockResolvedValue({
-      success: false,
-      sent: 1,
-      failed: 1,
-      invalidTokens: [],
-    })
+    vi.mocked(ExpoService.sendExpoNotification).mockResolvedValue(
+      expoResult({ success: false, sent: 1, failed: 1 })
+    )
 
     await NotificationController.sendPushNotification(
       requestWith(validBody),
@@ -240,12 +250,14 @@ describe('sendPushNotification', () => {
       'ExponentPushToken[a]',
       'ExponentPushToken[dead]',
     ])
-    vi.mocked(ExpoService.sendExpoNotification).mockResolvedValue({
-      success: false,
-      sent: 1,
-      failed: 1,
-      invalidTokens: ['ExponentPushToken[dead]'],
-    })
+    vi.mocked(ExpoService.sendExpoNotification).mockResolvedValue(
+      expoResult({
+        success: false,
+        sent: 1,
+        failed: 1,
+        invalidTokens: ['ExponentPushToken[dead]'],
+      })
+    )
 
     await NotificationController.sendPushNotification(
       requestWith(validBody),

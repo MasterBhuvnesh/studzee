@@ -50,6 +50,17 @@ Three of them, and the distinction is where the API process runs, not what stora
 - Live credentials belong only in the gitignored `BACKEND/.env`. Never commit them, and never print a value into a transcript or a log. Print key names and lengths instead.
 - If a secret is exposed by accident, say so plainly and tell the owner to rotate it.
 
+## TESTING
+
+The suite is Vitest. It stands at 90 passing across 11 files as of 13-08-2026.
+
+- **Run it from `BACKEND`, never from the repository root.** The root has no `package.json` and no Vitest config, so `npx vitest` there installs an unrelated Vitest from the registry, resolves no `@/*` aliases and never runs `globalSetup`. Every suite fails with `Cannot find package '@/...'`, which looks like a code fault and is not one.
+- **Start the compose stack first.** The integration tests in `content.route.test.ts` use a real Mongo and Redis. The unit tests do not.
+- `src/tests/setup/globalSetup.ts` supplies a default for every variable the config schema requires, so the suite runs on a checkout with no `.env`. A real `.env` still wins where set.
+- The Mongo default carries credentials and `authSource=admin`, matching the compose defaults. Without them Mongoose still connects, because it connects lazily, and the failure appears only on the first query as `Command aggregate requires authentication`.
+- `CLERK_PUBLISHABLE_KEY` in that file must stay structurally valid, meaning `pk_test_` followed by the base64 of a domain. Clerk decodes it to find its API host and throws `Publishable key not valid` on anything else, which surfaces as a 500 and makes an unauthenticated request look like a server fault instead of a 401.
+- **Vitest transpiles without typechecking**, so a test file can pass at runtime and still not compile. Run `npx tsc --noEmit -p tsconfig.json` as well. `tsconfig.build.json` excludes `src/tests`, the base config does not, and that is deliberate.
+
 ## PEOPLE
 
 - Developers: BHUVNESH (Bhuvnesh Verma), ABHAY (Abhay Mishra).
@@ -94,17 +105,17 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 
 ### KNOWN ENVIRONMENT ISSUES ON THIS MACHINE
 
-- **The Vitest suite cannot run here.** Windows Defender quarantines `node_modules/@esbuild/win32-x64/esbuild.exe` as a false positive, and Vitest cannot load its config without it. Verify logic by running the same assertions under `ts-node`, which does not use esbuild, and say plainly that the suite was not run.
+- **The Vitest suite runs here now.** Resolved 13-08-2026. Defender no longer quarantines `node_modules/@esbuild/win32-x64/esbuild.exe`, so the ts-node workaround is retired.
 - **`make` is not installed.** Use the `docker-compose` commands directly.
 - **Do not use the PowerShell `Get-Content -Raw` plus `Set-Content` pattern on files containing non-ASCII characters.** PowerShell 5.1 reads them as ANSI and writes UTF-8, which corrupts box drawing characters in the readme directory trees. Use the Edit tool, or `[System.IO.File]::ReadAllText` with an explicit UTF8 encoding.
 
 ### OPEN WORK
 
 - Repoint the ingress so devices running the released MOBILE 1.1.4 keep registering. They still call `POST /noti/api/register`, which no longer exists.
-- Update everything under `.github`. The website workflow builds a deleted directory and will fail on a `website-v*` tag.
+- Update the rest of `.github`. `docker-backend.testing.yml` was rewritten on 13-08-2026 and now gates the image on lint, typecheck and the suite. Still outstanding: the website workflow builds a deleted directory and will fail on a `website-v*` tag, and `docker-notification.testing.yml` builds a folder that no longer exists.
 - `hooks/useNotificationPermissions.ts` in MOBILE reads `registerToken` from a context that does not declare it, so `tsc` fails there. Predates the merge.
-- **Build out the backend test setup.** Asked for by the user on 11-08-2026. Vitest is configured but has never been run on this machine because Defender quarantines `esbuild.exe`, so there is no evidence any test passes. Decide whether to unblock Vitest or move to a runner that does not depend on esbuild, then write real coverage for the merged notification surface, the storage layer, and the cache invalidation paths.
-- **Slim the production Docker image.** It is around 830MB because `node_modules` is copied wholesale from the build stage, so `typescript`, `vitest` and `ts-node-dev` ship in it. The `dependencies` stage runs `npm ci` and is then discarded, since production copies from `build`, which ran `npm install`, so the lockfile is not enforced in the layer that ships. The awkward part is that the generated Prisma client lives in `node_modules`, which is why the shortcut was taken.
+- **Extend the backend test coverage.** Asked for by the user on 11-08-2026. Vitest now runs and the suite is green, and the notification service and controller were covered on 13-08-2026. Still uncovered: the storage layer, the cache invalidation paths, the upload and admin controllers, and the Clerk webhook. See the `coverage.exclude` list in `vitest.config.ts` for what is currently exempt.
+- **Reduce the Prisma weight in the production image.** The image is 692MB after the 13-08-2026 slimming, and roughly 105MB of what remains is the `prisma` CLI plus `effect` and `typescript` pulled in behind it. They ship only because the container runs `prisma migrate deploy` on start, which forces the CLI to be a runtime dependency. Moving migrations to a separate one-off job would recover it, but that changes how the service deploys and is the owner's call.
 - **Test the backend once it is deployed.** Asked for by the user on 11-08-2026. Everything so far has been verified against localhost. After the next deploy, exercise the same routes against the deployed URL: readiness against the real Mongo, Postgres and Redis, an upload round trip against the real Supabase buckets, and push registration. The renamed and new environment variables have to be set in the deployed environment first or the service will not boot.
 
 - Add things the user wants Claude to remember here as the project progresses.

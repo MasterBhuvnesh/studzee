@@ -12,30 +12,24 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-const notification = {
-  create: vi.fn(),
-  findMany: vi.fn(),
-  count: vi.fn(),
-}
-
-const emailLog = {
-  create: vi.fn(),
-  findMany: vi.fn(),
-  count: vi.fn(),
-}
-
-// The service imports only prisma from the config barrel. Replacing the whole
-// module keeps the real config out of the test, so no environment is required.
-vi.mock('@/config', () => ({ prisma: { notification, emailLog } }))
-
-const {
+import {
   getEmailLogs,
   getNotifications,
   resolveSortField,
   saveEmailLog,
   saveNotification,
-} = await import('@/services/notification.service')
+} from '@/services/notification.service'
+
+// vi.hoisted, because vi.mock is lifted above the imports and its factory would
+// otherwise close over bindings that have not been initialised yet.
+const { notification, emailLog } = vi.hoisted(() => ({
+  notification: { create: vi.fn(), findMany: vi.fn(), count: vi.fn() },
+  emailLog: { create: vi.fn(), findMany: vi.fn(), count: vi.fn() },
+}))
+
+// The service imports only prisma from the config barrel. Replacing the whole
+// module keeps the real config out of the test, so no environment is required.
+vi.mock('@/config', () => ({ prisma: { notification, emailLog } }))
 
 beforeEach(() => {
   vi.clearAllMocks()

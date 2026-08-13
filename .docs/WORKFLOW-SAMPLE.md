@@ -4,6 +4,8 @@ Reference copy of the GitHub Actions workflow pattern used in this repository, k
 
 This is a record, not a live workflow. GitHub does not read anything in `.docs`. To use it, copy the YAML into `.github/workflows/<name>.yml` and change the marked values.
 
+**Status as of 13-08-2026.** `docker-backend.testing.yml` no longer matches the sample below. It was rewritten into two jobs, a `test` job running lint, typecheck and Vitest against Mongo and Redis service containers, and a `build` job that declares `needs: test`, so a tag cannot publish an image whose tests fail. The sample here is kept as the v1 record and as the starting shape for the mobile and desktop pipelines. Copy the live backend workflow instead when a service needs a gated build.
+
 ## THE PATTERN
 
 Every service pipeline follows the same six steps.
@@ -106,12 +108,12 @@ Taken from `docker-notification.testing.yml`. Same shape as above with a Bun too
 
 ## NOTES FOR V2
 
-- The `.testing` suffix in the filenames is misleading. These workflows deploy, they do not test.
+- The `.testing` suffix in the filenames was misleading, because these workflows deployed without testing. It is accurate for the backend as of 13-08-2026 and still misleading for every other module.
 - The website workflow builds `./WEBSITE`, which was removed on 10-08-2026. It will fail on any `website-v*` tag and should be deleted.
 - **The notification workflow is now dead too.** That service was merged into BACKEND on 10-08-2026 and its folder is gone, so `docker-notification.testing.yml` builds a directory that no longer exists.
 - `code.sh` still accepts `website` and `notification` as service names. Only `backend`, `mobile` and `desktop` remain.
-- **The backend image build needs a Prisma step.** `npm run build` now runs `prisma generate`, and the container runs `prisma migrate deploy` on start, so the deploy target needs `DATABASE_URL` reachable at boot.
+- **The backend image build needs a Prisma step.** Done on 13-08-2026. The `test` job runs `npx prisma generate` before the typecheck, because the client is generated into `node_modules` and is not committed, so `@prisma/client` does not resolve without it. The container still runs `prisma migrate deploy` on start, so the deploy target needs `DATABASE_URL` reachable at boot or it exits 1 with `P1001`.
 - **New required environment variables** since this sample was captured: `DATABASE_URL`, the `SMTP_*` block, `EMAIL_FROM`, and the `S3_*` block replacing the old `AWS_*` names. The config schema throws at startup if any is missing, so the deploy fails fast rather than misbehaving.
-- No workflow runs the BACKEND Vitest suite, and no lint or typecheck gate exists for any module. A v2 pipeline should gate the image build on those.
+- The BACKEND pipeline runs Vitest, ESLint and `tsc --noEmit` as of 13-08-2026. No other module has a lint or typecheck gate yet. Two details are worth carrying to the others: the typecheck uses the base `tsconfig.json` rather than `tsconfig.build.json`, because Vitest transpiles without typechecking and a test file can pass while failing to compile, and the Mongo service container needs `MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` matching the defaults in `globalSetup.ts`, since Mongoose connects lazily and a mismatch fails on the first query rather than at connection.
 - Image tags are mutable on `latest`. Pinning deploys to the version tag is safer.
 - `bug-reproduction-instructions.yml` is unrelated to deployment. It runs an AI inference step on newly opened issues labelled `bug` and comments when the report lacks reproduction detail. It is independent of the module layout and needs no change for v2.

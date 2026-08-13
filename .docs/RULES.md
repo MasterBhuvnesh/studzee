@@ -64,5 +64,5 @@ Rules the Claude agent must follow when working in this repository.
 ## TOOLING ON THIS MACHINE
 
 - **Do not use `Get-Content -Raw` piped into `Set-Content` on any file containing non-ASCII characters.** PowerShell 5.1 reads them as ANSI and writes UTF-8, which corrupts the box drawing characters in the readme directory trees. It happened twice on 10-08-2026. Use the Edit tool, or `[System.IO.File]::ReadAllText` and `WriteAllText` with an explicit UTF8 encoding.
-- The Vitest suite cannot run here: Windows Defender quarantines `node_modules/@esbuild/win32-x64/esbuild.exe` as a false positive. Verify logic by running the same assertions under `ts-node`, which does not use esbuild, and state plainly that the suite itself was not run.
+- The Vitest suite runs here as of 13-08-2026. Windows Defender no longer quarantines `node_modules/@esbuild/win32-x64/esbuild.exe`, so the ts-node workaround is retired. Run it from `BACKEND`, never from the repository root, and start the compose stack first because the integration tests need Mongo and Redis.
 - `make` is not installed. Use the `docker-compose` commands directly.

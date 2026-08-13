@@ -17,7 +17,8 @@ Date is the date the status last changed.
 | Workflow sample kept before the `.github` rewrite | BHUVNESH | DONE | 10-08-2026 |
 | Repository stripped to the v2 working set | BHUVNESH | DONE | 10-08-2026 |
 | Ignore the local `.claude` directory | BHUVNESH | DONE | 10-08-2026 |
-| Update `.github` docs and workflows for the v2 tree | BHUVNESH | PLANNED | 10-08-2026 |
+| Gate the backend image build on lint, typecheck and the test suite | BHUVNESH | DONE | 13-08-2026 |
+| Update the rest of `.github` for the v2 tree, website and notification workflows | BHUVNESH | PLANNED | 13-08-2026 |
 
 ## BACKEND
 
@@ -35,9 +36,15 @@ Date is the date the status last changed.
 | Create the MinIO buckets automatically so local matches Supabase | BHUVNESH | DONE | 11-08-2026 |
 | Build the Docker image and run the API in a container | BHUVNESH | DONE | 12-08-2026 |
 | Add `.env.container` so the API can address the stack from inside Docker | BHUVNESH | DONE | 12-08-2026 |
-| Slim the production image and enforce the lockfile in it | BHUVNESH | PLANNED | 12-08-2026 |
+| Slim the production image and enforce the lockfile in it | BHUVNESH | DONE | 13-08-2026 |
+| Exclude test code from the compiled production build | BHUVNESH | DONE | 13-08-2026 |
+| Fall back to the JSON logger when `pino-pretty` is absent | BHUVNESH | DONE | 13-08-2026 |
+| Run the Vitest suite, previously blocked by Defender quarantining esbuild | BHUVNESH | DONE | 13-08-2026 |
+| Cover the notification service and controller with unit tests | BHUVNESH | DONE | 13-08-2026 |
+| Green the suite, 90 passing across 11 files | BHUVNESH | DONE | 13-08-2026 |
+| Extend coverage to storage, cache invalidation, uploads and the webhook | BHUVNESH | PLANNED | 13-08-2026 |
+| Move Prisma migrations out of the container start command | BHUVNESH | PLANNED | 13-08-2026 |
 | Data storage layer, database design | BHUVNESH | PLANNED | 10-08-2026 |
-| Run the Vitest suite, blocked by Defender quarantining esbuild | BHUVNESH | BLOCKED | 10-08-2026 |
 
 ## DOCUMENTATION
 

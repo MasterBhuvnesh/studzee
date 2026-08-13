@@ -29,8 +29,9 @@ Open items carried forward. Move each into a dated entry once it is done.
   `AWS_SECRET_ACCESS_KEY` and `AWS_S3_BUCKET_NAME` became `S3_REGION`,
   `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_IMAGES` and
   `S3_BUCKET_PDFS`, and `S3_ENDPOINT` and `S3_PUBLIC_URL` are new and required.
-- **Run the BACKEND test suite.** It could not be run on this machine, see the
-  10-08-2026 entry below.
+- **Extend the BACKEND test coverage.** The suite runs now and is green, see the
+  13-08-2026 entry below. Storage, cache invalidation, the upload and admin
+  controllers and the Clerk webhook are still uncovered.
 - **Update everything under `.github` for the v2 tree.** The strip on 10-08-2026
   left it describing modules that no longer exist. Known stale points:
   - `README.md` documents the full old architecture, including the website,
@@ -38,8 +39,10 @@ Open items carried forward. Move each into a dated entry once it is done.
     two deployment panels. It needs rewriting once the v2 design is settled.
   - `workflows/docker-website.testing.yml` builds `./WEBSITE`, which is gone.
     The workflow will fail on its `website-v*` tag trigger.
-  - `workflows/docker-backend.testing.yml` and
-    `workflows/docker-notification.testing.yml` still reflect the v1 services.
+  - `workflows/docker-backend.testing.yml` was rewritten on 13-08-2026 and now
+    gates the image on lint, typecheck and the test suite.
+    `workflows/docker-notification.testing.yml` builds a folder that no longer
+    exists and should be deleted.
   - `SECURITY.md` lists WEBSITE in the supported versions table.
   - `CONTRIBUTING.md` lists `website` as a valid commit scope.
   - `CODEOWNERS`, `CODE_OF_CONDUCT.md` and `assets` need a check for the same.
@@ -54,6 +57,56 @@ Open items carried forward. Move each into a dated entry once it is done.
 - Delivery: every branch ends in a pull request. The repository owner merges.
 - Style: no em dashes, no emoji, in code, comments, commits, and documentation.
 - Comments: specific and professional, explaining intent rather than restating the code.
+
+## 2026-08-13
+
+**Branch:** `feat/v2-architecture`
+
+- Slimmed the production Docker image from 830MB to 692MB and made the shipping
+  layer honour the lockfile. A `production-deps` stage runs `npm ci --omit=dev`
+  and production copies `node_modules` from there, with the generated Prisma
+  client layered on top from the build stage. The dead `dependencies` stage is
+  gone. `prisma` moved to a runtime dependency, because the container runs
+  `prisma migrate deploy` on start and would otherwise fail to boot.
+  - Roughly 105MB of what remains is the `prisma` CLI and what it pulls in,
+    present only because migrations run at container start. Moving them to a
+    separate job would recover it and is left as the owner's decision.
+- Fixed two defects the fat image had been hiding. The logger requested the
+  `pino-pretty` transport whenever `NODE_ENV` is `development`, but that is a
+  devDependency, so the slimmed container died at import time before
+  registering a route. It now falls back to the JSON logger. Separately, the
+  build compiled `src/tests` into `dist`, shipping test code in the image;
+  `tsconfig.build.json` now excludes it.
+- Covered the notification service and controller, 32 tests. The service tests
+  pin the sort allowlist, which guards a query string value interpolated into a
+  Prisma `orderBy`, and the paging arithmetic. The controller tests pin the
+  broadcast targeting, the 404 on an empty device set, the 207 partial
+  delivery, token pruning, and that `sentBy` comes from the token rather than
+  the request body. Mutation checked: breaking the skip calculation and the
+  allowlist fails 7 of them.
+- Took the suite from 84 passing with 7 failing to 90 passing with none.
+  Neither failure was in application code. `globalSetup` defaulted `MONGO_URI`
+  without credentials while the compose Mongo requires them, and Mongoose
+  connects lazily, so the failure appeared as a 500 on the first query rather
+  than a connection error. The placeholder `CLERK_PUBLISHABLE_KEY` was not
+  structurally valid, so Clerk threw while decoding it and an unauthenticated
+  request returned 500 instead of 401. A third test asserted that the content
+  controller calls `req.auth()`, which it does not and should not, since the
+  route middleware already enforces it; that test was removed rather than
+  satisfied.
+- Rewrote `.github/workflows/docker-backend.testing.yml` into a `test` job and
+  a `build` job with `needs: test`, so a `backend-v*` tag can no longer publish
+  an image that fails its own tests. The test job runs ESLint, `tsc --noEmit`
+  against the base tsconfig so the tests are typechecked too, and Vitest
+  against Mongo and Redis service containers. Added `workflow_dispatch` and
+  GitHub Actions layer caching.
+- Typechecking the tests immediately caught three faults in the new test files
+  that Vitest had been transpiling past. Vitest does not typecheck, so a green
+  test file can still be wrong.
+- Verified by running the image against the compose stack with
+  `.env.container`: healthy, migrations applied, JSON logs, and `/`,
+  `/healthcheck`, `/health/liveness`, `/health/readiness`, `/content`, `/pdfs`,
+  `/content/:id`, `/admin/users` and `/admin/notifications` all returning 200.
 
 ## 2026-08-11
 

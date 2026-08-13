@@ -1,4 +1,8 @@
 # GitHub Actions Workflow for Docker Backend Deployment
+#
+# The image is gated on the test suite. The build job does not start unless
+# lint, typecheck and Vitest all pass, so a tag can no longer publish an image
+# that fails its own tests.
 name: Build, Tag, and Deploy Docker Image - Backend
 
 on:
@@ -8,9 +12,86 @@ on:
     # Uncomment the following lines when we want to trigger on branch pushes as well
     # branches:
     #   - 'production'
+  # Runs the whole pipeline by hand without cutting a tag. The version then
+  # falls back to the short commit SHA.
+  workflow_dispatch:
 
 jobs:
+  test:
+    name: Lint, typecheck and test
+    runs-on: ubuntu-latest
+
+    # The integration tests talk to real Mongo and Redis. Postgres is not here
+    # on purpose: the readiness and notification tests mock Prisma, so nothing
+    # in the suite opens a Postgres connection.
+    services:
+      mongo:
+        image: mongo:7
+        env:
+          # Must match the defaults in src/tests/setup/globalSetup.ts, which
+          # mirror the ones docker-compose.yml falls back to. Mongoose connects
+          # lazily, so a credentials mismatch here does not fail the connection.
+          # It fails the first query with "Command find requires authentication".
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: password
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: ./BACKEND
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Matches the node:22-alpine base image the Dockerfile builds on.
+          node-version: 22
+          cache: npm
+          cache-dependency-path: BACKEND/package-lock.json
+
+      - name: Install dependencies
+        # npm ci rather than npm install, so the lockfile is what gets tested.
+        run: npm ci
+
+      - name: Generate the Prisma client
+        # The client is generated into node_modules and is not committed, so
+        # the typecheck cannot resolve @prisma/client without this step.
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        # The base tsconfig, not tsconfig.build.json, so the tests are checked
+        # too. Vitest transpiles without typechecking, so a test file can pass
+        # at runtime and still be wrong. This is the step that catches that.
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Run the test suite
+        run: npm test
+
   build:
+    name: Build and push the image
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -43,6 +124,11 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/studzee-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/studzee-backend:${{ steps.version.outputs.VERSION }}
+          # Reuses layers across runs, which matters because the image now
+          # installs the dependency tree twice, once in full for the build and
+          # once with --omit=dev for the layer that ships.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Print Docker image information
         run: |
@@ -50,6 +136,8 @@ jobs:
           echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-backend:latest"
           echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-backend:${{ steps.version.outputs.VERSION }}"
 
+      # The container runs prisma migrate deploy before the app, so the deploy
+      # target needs DATABASE_URL reachable at boot or it exits 1 with P1001.
       # # # Trigger Render deploy hook ( uncomment when using Render.com )
       # - name: Trigger Render deploy hook
       #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
