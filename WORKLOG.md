@@ -29,15 +29,20 @@ Open items carried forward. Move each into a dated entry once it is done.
   `AWS_SECRET_ACCESS_KEY` and `AWS_S3_BUCKET_NAME` became `S3_REGION`,
   `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_IMAGES` and
   `S3_BUCKET_PDFS`, and `S3_ENDPOINT` and `S3_PUBLIC_URL` are new and required.
-- **Extend the BACKEND test coverage.** The suite runs and is green, but
-  coverage measured on 14-08-2026 is **49 percent of statements**, and that is
-  after `vitest.config.ts` already excludes a long list of files. At 0 percent:
-  `middleware/errorHandler.ts`, `middleware/validation.ts`,
-  `middleware/rateLimit.ts`, `services/upload.service.ts`, and the webhook,
-  user, email and PDF controllers. `middleware/auth.ts` is at 24 percent and
-  `services/user.service.ts` at 18. Highest value first: the error handler and
-  the validation middleware sit in front of every route, and `auth.ts` decides
-  who reaches the admin surface.
+- **Extend the BACKEND test coverage.** Largely done on 14-08-2026, 49 to 80
+  percent of statements. What remains is low value: the email, PDF and user
+  controllers, which delegate straight to a service, the route files, which are
+  wiring, and `models/notification.validation.ts`, which is schema declarations.
+- **Consolidate the Clerk SDKs.** `@clerk/express` provides the middleware and
+  `@clerk/clerk-sdk-node` provides `clerkClient` for the admin role lookup. The
+  latter is end of life. Move to `@clerk/backend`.
+- **Stop calling Clerk on every admin request.** `requireAdmin` does an uncached
+  `users.getUser` round trip per request, which is latency on every admin action
+  and exposure to Clerk rate limits. A JWT Template carrying the role on the
+  session token would remove it.
+- **Provision an admin in the deployed Clerk instance.** The role comes from
+  `publicMetadata.role`, set by hand in the dashboard. No code path grants it,
+  so without this step the deployed admin surface is unreachable by anyone.
 - **Update everything under `.github` for the v2 tree.** The strip on 10-08-2026
   left it describing modules that no longer exist. Known stale points:
   - `README.md` documents the full old architecture, including the website,
@@ -126,6 +131,39 @@ Open items carried forward. Move each into a dated entry once it is done.
     triggers the build and publish pipeline.
   - `do-release` scripts repointed in BACKEND and MOBILE, and added to DESKTOP,
     which never had them.
+- Took backend coverage from 49 to 80 percent of statements, 374 of 465, and the
+  suite from 90 tests across 11 files to 172 across 18. Seven files went to 100
+  percent: the auth, error handling, validation and rate limit middleware, the
+  upload and user services, and the Clerk webhook controller.
+  - The auth tests mock both Clerk entry points rather than using a real token.
+    A session JWT expires about a minute after minting, so a suite built on one
+    would rot within the hour and would need network access to run.
+  - `auth.ts` reads `config.NODE_ENV` once at module load into
+    `isDevelopmentMode`, so exercising production behaviour needs
+    `vi.resetModules()` with `vi.doMock` and a dynamic import. Reassigning the
+    config after import does nothing.
+  - Mutation checked rather than assumed. Six defects introduced one at a time,
+    including requireAdmin accepting any role, validateBody no longer replacing
+    `req.body`, the error handler leaking the real message on a 500, and the
+    webhook accepting an already parsed body. All six were caught by the suite.
+  - The typecheck gate earned itself again: all 172 tests were green while `tsc`
+    reported 16 errors in the new files, from `beforeEach(() => vi.clearAllMocks())`
+    returning a value the hook type rejects.
+- Verified the Clerk auth path end to end against a real RS256 session token
+  from the local `clerk-auth-demo` probe, separately from the suite.
+  `BACKEND/.env` already holds keys for the same Clerk instance, so the host
+  process verified those tokens with no reconfiguration. 401 with no token and
+  with a garbage bearer, 200 with a real JWT, 200 on the admin surface for an
+  admin and 403 for a user with no role. The deny case needed a throwaway
+  non-admin user, created and deleted for the purpose, because the probe user
+  carries the admin role and could only ever prove the allow case.
+  - Four production relevant findings recorded in TCSK: the container cannot
+    verify any token while `.env.container` holds placeholder keys, admin is
+    granted by hand in the Clerk dashboard with no code path for it,
+    `requireAdmin` calls Clerk uncached on every admin request, and the project
+    depends on two Clerk SDKs of which one is end of life.
+  - Test data cleaned up: the throwaway Clerk user was deleted and the
+    `probe@studzee.test` row the registration check wrote to Postgres removed.
 - Installed GNU Make 4.4.1 with `winget install ezwinports.make`, at the owner's
   instruction, and repaired every target in `BACKEND/Makefile`.
   - `seed` and `refresh-cache` ran `docker-compose exec api ...` against a

@@ -45,7 +45,12 @@ Date is the date the status last changed.
 | Cover the notification service and controller with unit tests | BHUVNESH | DONE | 13-08-2026 |
 | Green the suite, 90 passing across 11 files | BHUVNESH | DONE | 13-08-2026 |
 | Run the API as a compose service behind the `api` profile | BHUVNESH | DONE | 14-08-2026 |
-| Extend coverage to storage, cache invalidation, uploads and the webhook | BHUVNESH | PLANNED | 13-08-2026 |
+| Cover the auth, error, validation and rate limit middleware | BHUVNESH | DONE | 14-08-2026 |
+| Cover the upload and user services and the Clerk webhook controller | BHUVNESH | DONE | 14-08-2026 |
+| Verify the Clerk auth path end to end with a real session token | BHUVNESH | DONE | 14-08-2026 |
+| Cover the email, PDF and user controllers | BHUVNESH | PLANNED | 14-08-2026 |
+| Consolidate onto `@clerk/backend`, dropping the end of life `clerk-sdk-node` | BHUVNESH | PLANNED | 14-08-2026 |
+| Cache or tokenise the admin role instead of calling Clerk per request | BHUVNESH | PLANNED | 14-08-2026 |
 | Move Prisma migrations out of the container start command | BHUVNESH | PLANNED | 13-08-2026 |
 | Data storage layer, database design | BHUVNESH | PLANNED | 10-08-2026 |
 

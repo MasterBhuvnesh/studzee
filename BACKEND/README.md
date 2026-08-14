@@ -1406,7 +1406,7 @@ For easier local development, you can bypass Clerk authentication:
 
 ## Testing
 
-The project uses **Vitest**. The suite stands at **90 tests across 11 files, all passing**, last verified 14-08-2026.
+The project uses **Vitest**. The suite stands at **172 tests across 18 files, all passing**, last verified 14-08-2026.
 
 > [!IMPORTANT]
 > Two things decide whether the suite runs at all.
