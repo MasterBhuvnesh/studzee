@@ -118,7 +118,7 @@ routes without a Clerk session and is ignored in every other environment.
 ```bash
 cd BACKEND
 docker compose up -d    # the integration tests need real Mongo and Redis
-npm test                # 172 tests across 18 files, all passing as of 14-08-2026
+npm test                # 235 tests across 26 files, all passing as of 14-08-2026
 ```
 
 Before pushing, run the three gates CI runs. The image build will not start

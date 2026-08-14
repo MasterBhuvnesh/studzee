@@ -48,7 +48,7 @@ Date is the date the status last changed.
 | Cover the auth, error, validation and rate limit middleware | BHUVNESH | DONE | 14-08-2026 |
 | Cover the upload and user services and the Clerk webhook controller | BHUVNESH | DONE | 14-08-2026 |
 | Verify the Clerk auth path end to end with a real session token | BHUVNESH | DONE | 14-08-2026 |
-| Cover the email, PDF and user controllers | BHUVNESH | PLANNED | 14-08-2026 |
+| Cover the email, PDF and user controllers, the schemas and the route wiring | BHUVNESH | DONE | 14-08-2026 |
 | Consolidate onto `@clerk/backend`, dropping the end of life `clerk-sdk-node` | BHUVNESH | PLANNED | 14-08-2026 |
 | Cache or tokenise the admin role instead of calling Clerk per request | BHUVNESH | PLANNED | 14-08-2026 |
 | Move Prisma migrations out of the container start command | BHUVNESH | PLANNED | 13-08-2026 |

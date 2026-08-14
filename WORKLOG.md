@@ -29,10 +29,12 @@ Open items carried forward. Move each into a dated entry once it is done.
   `AWS_SECRET_ACCESS_KEY` and `AWS_S3_BUCKET_NAME` became `S3_REGION`,
   `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_IMAGES` and
   `S3_BUCKET_PDFS`, and `S3_ENDPOINT` and `S3_PUBLIC_URL` are new and required.
-- **Extend the BACKEND test coverage.** Largely done on 14-08-2026, 49 to 80
-  percent of statements. What remains is low value: the email, PDF and user
-  controllers, which delegate straight to a service, the route files, which are
-  wiring, and `models/notification.validation.ts`, which is schema declarations.
+- **Extend the BACKEND test coverage.** Done on 14-08-2026, 49 to 91 percent of
+  statements, with no file left at 0. The 43 statements still uncovered are
+  transport, retry and timeout branches in `email.service.ts`,
+  `content.service.ts`, `expo.service.ts` and `health.route.ts`, which need a
+  fake SMTP or Expo endpoint to reach. Treat as finished unless a bug points at
+  one of them.
 - **Consolidate the Clerk SDKs.** `@clerk/express` provides the middleware and
   `@clerk/clerk-sdk-node` provides `clerkClient` for the admin role lookup. The
   latter is end of life. Move to `@clerk/backend`.
@@ -131,10 +133,21 @@ Open items carried forward. Move each into a dated entry once it is done.
     triggers the build and publish pipeline.
   - `do-release` scripts repointed in BACKEND and MOBILE, and added to DESKTOP,
     which never had them.
-- Took backend coverage from 49 to 80 percent of statements, 374 of 465, and the
-  suite from 90 tests across 11 files to 172 across 18. Seven files went to 100
-  percent: the auth, error handling, validation and rate limit middleware, the
-  upload and user services, and the Clerk webhook controller.
+- Took backend coverage from 49 to 91 percent of statements, 422 of 465, and the
+  suite from 90 tests across 11 files to 235 across 26. No file is left at 0 and
+  twenty are at 100.
+  - First pass, seven files to 100 percent: the auth, error handling, validation
+    and rate limit middleware, the upload and user services, and the Clerk
+    webhook controller.
+  - Second pass, at the owner's instruction after I had recommended stopping:
+    the email, PDF and user controllers, `models/notification.validation.ts`,
+    and the four uncovered route files. The route tests turned out to be worth
+    more than expected, because they pin ordering rather than lines. The
+    registration route proves auth runs before validation, so an unauthenticated
+    caller gets 401 and is never handed a description of the schema, and the
+    webhook route proves `express.raw` delivers the exact signed bytes, spacing
+    and unicode escapes included, which is the whole basis of the signature
+    check.
   - The auth tests mock both Clerk entry points rather than using a real token.
     A session JWT expires about a minute after minting, so a suite built on one
     would rot within the hour and would need network access to run.

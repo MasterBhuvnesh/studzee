@@ -53,7 +53,7 @@ Three of them, and the distinction is where the API process runs, not what stora
 
 ## TESTING
 
-The suite is Vitest. It stands at **172 passing across 18 files** as of 14-08-2026.
+The suite is Vitest. It stands at **235 passing across 26 files** as of 14-08-2026.
 
 - **Run it from `BACKEND`, never from the repository root.** The root has no `package.json` and no Vitest config, so `npx vitest` there installs an unrelated Vitest from the registry, resolves no `@/*` aliases and never runs `globalSetup`. Every suite fails with `Cannot find package '@/...'`, which looks like a code fault and is not one.
 - **Start the compose stack first.** The integration tests in `content.route.test.ts` use a real Mongo and Redis. The unit tests do not.
@@ -61,7 +61,8 @@ The suite is Vitest. It stands at **172 passing across 18 files** as of 14-08-20
 - The Mongo default carries credentials and `authSource=admin`, matching the compose defaults. Without them Mongoose still connects, because it connects lazily, and the failure appears only on the first query as `Command aggregate requires authentication`.
 - `CLERK_PUBLISHABLE_KEY` in that file must stay structurally valid, meaning `pk_test_` followed by the base64 of a domain. Clerk decodes it to find its API host and throws `Publishable key not valid` on anything else, which surfaces as a 500 and makes an unauthenticated request look like a server fault instead of a 401.
 - **Vitest transpiles without typechecking**, so a test file can pass at runtime and still not compile. Run `npx tsc --noEmit -p tsconfig.json` as well. `tsconfig.build.json` excludes `src/tests`, the base config does not, and that is deliberate.
-- **Measured coverage is 80 percent of statements**, 374 of 465, taken 14-08-2026 after the middleware and service pass. It was 49 percent that morning. At 100 percent: `middleware/auth.ts`, `middleware/errorHandler.ts`, `middleware/validation.ts`, `middleware/rateLimit.ts`, `services/upload.service.ts`, `services/user.service.ts`, `services/notification.service.ts`, `api/controllers/webhook.controller.ts`, `api/controllers/notification.controller.ts`. Still at 0 percent: `api/controllers/email.controller.ts`, `api/controllers/pdf.controller.ts`, `api/controllers/user.controller.ts`, `models/notification.validation.ts`, and the route files, which are wiring rather than logic.
+- **Measured coverage is 91 percent of statements**, 422 of 465, taken 14-08-2026. It was 49 percent that morning. **No file sits at 0 percent.** Twenty files are at 100, including every middleware, every controller except `content.controller.ts` at 95, every route file, `models/notification.validation.ts` and the notification, upload and user services.
+- **The four files still short of 100** are all partially covered already and were never at zero: `services/email.service.ts` at 59 percent, `services/content.service.ts` at 71, `services/expo.service.ts` at 84, `api/routes/health.route.ts` at 93. Together they account for 43 uncovered statements, mostly transport and retry branches that need a fake SMTP or Expo endpoint to reach.
 - **The auth tests mock Clerk and must keep doing so.** A real session JWT would make the suite network dependent and expires about a minute after minting. `auth.ts` reads `config.NODE_ENV` once at module load into `isDevelopmentMode`, so testing production behaviour needs `vi.resetModules()` plus `vi.doMock` and a dynamic import, not a reassignment. The live token path is checked by hand instead, see the note under CLERK below.
 - `globalSetup.ts` is wired as `setupFiles`, not `globalSetup`, so it runs once per test file rather than once per run. Its header comment says otherwise. It is idempotent, so this is a documentation defect and not a behavioural one, and `[TEST]: Global test setup complete` printing eleven times is the visible symptom.
 
@@ -127,7 +128,7 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
   - Action versions are floating major tags rather than commit SHAs.
   - Docker Hub login uses `DOCKER_PASSWORD` rather than a scoped access token.
 - `hooks/useNotificationPermissions.ts` in MOBILE reads `registerToken` from a context that does not declare it, so `tsc` fails there. Predates the merge.
-- **Extend the backend test coverage.** Largely done on 14-08-2026, 49 to 80 percent. The auth, error handling, validation and rate limit middleware, the upload and user services and the Clerk webhook controller are all at 100 percent. Remaining, and all low value: the email, PDF and user controllers, which delegate straight to a service, the route files, which are wiring, and `models/notification.validation.ts`, which is schema declarations. See the `coverage.exclude` list in `vitest.config.ts` for what is exempt.
+- **Extend the backend test coverage.** Done on 14-08-2026, 49 to 91 percent, no file at 0. What remains is 43 statements across `email.service.ts`, `content.service.ts`, `expo.service.ts` and `health.route.ts`, which are transport, retry and timeout branches needing a fake SMTP or Expo endpoint to reach. Treat this as finished unless a specific bug points at one of them. See the `coverage.exclude` list in `vitest.config.ts` for what is exempt.
 
 ### CLERK
 
