@@ -42,6 +42,7 @@ Date is the date the status last changed.
 | Run the Vitest suite, previously blocked by Defender quarantining esbuild | BHUVNESH | DONE | 13-08-2026 |
 | Cover the notification service and controller with unit tests | BHUVNESH | DONE | 13-08-2026 |
 | Green the suite, 90 passing across 11 files | BHUVNESH | DONE | 13-08-2026 |
+| Run the API as a compose service behind the `api` profile | BHUVNESH | DONE | 14-08-2026 |
 | Extend coverage to storage, cache invalidation, uploads and the webhook | BHUVNESH | PLANNED | 13-08-2026 |
 | Move Prisma migrations out of the container start command | BHUVNESH | PLANNED | 13-08-2026 |
 | Data storage layer, database design | BHUVNESH | PLANNED | 10-08-2026 |
@@ -57,6 +58,8 @@ Date is the date the status last changed.
 | Give the env files a documented section layout | BHUVNESH | DONE | 10-08-2026 |
 | Correct the readme claims that no longer match the stack | BHUVNESH | DONE | 12-08-2026 |
 | Document the root route and the environment dependent file URLs | BHUVNESH | DONE | 12-08-2026 |
+| Rewrite the readme prerequisites, quickstart and testing sections | BHUVNESH | DONE | 14-08-2026 |
+| Add a root `CLAUDE.md` orientation file for contributors and agents | BHUVNESH | DONE | 14-08-2026 |
 
 ## CLIENTS
 

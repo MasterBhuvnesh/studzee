@@ -16,10 +16,26 @@ on:
   # falls back to the short commit SHA.
   workflow_dispatch:
 
+# The token only ever reads the repository here. The image is pushed to Docker
+# Hub with its own credentials, so nothing in this pipeline needs write access
+# to GitHub.
+permissions:
+  contents: read
+
+# Two tags pushed close together would otherwise race, and the slower run could
+# publish an older image over `latest`. Queued rather than cancelled, because a
+# release build that has started should finish.
+concurrency:
+  group: docker-backend-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     name: Lint, typecheck and test
     runs-on: ubuntu-latest
+    # The suite finishes in well under a minute. This is a hang guard, so a
+    # wedged run does not sit on a runner for the six hour default.
+    timeout-minutes: 15
 
     # The integration tests talk to real Mongo and Redis. Postgres is not here
     # on purpose: the readiness and notification tests mock Prisma, so nothing
@@ -93,19 +109,29 @@ jobs:
     name: Build and push the image
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Extract version or commit hash
+      - name: Work out the version and which tags to publish
         id: version
         run: |
+          NS="${{ secrets.DOCKER_USERNAME }}/studzee-backend"
           if [[ $GITHUB_REF == refs/tags/backend-v* ]]; then
-            echo "VERSION=${GITHUB_REF#refs/tags/backend-v}" >> $GITHUB_OUTPUT
+            # A version tag is a release, so it moves `latest`.
+            VERSION="${GITHUB_REF#refs/tags/backend-v}"
+            TAGS="$NS:latest,$NS:$VERSION"
           else
-            echo "VERSION=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+            # A manual dispatch can run from any branch and is not a release, so
+            # it publishes the commit SHA only. Tagging it `latest` would let an
+            # unreleased branch become what a deploy target pulls.
+            VERSION="${GITHUB_SHA::7}"
+            TAGS="$NS:$VERSION"
           fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TAGS=$TAGS" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -121,9 +147,7 @@ jobs:
         with:
           context: ./BACKEND
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/studzee-backend:latest
-            ${{ secrets.DOCKER_USERNAME }}/studzee-backend:${{ steps.version.outputs.VERSION }}
+          tags: ${{ steps.version.outputs.TAGS }}
           # Reuses layers across runs, which matters because the image now
           # installs the dependency tree twice, once in full for the build and
           # once with --omit=dev for the layer that ships.
@@ -133,8 +157,7 @@ jobs:
       - name: Print Docker image information
         run: |
           echo "Docker image successfully built and pushed:"
-          echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-backend:latest"
-          echo "  - ${{ secrets.DOCKER_USERNAME }}/studzee-backend:${{ steps.version.outputs.VERSION }}"
+          echo "${{ steps.version.outputs.TAGS }}" | tr ',' '\n' | sed 's/^/  - /'
 
       # The container runs prisma migrate deploy before the app, so the deploy
       # target needs DATABASE_URL reachable at boot or it exits 1 with P1001.

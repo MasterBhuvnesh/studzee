@@ -29,9 +29,15 @@ Open items carried forward. Move each into a dated entry once it is done.
   `AWS_SECRET_ACCESS_KEY` and `AWS_S3_BUCKET_NAME` became `S3_REGION`,
   `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_IMAGES` and
   `S3_BUCKET_PDFS`, and `S3_ENDPOINT` and `S3_PUBLIC_URL` are new and required.
-- **Extend the BACKEND test coverage.** The suite runs now and is green, see the
-  13-08-2026 entry below. Storage, cache invalidation, the upload and admin
-  controllers and the Clerk webhook are still uncovered.
+- **Extend the BACKEND test coverage.** The suite runs and is green, but
+  coverage measured on 14-08-2026 is **49 percent of statements**, and that is
+  after `vitest.config.ts` already excludes a long list of files. At 0 percent:
+  `middleware/errorHandler.ts`, `middleware/validation.ts`,
+  `middleware/rateLimit.ts`, `services/upload.service.ts`, and the webhook,
+  user, email and PDF controllers. `middleware/auth.ts` is at 24 percent and
+  `services/user.service.ts` at 18. Highest value first: the error handler and
+  the validation middleware sit in front of every route, and `auth.ts` decides
+  who reaches the admin surface.
 - **Update everything under `.github` for the v2 tree.** The strip on 10-08-2026
   left it describing modules that no longer exist. Known stale points:
   - `README.md` documents the full old architecture, including the website,
@@ -39,8 +45,10 @@ Open items carried forward. Move each into a dated entry once it is done.
     two deployment panels. It needs rewriting once the v2 design is settled.
   - `workflows/docker-website.testing.yml` builds `./WEBSITE`, which is gone.
     The workflow will fail on its `website-v*` tag trigger.
-  - `workflows/docker-backend.testing.yml` was rewritten on 13-08-2026 and now
-    gates the image on lint, typecheck and the test suite.
+  - `workflows/docker-backend.testing.yml` was rewritten on 13-08-2026 to gate
+    the image on lint, typecheck and the test suite, and hardened on
+    14-08-2026 around tagging, permissions, concurrency and timeouts. It is
+    the only workflow in a good state.
     `workflows/docker-notification.testing.yml` builds a folder that no longer
     exists and should be deleted.
   - `SECURITY.md` lists WEBSITE in the supported versions table.
@@ -57,6 +65,50 @@ Open items carried forward. Move each into a dated entry once it is done.
 - Delivery: every branch ends in a pull request. The repository owner merges.
 - Style: no em dashes, no emoji, in code, comments, commits, and documentation.
 - Comments: specific and professional, explaining intent rather than restating the code.
+
+## 2026-08-14
+
+**Branch:** `feat/v2-architecture`
+
+- Reviewed the backend test setup end to end against a running stack. The suite
+  is genuinely healthy: 90 tests across 11 files passing, `tsc --noEmit` clean
+  against the base config, ESLint 0 errors. The 3769 warnings are almost all
+  `Delete ␍` from CRLF line endings and vanish on a Linux checkout.
+- Measured coverage rather than assuming it. **49 percent of statements**, and
+  that is after `vitest.config.ts` already excludes a long list of files. Fully
+  uncovered: the error handler, the request validation middleware, the rate
+  limiter, the upload service, and the webhook, user, email and PDF controllers.
+  `auth.ts` is at 24 percent and `user.service.ts` at 18. The green suite says
+  the covered half works, not that the service does.
+- Added an `api` service to `BACKEND/docker-compose.yml`, replacing the
+  `docker run` line that only existed in a chat transcript. It sits behind the
+  `api` compose profile, so `docker compose up -d` still starts infrastructure
+  only and leaves port 4000 to the host `npm run dev`. Both modes bind 4000, so
+  the profile makes them mutually exclusive on purpose instead of letting the
+  container silently win.
+  - Verified: config parses, the default service list is still seven, the
+    profile adds the eighth, the container reports healthy, and all six public
+    routes return 200 with readiness reporting db, postgres and redis ok.
+  - Also confirmed `bun run dev` works on the host. Bun acts only as a script
+    runner there; `ts-node-dev` still executes on Node, so this does not
+    reintroduce the Bun runtime that was dropped on 10-08-2026.
+- Hardened the backend workflow. The `workflow_dispatch` trigger added on
+  13-08-2026 had a real defect: the build job tagged every image `latest`
+  unconditionally, so a manual run from any branch would overwrite what a deploy
+  target pulls. A tag now publishes `latest` plus the version, and a dispatch
+  publishes the commit SHA only. Also added `permissions: contents: read`, a
+  queued concurrency group so two tags cannot race and publish out of order, and
+  timeouts so a wedged run does not hold a runner for the six hour default.
+- Rewrote the readme prerequisites, quickstart, testing and compose sections.
+  The testing section still claimed the suite had never been run here because
+  Defender quarantined the esbuild binary, which stopped being true on
+  13-08-2026. It also told the reader to seed through
+  `docker-compose exec api npm run seed`, which cannot work: the seed scripts go
+  through `ts-node` and the image installs with `--omit=dev`.
+- Added a root `CLAUDE.md` covering prerequisites with versions and reasons, the
+  startup flow, the three env files and which process each is for, the testing
+  gates, the house rules, and the gotchas that have cost time, so a contributor
+  or agent does not have to read 1600 lines of readme first.
 
 ## 2026-08-13
 

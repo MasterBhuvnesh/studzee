@@ -32,7 +32,8 @@ Gitignored local files from the removed folders were copied to `D:\Projects\Stud
 - **Redis** is the read cache, using the cache aside pattern with `SCAN` based invalidation.
 - **Supabase Storage** holds uploaded files, spoken to over the S3 protocol with the AWS SDK. Project ref `lammfakgegmrkxdkwukd`, region `ap-northeast-2`. Three public buckets: `images` and `pdfs` for uploads, and `assets` for the email banner, which the application never writes to. The S3 endpoint and the public URL are different hosts, and `forcePathStyle` is required.
 - **MinIO** stands in for Supabase locally, and **Mailpit** stands in for the mail provider. A `minio-init` container creates the same three buckets and marks them public, so local behaviour matches the real project.
-- **There is no `api` service in `docker-compose.yml`.** The stack is infrastructure only. The API runs on the host with `npm run dev`, or in a container started by hand from the image.
+- **`docker-compose.yml` has an `api` service, behind the `api` profile.** Added 14-08-2026, replacing the hand-written `docker run` invocation. `docker compose up -d` still starts infrastructure only, so the host `npm run dev` workflow is unchanged and keeps port 4000. `docker compose --profile api up -d` runs the API as a container instead. The two are mutually exclusive because both bind 4000; set `API_PORT` to run them side by side.
+- **The API container cannot run the seed or job scripts.** They go through `ts-node`, a devDependency, and the image installs with `--omit=dev`. Run `npm run seed` and `npm run job:refresh-cache` on the host. The `make seed`, `make logs` and `make refresh-cache` targets shell into the container and fail for the same reason.
 
 ### ENVIRONMENT FILES
 
@@ -60,6 +61,8 @@ The suite is Vitest. It stands at 90 passing across 11 files as of 13-08-2026.
 - The Mongo default carries credentials and `authSource=admin`, matching the compose defaults. Without them Mongoose still connects, because it connects lazily, and the failure appears only on the first query as `Command aggregate requires authentication`.
 - `CLERK_PUBLISHABLE_KEY` in that file must stay structurally valid, meaning `pk_test_` followed by the base64 of a domain. Clerk decodes it to find its API host and throws `Publishable key not valid` on anything else, which surfaces as a 500 and makes an unauthenticated request look like a server fault instead of a 401.
 - **Vitest transpiles without typechecking**, so a test file can pass at runtime and still not compile. Run `npx tsc --noEmit -p tsconfig.json` as well. `tsconfig.build.json` excludes `src/tests`, the base config does not, and that is deliberate.
+- **Measured coverage is 49 percent of statements**, taken 14-08-2026, and that is after `vitest.config.ts` already excludes a long list of files. Fully uncovered at 0 percent: `middleware/errorHandler.ts`, `middleware/validation.ts`, `middleware/rateLimit.ts`, `services/upload.service.ts`, `api/controllers/webhook.controller.ts`, `api/controllers/user.controller.ts`, `api/controllers/email.controller.ts`, `api/controllers/pdf.controller.ts`. Barely covered: `middleware/auth.ts` at 24 percent and `services/user.service.ts` at 18 percent. The green suite says the covered half works, not that the service does.
+- `globalSetup.ts` is wired as `setupFiles`, not `globalSetup`, so it runs once per test file rather than once per run. Its header comment says otherwise. It is idempotent, so this is a documentation defect and not a behavioural one, and `[TEST]: Global test setup complete` printing eleven times is the visible symptom.
 
 ## PEOPLE
 
@@ -112,7 +115,13 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 ### OPEN WORK
 
 - Repoint the ingress so devices running the released MOBILE 1.1.4 keep registering. They still call `POST /noti/api/register`, which no longer exists.
-- Update the rest of `.github`. `docker-backend.testing.yml` was rewritten on 13-08-2026 and now gates the image on lint, typecheck and the suite. Still outstanding: the website workflow builds a deleted directory and will fail on a `website-v*` tag, and `docker-notification.testing.yml` builds a folder that no longer exists.
+- Update the rest of `.github`. `docker-backend.testing.yml` was rewritten on 13-08-2026, gated on lint, typecheck and the suite, and hardened on 14-08-2026. Still outstanding: the website workflow builds a deleted directory and will fail on a `website-v*` tag, and `docker-notification.testing.yml` builds a folder that no longer exists.
+- **Backend workflow items left open on 14-08-2026, deliberately not changed:**
+  - There is no Postgres service container. Nothing in the suite opens a Postgres connection today because the readiness and notification tests mock Prisma, but `globalSetup.ts` still hands out a `DATABASE_URL` pointing at `localhost:5432`. The first test that touches Prisma unmocked will fail in CI with a connection error rather than a useful message.
+  - CI runs `redis:7-alpine` while compose runs `redis/redis-stack:latest`. Harmless while `cache.ts` uses only `SCAN` and `DEL`, which is the case today. Any RediSearch or RedisJSON use would pass locally and fail in CI.
+  - `npm run fmt:check` is not a gate, so formatting drifts. Adding it would fail immediately on the CRLF line endings, so it needs `.gitattributes` or a Prettier `endOfLine` setting first.
+  - Action versions are floating major tags rather than commit SHAs.
+  - Docker Hub login uses `DOCKER_PASSWORD` rather than a scoped access token.
 - `hooks/useNotificationPermissions.ts` in MOBILE reads `registerToken` from a context that does not declare it, so `tsc` fails there. Predates the merge.
 - **Extend the backend test coverage.** Asked for by the user on 11-08-2026. Vitest now runs and the suite is green, and the notification service and controller were covered on 13-08-2026. Still uncovered: the storage layer, the cache invalidation paths, the upload and admin controllers, and the Clerk webhook. See the `coverage.exclude` list in `vitest.config.ts` for what is currently exempt.
 - **Reduce the Prisma weight in the production image.** The image is 692MB after the 13-08-2026 slimming, and roughly 105MB of what remains is the `prisma` CLI plus `effect` and `typescript` pulled in behind it. They ship only because the container runs `prisma migrate deploy` on start, which forces the CLI to be a runtime dependency. Moving migrations to a separate one-off job would recover it, but that changes how the service deploys and is the owner's call.
