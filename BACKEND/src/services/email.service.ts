@@ -65,7 +65,9 @@ const assertAttachmentsAllowed = (urls: string[]): void => {
  */
 const filenameFromUrl = (url: string, index: number): string => {
   try {
-    const last = decodeURIComponent(new URL(url).pathname.split('/').pop() ?? '')
+    const last = decodeURIComponent(
+      new URL(url).pathname.split('/').pop() ?? ''
+    )
     if (last.toLowerCase().endsWith('.pdf')) return last
   } catch {
     // fall through to the positional name

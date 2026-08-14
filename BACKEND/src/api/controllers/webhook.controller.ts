@@ -63,7 +63,10 @@ export const handleClerkWebhook = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Webhook verification failed' })
   }
 
-  logger.info({ type: event.type, userId: event.data.id }, 'Clerk webhook received')
+  logger.info(
+    { type: event.type, userId: event.data.id },
+    'Clerk webhook received'
+  )
 
   if (event.type !== 'user.created') {
     return res.status(200).json({ message: `Ignored event: ${event.type}` })

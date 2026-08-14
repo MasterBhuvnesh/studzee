@@ -83,9 +83,7 @@ describe('errorHandler', () => {
 
   it('should hide the underlying message on a 500', () => {
     const res = buildRes()
-    const err = new Error(
-      'connect ECONNREFUSED 10.0.0.4:5432'
-    ) as AppError
+    const err = new Error('connect ECONNREFUSED 10.0.0.4:5432') as AppError
 
     errorHandler(err, buildReq(), res, mockNext)
 

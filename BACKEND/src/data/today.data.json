@@ -57,7 +57,11 @@
             "type": "table",
             "headers": ["Model", "Key Feature", "Advantage"],
             "rows": [
-              ["LSTM", "Input, Forget, Output gates", "Handles long dependencies"],
+              [
+                "LSTM",
+                "Input, Forget, Output gates",
+                "Handles long dependencies"
+              ],
               ["GRU", "Reset & Update gates", "Simpler and faster"]
             ]
           }
@@ -98,11 +102,26 @@
           },
           {
             "type": "table",
-            "headers": ["Strategy", "Effect","Use Case","Example"],
+            "headers": ["Strategy", "Effect", "Use Case", "Example"],
             "rows": [
-              ["Low Temperature", "Deterministic output", "Factual tasks", "Summarization and translation"],
-              ["High Temperature", "Creative but random", "Creative tasks", "Creative writing and brainstorming"],
-              ["Repetition Penalty", "Avoids repeated text", "Text generation", "Story generation and dialogue systems"]
+              [
+                "Low Temperature",
+                "Deterministic output",
+                "Factual tasks",
+                "Summarization and translation"
+              ],
+              [
+                "High Temperature",
+                "Creative but random",
+                "Creative tasks",
+                "Creative writing and brainstorming"
+              ],
+              [
+                "Repetition Penalty",
+                "Avoids repeated text",
+                "Text generation",
+                "Story generation and dialogue systems"
+              ]
             ]
           }
         ]
@@ -134,7 +153,7 @@
         ]
       },
       {
-      "title": "SAMPLE CODE",
+        "title": "SAMPLE CODE",
         "content": [
           {
             "type": "code",

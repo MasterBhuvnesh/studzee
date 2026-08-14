@@ -44,7 +44,11 @@ describe('registerOrUpdateUser', () => {
     user.findUnique.mockResolvedValue(null)
     user.create.mockResolvedValue({ id: 1 })
 
-    await registerOrUpdateUser('clerk_1', 'a@example.test', 'ExponentPushToken[a]')
+    await registerOrUpdateUser(
+      'clerk_1',
+      'a@example.test',
+      'ExponentPushToken[a]'
+    )
 
     expect(user.create).toHaveBeenCalledWith({
       data: {
@@ -63,7 +67,11 @@ describe('registerOrUpdateUser', () => {
     })
     user.update.mockResolvedValue({ id: 1 })
 
-    await registerOrUpdateUser('clerk_1', 'a@example.test', 'ExponentPushToken[b]')
+    await registerOrUpdateUser(
+      'clerk_1',
+      'a@example.test',
+      'ExponentPushToken[b]'
+    )
 
     expect(user.update).toHaveBeenCalledWith({
       where: { clerkId: 'clerk_1' },
@@ -82,7 +90,11 @@ describe('registerOrUpdateUser', () => {
     })
     user.update.mockResolvedValue({ id: 1 })
 
-    await registerOrUpdateUser('clerk_1', 'a@example.test', 'ExponentPushToken[a]')
+    await registerOrUpdateUser(
+      'clerk_1',
+      'a@example.test',
+      'ExponentPushToken[a]'
+    )
 
     // Re-registering the same device is the common case, on every app launch.
     expect(user.update.mock.calls[0][0].data.expoTokens).toEqual([
@@ -94,7 +106,11 @@ describe('registerOrUpdateUser', () => {
     user.findUnique.mockResolvedValue({ clerkId: 'clerk_1', expoTokens: [] })
     user.update.mockResolvedValue({ id: 1 })
 
-    await registerOrUpdateUser('clerk_1', 'new@example.test', 'ExponentPushToken[a]')
+    await registerOrUpdateUser(
+      'clerk_1',
+      'new@example.test',
+      'ExponentPushToken[a]'
+    )
 
     expect(user.update.mock.calls[0][0].data.email).toBe('new@example.test')
   })

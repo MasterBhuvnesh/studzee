@@ -44,7 +44,11 @@ describe('listUsers', () => {
     const res = buildRes()
     res.locals.query = { page: 3, limit: 25, order: 'desc' }
 
-    await listUsers({ query: { page: '99' } } as unknown as Request, res, mockNext)
+    await listUsers(
+      { query: { page: '99' } } as unknown as Request,
+      res,
+      mockNext
+    )
 
     // Numbers from the validated query, not the raw strings on req.query.
     expect(getUsers).toHaveBeenCalledWith(3, 25)

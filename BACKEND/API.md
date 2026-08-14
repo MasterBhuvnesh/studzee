@@ -39,10 +39,10 @@ The Clerk webhook is the one exception. It carries no user token and is authenti
 
 Every `imageUrl`, `pdfUrl` and `banner` in this document is shown with a Supabase host, because that is what a deployed environment returns. The host is not fixed. Uploads are stored over the S3 protocol and the URL written onto the document is built from `S3_PUBLIC_URL`, so it changes with the environment:
 
-| Environment | `S3_PUBLIC_URL` | Example URL |
-| --- | --- | --- |
-| Deployed | `https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public` | `.../public/pdfs/introduction-to-typescript.pdf` |
-| Local | `http://localhost:9000` | `http://localhost:9000/pdfs/introduction-to-typescript.pdf` |
+| Environment | `S3_PUBLIC_URL`                                                     | Example URL                                                 |
+| ----------- | ------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Deployed    | `https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public` | `.../public/pdfs/introduction-to-typescript.pdf`            |
+| Local       | `http://localhost:9000`                                             | `http://localhost:9000/pdfs/introduction-to-typescript.pdf` |
 
 Local development runs MinIO with the same three buckets, `images`, `pdfs` and `assets`, all public read. Clients must treat these as opaque absolute URLs and never rebuild them from a hardcoded host.
 
@@ -213,8 +213,14 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
         {
           "title": "Introduction",
           "content": [
-            { "type": "text", "value": "TypeScript is a typed superset of JavaScript." },
-            { "type": "list", "items": ["Static types", "Compiles to JavaScript"] }
+            {
+              "type": "text",
+              "value": "TypeScript is a typed superset of JavaScript."
+            },
+            {
+              "type": "list",
+              "items": ["Static types", "Compiles to JavaScript"]
+            }
           ]
         }
       ],
@@ -233,7 +239,10 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
         "q1": {
           "que": "What is TypeScript?",
           "ans": "A typed superset of JavaScript",
-          "options": ["A typed superset of JavaScript", "A new programming language"]
+          "options": [
+            "A typed superset of JavaScript",
+            "A new programming language"
+          ]
         }
       },
       "key_notes": {
@@ -304,14 +313,17 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
 - **Protected:** Yes
 - **Rate Limit:** 10 requests per minute
 - **Request Body:**
+
   ```json
   {
     "email": "learner@example.com",
     "expoToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
   }
   ```
+
   - `email` (string, required) - Must be a valid email address
   - `expoToken` (string, required) - Must start with `ExponentPushToken[`
+
 - **Response:**
   - `200 OK`
     ```json
@@ -388,6 +400,7 @@ Common failures on all admin routes:
 
 - **Route:** `POST /admin/documents`
 - **Request Body:**
+
   ```json
   {
     "title": "New Tutorial",
@@ -415,11 +428,13 @@ Common failures on all admin routes:
     }
   }
   ```
+
   - **Required:**
     - `title` (string, min 3 chars)
     - `content` (array or object, structured, not a string)
     - `quiz` (object keyed by question ID, each with `que`, `ans` and at least two `options`)
   - **Optional:** `summary`, `facts`, `key_notes`, `imageUrl`, `pdfUrl`
+
 - **Response:**
   - `201 Created`
     ```json
@@ -467,6 +482,7 @@ Common failures on all admin routes:
 - **Body:** `file` (required) - JPG, PNG or WebP, max 10MB
 
 > **The form field must be named `file`.** Three mistakes produce a 400, each with its own message: sending a JSON body rather than `multipart/form-data`, naming the field something other than `file`, and sending multipart with no file attached. In Postman, a `file` row in the form-data tab is not enough on its own, you also have to pick a file with the Select Files button, otherwise nothing is sent.
+
 - **Response:**
   - `200 OK`
     ```json
@@ -536,6 +552,7 @@ Common failures on all admin routes:
 - **Route:** `POST /admin/notifications/send`
 - **Rate Limit:** 20 requests per minute
 - **Request Body:**
+
   ```json
   {
     "title": "New notes published",
@@ -545,11 +562,13 @@ Common failures on all admin routes:
     "emails": ["learner@example.com"]
   }
   ```
+
   - `title` (string, required)
   - `message` (string, required)
   - `imageUrl` (string, optional) - Must be a valid URL
   - `sendToAll` (boolean, required)
   - `emails` (array of emails) - Required and non empty whenever `sendToAll` is false, ignored otherwise
+
 - **Response:**
   - `200 OK` - Every message accepted
     ```json
@@ -610,6 +629,7 @@ Common failures on all admin routes:
 - **Route:** `POST /admin/emails/send`
 - **Rate Limit:** 10 requests per minute
 - **Request Body:**
+
   ```json
   {
     "emails": ["learner@example.com"],
@@ -618,13 +638,17 @@ Common failures on all admin routes:
     "body": "<p>Chapter 4 of System Design is published.</p>",
     "banner": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/assets/banner.png",
     "footer": "This is an automated email from Studzee.",
-    "pdfUrls": ["https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/system-design.pdf"]
+    "pdfUrls": [
+      "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/system-design.pdf"
+    ]
   }
   ```
+
   - `emails` (array of emails, required, min 1)
   - `subject`, `title`, `body` (string, required). `body` is an HTML fragment dropped into the shared template.
   - `banner`, `footer` (optional) - Fall back to the configured defaults
   - `pdfUrls` (array of URLs, optional)
+
 - **Response:**
   - `200 OK`
     ```json
@@ -786,13 +810,13 @@ Common status codes:
 
 A global limiter applies to every request, and the expensive admin endpoints carry tighter per route limits on top of it.
 
-| Scope                            | Limit                |
-| -------------------------------- | -------------------- |
-| Global, all routes               | 100 per 15 minutes   |
-| `POST /notifications/register`   | 10 per minute        |
-| `POST /admin/notifications/send` | 20 per minute        |
-| `POST /admin/emails/send`        | 10 per minute        |
-| Admin listing endpoints          | 30 per minute        |
+| Scope                            | Limit              |
+| -------------------------------- | ------------------ |
+| Global, all routes               | 100 per 15 minutes |
+| `POST /notifications/register`   | 10 per minute      |
+| `POST /admin/notifications/send` | 20 per minute      |
+| `POST /admin/emails/send`        | 10 per minute      |
+| Admin listing endpoints          | 30 per minute      |
 
 Exceeding a limit returns `429 Too Many Requests`. Limits are reported in the standard `RateLimit-*` response headers. The service sets `trust proxy`, so limits are applied per client address rather than per proxy.
 
@@ -800,10 +824,10 @@ Exceeding a limit returns `429 Too Many Requests`. Limits are reported in the st
 
 Redis caches read responses using the cache aside pattern.
 
-| Cache          | Key pattern                            | TTL variable      | Default  |
-| -------------- | -------------------------------------- | ----------------- | -------- |
-| List           | `content:list:page:<page>:limit:<limit>` | `LIST_CACHE_TTL`  | 5 minutes |
-| Document       | `content:doc:<id>`                     | `DOC_CACHE_TTL`   | 24 hours |
-| Today          | `content:today`                        | `TODAY_CACHE_TTL` | 1 hour   |
+| Cache    | Key pattern                              | TTL variable      | Default   |
+| -------- | ---------------------------------------- | ----------------- | --------- |
+| List     | `content:list:page:<page>:limit:<limit>` | `LIST_CACHE_TTL`  | 5 minutes |
+| Document | `content:doc:<id>`                       | `DOC_CACHE_TTL`   | 24 hours  |
+| Today    | `content:today`                          | `TODAY_CACHE_TTL` | 1 hour    |
 
 Any admin write invalidates every content cache entry. Cache hits and misses are visible in the application log; no cache status is exposed in response headers.

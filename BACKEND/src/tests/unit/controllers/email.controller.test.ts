@@ -15,13 +15,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NextFunction, Request, Response } from 'express'
 import { listEmailLogs, sendEmail } from '@/api/controllers/email.controller'
 
-const { sendEmailWithAttachments, getEmailLogs, saveEmailLog, resolveSortField } =
-  vi.hoisted(() => ({
-    sendEmailWithAttachments: vi.fn(),
-    getEmailLogs: vi.fn(),
-    saveEmailLog: vi.fn(),
-    resolveSortField: vi.fn((v: string | undefined) => v ?? 'createdAt'),
-  }))
+const {
+  sendEmailWithAttachments,
+  getEmailLogs,
+  saveEmailLog,
+  resolveSortField,
+} = vi.hoisted(() => ({
+  sendEmailWithAttachments: vi.fn(),
+  getEmailLogs: vi.fn(),
+  saveEmailLog: vi.fn(),
+  resolveSortField: vi.fn((v: string | undefined) => v ?? 'createdAt'),
+}))
 
 vi.mock('@/services/email.service', () => ({ sendEmailWithAttachments }))
 vi.mock('@/services/notification.service', () => ({
@@ -100,7 +104,10 @@ describe('sendEmail', () => {
   })
 
   it('should record the audit row as sent on success', async () => {
-    sendEmailWithAttachments.mockResolvedValue({ success: true, messageId: 'm' })
+    sendEmailWithAttachments.mockResolvedValue({
+      success: true,
+      messageId: 'm',
+    })
 
     await sendEmail(buildReq(), buildRes(), mockNext)
 
@@ -126,7 +133,10 @@ describe('sendEmail', () => {
   })
 
   it('should take sentBy from the token, not the request body', async () => {
-    sendEmailWithAttachments.mockResolvedValue({ success: true, messageId: 'm' })
+    sendEmailWithAttachments.mockResolvedValue({
+      success: true,
+      messageId: 'm',
+    })
     const req = buildReq({
       body: body({ sentBy: 'user_someone_else' }),
       auth: () => ({ userId: 'user_admin' }),
@@ -138,7 +148,10 @@ describe('sendEmail', () => {
   })
 
   it('should default pdfUrls to an empty array in the audit row', async () => {
-    sendEmailWithAttachments.mockResolvedValue({ success: true, messageId: 'm' })
+    sendEmailWithAttachments.mockResolvedValue({
+      success: true,
+      messageId: 'm',
+    })
 
     await sendEmail(buildReq(), buildRes(), mockNext)
 
@@ -146,7 +159,10 @@ describe('sendEmail', () => {
   })
 
   it('should pass attachments through to the mail service', async () => {
-    sendEmailWithAttachments.mockResolvedValue({ success: true, messageId: 'm' })
+    sendEmailWithAttachments.mockResolvedValue({
+      success: true,
+      messageId: 'm',
+    })
     const req = buildReq({
       body: body({
         banner: 'https://cdn.test/b.png',
@@ -183,7 +199,9 @@ describe('sendEmail', () => {
 describe('listEmailLogs', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    resolveSortField.mockImplementation((v: string | undefined) => v ?? 'createdAt')
+    resolveSortField.mockImplementation(
+      (v: string | undefined) => v ?? 'createdAt'
+    )
   })
 
   it('should read paging from res.locals rather than req.query', async () => {
@@ -205,7 +223,12 @@ describe('listEmailLogs', () => {
   it('should push the sort column through the allowlist', async () => {
     getEmailLogs.mockResolvedValue({ data: [], meta: {} })
     const res = buildRes()
-    res.locals.query = { page: 1, limit: 20, sortBy: 'DROP TABLE', order: 'desc' }
+    res.locals.query = {
+      page: 1,
+      limit: 20,
+      sortBy: 'DROP TABLE',
+      order: 'desc',
+    }
 
     await listEmailLogs({} as Request, res, mockNext)
 

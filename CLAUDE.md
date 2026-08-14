@@ -121,20 +121,25 @@ docker compose up -d    # the integration tests need real Mongo and Redis
 npm test                # 235 tests across 26 files, all passing as of 14-08-2026
 ```
 
-Before pushing, run the three gates CI runs. The image build will not start
-unless all three pass:
+Before pushing, run the four gates CI runs. The image build will not start
+unless all four pass:
 
 ```bash
-make check                          # all three in one go
+make check                          # all four in one go
 
 # or individually
+npm run fmt:check                   # Prettier, now a CI gate
 npm run lint                        # 0 errors expected
 npx tsc --noEmit -p tsconfig.json   # base config, so tests are typechecked too
 npm test
 ```
 
-`npm run lint` reports several thousand warnings on Windows. They are almost
-all `Delete ␍` from CRLF line endings and they do not fail the build. Errors do.
+Lint was reporting 4012 warnings on Windows, almost all `Delete CR`, until
+`.gitattributes` forced LF in the working tree on 14-08-2026. It is down to one.
+**Do not remove `* text=auto eol=lf` from `.gitattributes`**: without it
+`core.autocrlf=true` rewrites the working tree to CRLF on Windows, Prettier
+flags every line, and `fmt:check` fails locally while passing in CI, which
+checks out on Linux.
 
 The typecheck deliberately uses `tsconfig.json`, not `tsconfig.build.json`.
 The build config excludes `src/tests` so test code stays out of `dist`, which

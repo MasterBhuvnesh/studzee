@@ -22,7 +22,8 @@ export const SendNotificationSchema = z
     emails: z.array(z.string().email()).optional(),
   })
   .refine(
-    (data) => data.sendToAll || (data.emails !== undefined && data.emails.length > 0),
+    (data) =>
+      data.sendToAll || (data.emails !== undefined && data.emails.length > 0),
     {
       message: 'At least one email is required when sendToAll is false',
       path: ['emails'],

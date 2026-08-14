@@ -71,9 +71,7 @@ beforeEach(() => {
   // resolveSortField is an allowlist rather than a dependency, so the mocked
   // module needs it to behave like the real one for the listing tests.
   vi.mocked(NotificationService.resolveSortField).mockImplementation((value) =>
-    (['createdAt', 'status', 'sentBy'] as const).includes(
-      value as 'createdAt'
-    )
+    (['createdAt', 'status', 'sentBy'] as const).includes(value as 'createdAt')
       ? (value as 'createdAt')
       : 'createdAt'
   )
@@ -93,7 +91,11 @@ describe('registerDevice', () => {
       clerkId: 'user_someone_else',
     })
 
-    await NotificationController.registerDevice(req, mockRes as Response, mockNext)
+    await NotificationController.registerDevice(
+      req,
+      mockRes as Response,
+      mockNext
+    )
 
     expect(UserService.registerOrUpdateUser).toHaveBeenCalledWith(
       CLERK_ID,
@@ -112,7 +114,10 @@ describe('registerDevice', () => {
     vi.mocked(UserService.registerOrUpdateUser).mockRejectedValue(failure)
 
     await NotificationController.registerDevice(
-      requestWith({ email: 'a@example.test', expoToken: 'ExponentPushToken[a]' }),
+      requestWith({
+        email: 'a@example.test',
+        expoToken: 'ExponentPushToken[a]',
+      }),
       mockRes as Response,
       mockNext
     )

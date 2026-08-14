@@ -22,26 +22,21 @@ Open items carried forward. Move each into a dated entry once it is done.
   storage moved to Supabase on 11-08-2026. The database half is not yet
   specified.
 - **Set the renamed and new environment variables in the deployed
-  environment.** The config schema throws at boot on anything missing, so a
-  deploy fails fast rather than misbehaving. New since the merge:
-  `DATABASE_URL`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`.
-  Renamed on 11-08-2026: `AWS_REGION`, `AWS_ACCESS_KEY_ID`,
-  `AWS_SECRET_ACCESS_KEY` and `AWS_S3_BUCKET_NAME` became `S3_REGION`,
-  `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_IMAGES` and
-  `S3_BUCKET_PDFS`, and `S3_ENDPOINT` and `S3_PUBLIC_URL` are new and required.
+  environment.** The full checklist is now [`.docs/DEPLOYMENT.md`](.docs/DEPLOYMENT.md),
+  generated from the config schema on 14-08-2026: 16 required variables, the
+  defaults that must be overridden anyway, and the two steps that are not
+  variables at all. Setting them in the deploy platform is the remaining work
+  and needs access this repository does not have.
 - **Extend the BACKEND test coverage.** Done on 14-08-2026, 49 to 91 percent of
   statements, with no file left at 0. The 43 statements still uncovered are
   transport, retry and timeout branches in `email.service.ts`,
   `content.service.ts`, `expo.service.ts` and `health.route.ts`, which need a
   fake SMTP or Expo endpoint to reach. Treat as finished unless a bug points at
   one of them.
-- **Consolidate the Clerk SDKs.** `@clerk/express` provides the middleware and
-  `@clerk/clerk-sdk-node` provides `clerkClient` for the admin role lookup. The
-  latter is end of life. Move to `@clerk/backend`.
 - **Stop calling Clerk on every admin request.** `requireAdmin` does an uncached
   `users.getUser` round trip per request, which is latency on every admin action
   and exposure to Clerk rate limits. A JWT Template carrying the role on the
-  session token would remove it.
+  session token would remove it. Deferred by the owner on 14-08-2026.
 - **Provision an admin in the deployed Clerk instance.** The role comes from
   `publicMetadata.role`, set by hand in the dashboard. No code path grants it,
   so without this step the deployed admin surface is unreachable by anyone.
@@ -64,6 +59,52 @@ Open items carried forward. Move each into a dated entry once it is done.
 ## 2026-08-14
 
 **Branch:** `feat/v2-architecture`
+
+- Normalised line endings and made `fmt:check` a CI gate. The two are the same
+  job: the check could not be enabled before because it failed on several
+  thousand CRLF differences. The index already stored LF; what produced them was
+  the checkout, since `core.autocrlf=true` rewrites the working tree to CRLF
+  while Prettier defaults to `endOfLine: "lf"`. A `.gitattributes` with
+  `* text=auto eol=lf` overrides that per repository, so the working tree matches
+  the index on every platform. That matters because CI checks out on Linux and
+  the maintainer works on Windows, so without it the two disagree by definition.
+  - Fixed at the source rather than suppressed in the Prettier config, which
+    would have hidden the difference instead of removing it.
+  - `prettier --write` then rewrote 68 files, and ESLint went from **4012
+    problems to 1**. The survivor was a genuine `no-explicit-any` in
+    `config/mongo.ts`, now narrowed to the `{ code, message }` shape the driver
+    actually provides. `API.md` needed a second Prettier pass; it is not
+    idempotent on that file.
+  - `make check` now runs four gates rather than three, matching CI.
+- Dropped `@clerk/clerk-sdk-node`, which is end of life. It was providing
+  `clerkClient` for the admin role lookup while `@clerk/express` provided the
+  middleware, so the project carried two Clerk SDKs and two copies of
+  `@clerk/backend`, an old 0.38 hoisted to the top level and a 2.x nested under
+  express. `@clerk/express` re-exports an equivalent `clerkClient`, so this
+  removed a dependency rather than swapping one, and `@clerk/backend` is now an
+  explicit 2.33 direct dependency for its types.
+  - `src/types/express.d.ts` is still required. `@clerk/express` declares
+    `Request.auth` in its own module scope and that does not reach the global
+    Express namespace; removing the file produced eight compile errors.
+  - The type had to become `SessionAuthObject`, not `AuthObject`. In v2 the
+    latter widened to include machine tokens, which carry no `userId`, so every
+    `req.auth().userId` in the codebase failed against it.
+  - Verified live, not just by the suite. The tests mock Clerk, so they would
+    have passed even if the real client were broken. Re-ran the real token probe
+    against a restarted server: 401 without a token and on a garbage bearer, 200
+    with a real JWT, 200 on `/admin/*` for an admin and 403 for a throwaway user
+    with no role. `/admin/users` returning 200 is the specific proof, since that
+    is the `clerkClient.users.getUser` call that changed.
+- Added [`.docs/DEPLOYMENT.md`](.docs/DEPLOYMENT.md), the environment checklist
+  for a deploy. Generated from the Zod schema rather than transcribed, so it
+  matches what the service validates: 16 required variables, the defaults that
+  must be overridden anyway, and the steps that are not variables.
+  - The most dangerous default is `NODE_ENV`, which is `development`. The
+    `DEV_TOKEN` bypass is active whenever that holds and `DEV_TOKEN` is set, and
+    it grants admin, so an unset `NODE_ENV` alongside a present `DEV_TOKEN` is an
+    open admin surface.
+- Wrote the missing 2026-08-12 entry below, reconstructed from that day's three
+  commits and the matching fix and record rows, and marked as such.
 
 - Reviewed the backend test setup end to end against a running stack. The suite
   is genuinely healthy: 90 tests across 11 files passing, `tsc --noEmit` clean
@@ -252,6 +293,44 @@ Open items carried forward. Move each into a dated entry once it is done.
   `.env.container`: healthy, migrations applied, JSON logs, and `/`,
   `/healthcheck`, `/health/liveness`, `/health/readiness`, `/content`, `/pdfs`,
   `/content/:id`, `/admin/users` and `/admin/notifications` all returning 200.
+
+## 2026-08-12
+
+**Branch:** `feat/v2-architecture`
+
+> Written on 14-08-2026, reconstructed from the three commits of that day
+> (`1ac80b60`, `91dcfca6`, `28590ea2`) and the matching rows in
+> [`.docs/FIXES.md`](.docs/FIXES.md) and [`.docs/RECORDS.md`](.docs/RECORDS.md).
+> The entry was missed on the day. It is accurate to the record but thinner than
+> a contemporaneous one would have been, and any reasoning not captured in a
+> commit message or a fix row is lost.
+
+- Built the Docker image and ran the API in a container for the first time,
+  which immediately exposed that no existing env file could work inside one.
+  `.env` and `.env.docker` both address every dependency as `localhost`, which
+  is correct for a host process because the containers publish their ports, and
+  wrong for a process on the compose network. Added `BACKEND/.env.container`,
+  which addresses them by compose service name.
+  - The failure mode is worth remembering: it presents as `P1001` from
+    `prisma migrate deploy` at boot, before any application code runs, so it
+    looks like a database problem rather than a configuration one.
+- Set `PORT=3000` in `.env.container`, unlike the other two files. The Dockerfile
+  declares `EXPOSE 3000` and probes port 3000 in its `HEALTHCHECK`, so with
+  `PORT=4000` the container serves traffic correctly and reports `unhealthy`
+  forever. It is published as `-p 4000:3000`.
+- In `.env.container` only, `S3_ENDPOINT` and `S3_PUBLIC_URL` deliberately point
+  at different hosts. Uploads go to `http://minio:9000`, while the URL stored on
+  the document stays `http://localhost:9000`, because a client outside Docker
+  fetches it later and cannot resolve `minio`.
+- Found that `make seed`, `make logs` and `make refresh-cache` all fail, since
+  they shell into an `api` compose service that did not exist. Documented as
+  broken rather than fixed at the time. Both the service and the targets were
+  fixed on 14-08-2026.
+- Corrected the readme claims that no longer matched the stack, and documented
+  the root route and the environment dependent file URLs in `API.md`.
+- Rewrote the storage troubleshooting around the failures that actually occur,
+  `NoSuchBucket`, `SignatureDoesNotMatch` and an unreachable endpoint, rather
+  than generic advice.
 
 ## 2026-08-11
 

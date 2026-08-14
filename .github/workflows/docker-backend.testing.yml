@@ -93,6 +93,13 @@ jobs:
         # the typecheck cannot resolve @prisma/client without this step.
         run: npx prisma generate
 
+      - name: Check formatting
+        # Enabled on 14-08-2026, once .gitattributes forced LF in the working
+        # tree. Before that this step failed on several thousand CRLF
+        # differences, because CI checks out on Linux and the maintainer works
+        # on Windows with core.autocrlf=true.
+        run: npm run fmt:check
+
       - name: Lint
         run: npm run lint
 

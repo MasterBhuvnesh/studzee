@@ -34,7 +34,7 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.956.0",
-    "@clerk/clerk-sdk-node": "^4.13.23",
+    "@clerk/backend": "^2.29.0",
     "@clerk/express": "^1.7.55",
     "@prisma/client": "^6.0.0",
     "axios": "^1.13.2",

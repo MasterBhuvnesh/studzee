@@ -15,7 +15,7 @@
 
 .PHONY: help up env-up down env-down ps \
         api-up api-down api-logs api-rebuild \
-        build test coverage lint typecheck check fmt seed refresh-cache logs \
+        build test coverage lint typecheck fmt-check check fmt seed refresh-cache logs \
         prisma-generate prisma-migrate prisma-deploy prisma-studio prisma-status db-reset
 
 help:
@@ -38,7 +38,8 @@ help:
 	@echo "  coverage        : Run the suite with a coverage report."
 	@echo "  lint            : ESLint. Warnings are tolerated, errors are not."
 	@echo "  typecheck       : tsc --noEmit against the base config, tests included."
-	@echo "  check           : lint, typecheck and test. The same three gates CI runs."
+	@echo "  fmt-check       : Prettier in check mode, no writes."
+	@echo "  check           : fmt-check, lint, typecheck and test. The four gates CI runs."
 	@echo "  fmt             : Format with Prettier."
 	@echo "  seed            : Load sample documents. Runs on the host, see note below."
 	@echo "  refresh-cache   : Trigger the cache refresh job on the host."
@@ -121,13 +122,17 @@ typecheck:
 	@echo "Typechecking, tests included..."
 	npx tsc --noEmit -p tsconfig.json
 
-# The three gates the image build is blocked on in CI. Run this before pushing.
-check: lint typecheck test
-	@echo "All three CI gates passed."
+# The four gates the image build is blocked on in CI. Run this before pushing.
+check: fmt-check lint typecheck test
+	@echo "All four CI gates passed."
 
 fmt:
 	@echo "Formatting..."
 	npm run fmt
+
+fmt-check:
+	@echo "Checking formatting..."
+	npm run fmt:check
 
 # On the host, not in the container. The image omits devDependencies and so has
 # no ts-node, which both of these scripts need.

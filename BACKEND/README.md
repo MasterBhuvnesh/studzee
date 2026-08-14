@@ -11,10 +11,10 @@ The service uses MongoDB for content, PostgreSQL for users and delivery logs, Re
 There are two ways to run the API, and they are mutually exclusive because both
 want port 4000. Pick one.
 
-| Mode | Command | Use it when |
-| ---- | ------- | ----------- |
-| **Host** | `docker compose up -d` then `npm run dev` | Writing code. Hot reloads on save and attaches to a debugger. |
-| **Container** | `docker compose --profile api up -d` | Checking the image that actually ships. No hot reload, a code change needs `--build`. |
+| Mode          | Command                                   | Use it when                                                                           |
+| ------------- | ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Host**      | `docker compose up -d` then `npm run dev` | Writing code. Hot reloads on save and attaches to a debugger.                         |
+| **Container** | `docker compose --profile api up -d`      | Checking the image that actually ships. No hot reload, a code change needs `--build`. |
 
 The API is behind the `api` compose profile, so a plain `docker compose up -d`
 starts the infrastructure only and leaves port 4000 free for the host process.
@@ -68,29 +68,29 @@ Any `"error"` in that response names the store that is not answering. It round t
 
 **Dashboards, while the stack is running:**
 
-| What | Where |
-| ---- | ----- |
-| API | [http://localhost:4000](http://localhost:4000) |
-| Mail inbox (Mailpit) | [http://localhost:8025](http://localhost:8025) |
-| Mongo admin (Mongo Express) | [http://localhost:8081](http://localhost:8081) |
+| What                           | Where                                          |
+| ------------------------------ | ---------------------------------------------- |
+| API                            | [http://localhost:4000](http://localhost:4000) |
+| Mail inbox (Mailpit)           | [http://localhost:8025](http://localhost:8025) |
+| Mongo admin (Mongo Express)    | [http://localhost:8081](http://localhost:8081) |
 | Object storage (MinIO console) | [http://localhost:9001](http://localhost:9001) |
-| Cache (RedisInsight) | [http://localhost:8001](http://localhost:8001) |
-| Postgres data (Prisma Studio) | `npm run prisma:studio` |
+| Cache (RedisInsight)           | [http://localhost:8001](http://localhost:8001) |
+| Postgres data (Prisma Studio)  | `npm run prisma:studio`                        |
 
 **Authenticating locally**: set `NODE_ENV=development` and `DEV_TOKEN` in `.env`, then send `Authorization: Bearer <DEV_TOKEN>` to reach authenticated and admin routes without a Clerk session. It is ignored in every other environment.
 
 **If something will not start:**
 
-| Symptom | Cause |
-| ------- | ----- |
-| Server exits at boot naming a variable | The config schema validates at import time. Add the variable, see [Environment Variables](#environment-variables). |
-| `EADDRINUSE` on port 4000 | `ts-node-dev` can outlive its terminal. Kill the stray node process holding the port. |
-| Hangs with repeated Redis errors | `REDIS_URL` points somewhere unreachable. Use `redis://localhost:6379` for local work. |
-| `NoSuchBucket` on upload | The `minio-init` container did not run. `docker compose up -d minio-init`. |
-| `make` is not recognised | Install it, or use the `docker compose` and npm commands directly. On Windows: `winget install ezwinports.make`, then open a new shell. |
-| `Cannot find package '@/...'` from every test file | Vitest was run from the repository root. It has no `package.json` and no Vitest config. Run from `BACKEND`. |
-| `docker compose --profile api up` fails to bind 4000 | A host `npm run dev` is still holding the port. Stop it, or set `API_PORT` to something else. |
-| API container is `unhealthy` but serves traffic | Its healthcheck probes port 3000. `.env.container` must keep `PORT=3000`. |
+| Symptom                                              | Cause                                                                                                                                   |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Server exits at boot naming a variable               | The config schema validates at import time. Add the variable, see [Environment Variables](#environment-variables).                      |
+| `EADDRINUSE` on port 4000                            | `ts-node-dev` can outlive its terminal. Kill the stray node process holding the port.                                                   |
+| Hangs with repeated Redis errors                     | `REDIS_URL` points somewhere unreachable. Use `redis://localhost:6379` for local work.                                                  |
+| `NoSuchBucket` on upload                             | The `minio-init` container did not run. `docker compose up -d minio-init`.                                                              |
+| `make` is not recognised                             | Install it, or use the `docker compose` and npm commands directly. On Windows: `winget install ezwinports.make`, then open a new shell. |
+| `Cannot find package '@/...'` from every test file   | Vitest was run from the repository root. It has no `package.json` and no Vitest config. Run from `BACKEND`.                             |
+| `docker compose --profile api up` fails to bind 4000 | A host `npm run dev` is still holding the port. Stop it, or set `API_PORT` to something else.                                           |
+| API container is `unhealthy` but serves traffic      | Its healthcheck probes port 3000. `.env.container` must keep `PORT=3000`.                                                               |
 
 ## Table of Contents
 
@@ -168,32 +168,32 @@ Any `"error"` in that response names the store that is not answering. It round t
 
 ### Required
 
-| Tool | Version | Why |
-| ---- | ------- | --- |
-| [Docker Desktop](https://www.docker.com/) | any current release | Runs Mongo, Postgres, Redis, MinIO and Mailpit, and optionally the API itself. Must be running before `docker compose`. |
-| Docker Compose | v2 | Ships inside Docker Desktop. The commands here are `docker compose`, not the older `docker-compose` binary. Profiles are a v2 feature. |
-| [Node.js](https://nodejs.org/) | 22 | The Dockerfile builds on `node:22-alpine`, so 22 is what the deployed image runs. Newer versions work locally but are not what CI or production use. |
-| npm | 10, ships with Node 22 | `package-lock.json` is the lockfile. CI runs `npm ci` against it, so it is the one that must stay accurate. |
+| Tool                                      | Version                | Why                                                                                                                                                  |
+| ----------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Docker Desktop](https://www.docker.com/) | any current release    | Runs Mongo, Postgres, Redis, MinIO and Mailpit, and optionally the API itself. Must be running before `docker compose`.                              |
+| Docker Compose                            | v2                     | Ships inside Docker Desktop. The commands here are `docker compose`, not the older `docker-compose` binary. Profiles are a v2 feature.               |
+| [Node.js](https://nodejs.org/)            | 22                     | The Dockerfile builds on `node:22-alpine`, so 22 is what the deployed image runs. Newer versions work locally but are not what CI or production use. |
+| npm                                       | 10, ships with Node 22 | `package-lock.json` is the lockfile. CI runs `npm ci` against it, so it is the one that must stay accurate.                                          |
 
 ### Optional
 
-| Tool | Why |
-| ---- | --- |
+| Tool                   | Why                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Bun](https://bun.sh/) | Only as a faster script runner. `bun run dev` and `bun run test` execute the same `package.json` scripts, and the scripts themselves still run on Node through `ts-node-dev`. The Bun **runtime** was dropped from this project on 10-08-2026, so do not add `bun` to the lockfile or the Dockerfile. |
-| `make` | Convenience wrapper over the commands below, and `make check` runs the three CI gates in one go. Every target works as of 14-08-2026. Install with `winget install ezwinports.make` on Windows, then open a new shell. See [Available Commands](#available-commands-makefile). |
+| `make`                 | Convenience wrapper over the commands below, and `make check` runs the three CI gates in one go. Every target works as of 14-08-2026. Install with `winget install ezwinports.make` on Windows, then open a new shell. See [Available Commands](#available-commands-makefile).                        |
 
 ### Accounts and services
 
 Local development needs none of these. The compose stack substitutes for all
 four, so a fresh clone runs with no external account.
 
-| Service | Local stand-in | Needed for real when |
-| ------- | -------------- | -------------------- |
-| Clerk | `DEV_TOKEN` bearer bypass, development only | Testing real sign-in, or the `/webhooks/clerk` route |
-| MongoDB Atlas | `mongo` container | Deploying |
-| PostgreSQL | `postgres` container | Deploying |
-| Supabase Storage | `minio` plus `minio-init` | Deploying, or verifying against the real buckets |
-| SMTP provider | `mailpit` container | Sending mail that leaves the machine |
+| Service          | Local stand-in                              | Needed for real when                                 |
+| ---------------- | ------------------------------------------- | ---------------------------------------------------- |
+| Clerk            | `DEV_TOKEN` bearer bypass, development only | Testing real sign-in, or the `/webhooks/clerk` route |
+| MongoDB Atlas    | `mongo` container                           | Deploying                                            |
+| PostgreSQL       | `postgres` container                        | Deploying                                            |
+| Supabase Storage | `minio` plus `minio-init`                   | Deploying, or verifying against the real buckets     |
+| SMTP provider    | `mailpit` container                         | Sending mail that leaves the machine                 |
 
 ## Installation
 
@@ -241,45 +241,45 @@ four, so a fresh clone runs with no external account.
 
 Configuration is parsed and validated by Zod at import time. A missing or malformed required variable throws before the server starts, rather than failing on the first request that needs it.
 
-| Variable                       | Description                                                                      | Required | Default                        |
-| ------------------------------ | -------------------------------------------------------------------------------- | -------- | ------------------------------ |
-| `NODE_ENV`                     | Environment (development/production/test)                                        | Yes      | development                    |
-| `PORT`                         | Server port                                                                      | No       | 4000                           |
-| `MONGO_URI`                    | MongoDB connection string                                                        | Yes      | -                              |
-| `DB_NAME`                      | MongoDB database name                                                            | No       | Studzee_Database               |
-| `MONGO_ROOT_USER`              | MongoDB root username (Docker only)                                              | Yes      | -                              |
-| `MONGO_ROOT_PASSWORD`          | MongoDB root password (Docker only)                                              | Yes      | -                              |
-| `DATABASE_URL`                 | PostgreSQL connection string used by Prisma                                      | Yes      | -                              |
-| `POSTGRES_USER`                | Postgres username (Docker only)                                                  | No       | postgres                       |
-| `POSTGRES_PASSWORD`            | Postgres password (Docker only)                                                  | No       | postgres                       |
-| `POSTGRES_DB`                  | Postgres database name (Docker only)                                             | No       | studzee_notifications          |
-| `POSTGRES_PORT`                | Postgres host port (Docker only)                                                 | No       | 5432                           |
-| `REDIS_URL`                    | Redis connection URL                                                             | Yes      | -                              |
-| `CLERK_SECRET_KEY`             | Clerk authentication secret key                                                  | Yes      | -                              |
-| `CLERK_PUBLISHABLE_KEY`        | Clerk publishable key                                                            | Yes      | -                              |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | Signing secret for `/webhooks/clerk`. The webhook returns 500 without it          | No       | -                              |
-| `LIST_CACHE_TTL`               | List cache TTL in seconds                                                        | No       | 300                            |
-| `DOC_CACHE_TTL`                | Document cache TTL in seconds                                                    | No       | 86400                          |
-| `TODAY_CACHE_TTL`              | Today's content cache TTL in seconds                                             | No       | 3600                           |
-| `JOB_CRON`                     | Cron expression for cache refresh job (currently unused)                         | No       | 0 0 \* \* \*                   |
-| `LOG_LEVEL`                    | Logging level (info/debug/error)                                                 | No       | info                           |
-| `S3_REGION`                    | Storage region. Must match the Supabase project region exactly                   | Yes      | -                              |
-| `S3_ACCESS_KEY_ID`             | Storage access key ID                                                            | Yes      | -                              |
-| `S3_SECRET_ACCESS_KEY`         | Storage secret access key                                                        | Yes      | -                              |
-| `S3_BUCKET_IMAGES`             | Public bucket holding uploaded images                                            | Yes      | -                              |
-| `S3_BUCKET_PDFS`               | Public bucket holding uploaded PDFs                                              | Yes      | -                              |
-| `S3_ENDPOINT`                  | S3 API endpoint, Supabase or MinIO                                               | Yes      | -                              |
-| `S3_PUBLIC_URL`                | Base public object URLs are built from, bucket and key appended                  | Yes      | -                              |
-| `SMTP_HOST`                    | SMTP server hostname                                                             | Yes      | -                              |
-| `SMTP_PORT`                    | SMTP port. Implicit TLS on 465, STARTTLS elsewhere                               | No       | 587                            |
-| `SMTP_USER`                    | SMTP username                                                                    | Yes      | -                              |
-| `SMTP_PASSWORD`                | SMTP password                                                                    | Yes      | -                              |
-| `EMAIL_FROM`                   | Sender address on outbound email                                                 | Yes      | -                              |
-| `SITE_URL`                     | Public site URL used in email templates                                          | No       | https://studzee.in             |
-| `EMAIL_BANNER_URL`             | Banner image used in email templates                                             | No       | the S3 brand banner            |
-| `EMAIL_ATTACHMENT_HOSTS`       | Comma separated hosts an email attachment may be fetched from                    | No       | the S3 asset bucket            |
-| `DEV_TOKEN`                    | Development auth bypass token (bypasses Clerk authentication)                    | No       | -                              |
-| `HEALTHCHECK_URL`              | URL for the heartbeat job to ping. The job is skipped when unset                 | No       | -                              |
+| Variable                       | Description                                                              | Required | Default               |
+| ------------------------------ | ------------------------------------------------------------------------ | -------- | --------------------- |
+| `NODE_ENV`                     | Environment (development/production/test)                                | Yes      | development           |
+| `PORT`                         | Server port                                                              | No       | 4000                  |
+| `MONGO_URI`                    | MongoDB connection string                                                | Yes      | -                     |
+| `DB_NAME`                      | MongoDB database name                                                    | No       | Studzee_Database      |
+| `MONGO_ROOT_USER`              | MongoDB root username (Docker only)                                      | Yes      | -                     |
+| `MONGO_ROOT_PASSWORD`          | MongoDB root password (Docker only)                                      | Yes      | -                     |
+| `DATABASE_URL`                 | PostgreSQL connection string used by Prisma                              | Yes      | -                     |
+| `POSTGRES_USER`                | Postgres username (Docker only)                                          | No       | postgres              |
+| `POSTGRES_PASSWORD`            | Postgres password (Docker only)                                          | No       | postgres              |
+| `POSTGRES_DB`                  | Postgres database name (Docker only)                                     | No       | studzee_notifications |
+| `POSTGRES_PORT`                | Postgres host port (Docker only)                                         | No       | 5432                  |
+| `REDIS_URL`                    | Redis connection URL                                                     | Yes      | -                     |
+| `CLERK_SECRET_KEY`             | Clerk authentication secret key                                          | Yes      | -                     |
+| `CLERK_PUBLISHABLE_KEY`        | Clerk publishable key                                                    | Yes      | -                     |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Signing secret for `/webhooks/clerk`. The webhook returns 500 without it | No       | -                     |
+| `LIST_CACHE_TTL`               | List cache TTL in seconds                                                | No       | 300                   |
+| `DOC_CACHE_TTL`                | Document cache TTL in seconds                                            | No       | 86400                 |
+| `TODAY_CACHE_TTL`              | Today's content cache TTL in seconds                                     | No       | 3600                  |
+| `JOB_CRON`                     | Cron expression for cache refresh job (currently unused)                 | No       | 0 0 \* \* \*          |
+| `LOG_LEVEL`                    | Logging level (info/debug/error)                                         | No       | info                  |
+| `S3_REGION`                    | Storage region. Must match the Supabase project region exactly           | Yes      | -                     |
+| `S3_ACCESS_KEY_ID`             | Storage access key ID                                                    | Yes      | -                     |
+| `S3_SECRET_ACCESS_KEY`         | Storage secret access key                                                | Yes      | -                     |
+| `S3_BUCKET_IMAGES`             | Public bucket holding uploaded images                                    | Yes      | -                     |
+| `S3_BUCKET_PDFS`               | Public bucket holding uploaded PDFs                                      | Yes      | -                     |
+| `S3_ENDPOINT`                  | S3 API endpoint, Supabase or MinIO                                       | Yes      | -                     |
+| `S3_PUBLIC_URL`                | Base public object URLs are built from, bucket and key appended          | Yes      | -                     |
+| `SMTP_HOST`                    | SMTP server hostname                                                     | Yes      | -                     |
+| `SMTP_PORT`                    | SMTP port. Implicit TLS on 465, STARTTLS elsewhere                       | No       | 587                   |
+| `SMTP_USER`                    | SMTP username                                                            | Yes      | -                     |
+| `SMTP_PASSWORD`                | SMTP password                                                            | Yes      | -                     |
+| `EMAIL_FROM`                   | Sender address on outbound email                                         | Yes      | -                     |
+| `SITE_URL`                     | Public site URL used in email templates                                  | No       | https://studzee.in    |
+| `EMAIL_BANNER_URL`             | Banner image used in email templates                                     | No       | the S3 brand banner   |
+| `EMAIL_ATTACHMENT_HOSTS`       | Comma separated hosts an email attachment may be fetched from            | No       | the S3 asset bucket   |
+| `DEV_TOKEN`                    | Development auth bypass token (bypasses Clerk authentication)            | No       | -                     |
+| `HEALTHCHECK_URL`              | URL for the heartbeat job to ping. The job is skipped when unset         | No       | -                     |
 
 ### Clerk Setup
 
@@ -577,13 +577,13 @@ Management dashboards for the containers are listed under [Accessing Dashboards]
 
 The Docker Compose setup uses **named volumes** to persist data across container restarts:
 
-| Volume Name             | Purpose            | Data Stored                                   |
-| ----------------------- | ------------------ | --------------------------------------------- |
-| `studzee-mongo-data`    | MongoDB storage    | Content collections, indexes, configurations  |
+| Volume Name             | Purpose            | Data Stored                                     |
+| ----------------------- | ------------------ | ----------------------------------------------- |
+| `studzee-mongo-data`    | MongoDB storage    | Content collections, indexes, configurations    |
 | `studzee-postgres-data` | PostgreSQL storage | Users, push tokens, notification and email logs |
-| `studzee-redis-data`    | Redis storage      | Cache data, persistence snapshots             |
-| `studzee-minio-data`    | MinIO storage      | Uploaded images, PDFs, and other objects      |
-| `studzee-mailpit-data`  | Mailpit storage    | Caught outbound email                         |
+| `studzee-redis-data`    | Redis storage      | Cache data, persistence snapshots               |
+| `studzee-minio-data`    | MinIO storage      | Uploaded images, PDFs, and other objects        |
+| `studzee-mailpit-data`  | Mailpit storage    | Caught outbound email                           |
 
 **Volume Management**:
 
@@ -615,11 +615,11 @@ All services communicate through a dedicated Docker bridge network:
 
 The project has three environment files. The difference that matters is **where the API process runs**, because that decides how it must address the databases.
 
-| File | Read by | Dependency hosts | Tracked |
-| ---- | ------- | ---------------- | ------- |
-| `.env` | The API on your host | `localhost` | No, gitignored |
-| `.env.docker` | `docker compose`, and the API on your host | `localhost` | Yes |
-| `.env.container` | The API inside a container | Compose service names | Yes |
+| File             | Read by                                    | Dependency hosts      | Tracked        |
+| ---------------- | ------------------------------------------ | --------------------- | -------------- |
+| `.env`           | The API on your host                       | `localhost`           | No, gitignored |
+| `.env.docker`    | `docker compose`, and the API on your host | `localhost`           | Yes            |
+| `.env.container` | The API inside a container                 | Compose service names | Yes            |
 
 > **`.env.docker` does not mean "for running in Docker".** It means "for talking to the Docker stack" from outside it. Both it and `.env` use `localhost`, which is correct for a host process, because every container publishes its ports to the host.
 
@@ -666,18 +666,18 @@ Two details in that file are deliberate and easy to get wrong:
 
 Complete reference of all exposed ports:
 
-| Port    | Service       | Purpose                | Environment Variable |
-| ------- | ------------- | ---------------------- | -------------------- |
-| `4000`  | API           | Application server     | `PORT`               |
-| `27017` | MongoDB       | Content database       | `MONGO_PORT`         |
-| `5432`  | PostgreSQL    | Notification database  | `POSTGRES_PORT`      |
-| `6379`  | Redis         | Cache connection       | `REDIS_PORT`         |
-| `1025`  | Mailpit SMTP  | Local mail delivery    | `MAILPIT_SMTP_PORT`  |
-| `8001`  | RedisInsight  | Redis web dashboard    | `REDIS_INSIGHT_PORT` |
-| `8025`  | Mailpit UI    | Read caught email      | `MAILPIT_UI_PORT`    |
-| `8081`  | Mongo Express | MongoDB web admin      | `MONGO_EXPRESS_PORT` |
-| `9000`  | MinIO         | Object storage API     | `MINIO_PORT`         |
-| `9001`  | MinIO Console | MinIO web interface    | `MINIO_CONSOLE_PORT` |
+| Port    | Service       | Purpose               | Environment Variable |
+| ------- | ------------- | --------------------- | -------------------- |
+| `4000`  | API           | Application server    | `PORT`               |
+| `27017` | MongoDB       | Content database      | `MONGO_PORT`         |
+| `5432`  | PostgreSQL    | Notification database | `POSTGRES_PORT`      |
+| `6379`  | Redis         | Cache connection      | `REDIS_PORT`         |
+| `1025`  | Mailpit SMTP  | Local mail delivery   | `MAILPIT_SMTP_PORT`  |
+| `8001`  | RedisInsight  | Redis web dashboard   | `REDIS_INSIGHT_PORT` |
+| `8025`  | Mailpit UI    | Read caught email     | `MAILPIT_UI_PORT`    |
+| `8081`  | Mongo Express | MongoDB web admin     | `MONGO_EXPRESS_PORT` |
+| `9000`  | MinIO         | Object storage API    | `MINIO_PORT`         |
+| `9001`  | MinIO Console | MinIO web interface   | `MINIO_CONSOLE_PORT` |
 
 **Accessing Services**:
 
@@ -712,19 +712,20 @@ MinIO provides an S3-compatible storage solution for local development without r
 3. **Buckets**: nothing to do. The `minio-init` container has already created `images`, `pdfs` and `assets` and set them to public read. Use the console only to inspect them or to add another bucket.
 
 4. **Public Access**: also already applied by `minio-init`, which runs `mc anonymous set download` on each bucket. This is required, not optional, because the application stores a plain public URL on the document and the clients fetch it directly. The equivalent policy, for reference:
-     ```json
-     {
-       "Version": "2012-10-17",
-       "Statement": [
-         {
-           "Effect": "Allow",
-           "Principal": { "AWS": ["*"] },
-           "Action": ["s3:GetObject"],
-           "Resource": ["arn:aws:s3:::images/*", "arn:aws:s3:::pdfs/*"]
-         }
-       ]
-     }
-     ```
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": { "AWS": ["*"] },
+         "Action": ["s3:GetObject"],
+         "Resource": ["arn:aws:s3:::images/*", "arn:aws:s3:::pdfs/*"]
+       }
+     ]
+   }
+   ```
 
 5. **Run the API** with MinIO configuration:
    ```bash
@@ -755,13 +756,13 @@ assets/
 
 All core services include health check configurations to ensure reliability:
 
-| Service    | Check Command                              | Interval | Timeout | Retries | Start Period |
-| ---------- | ------------------------------------------ | -------- | ------- | ------- | ------------ |
-| MongoDB    | `mongosh --eval "db.adminCommand('ping')"` | 30s      | 10s     | 5       | 30s          |
-| PostgreSQL | `pg_isready -U $POSTGRES_USER`             | 10s      | 5s      | 5       | 10s          |
-| Redis      | `redis-cli ping`                           | 30s      | 10s     | 5       | 30s          |
-| MinIO      | `curl -f http://localhost:9001/health`     | 30s      | 10s     | 5       | 30s          |
-| Mailpit    | `wget -q -O - http://localhost:8025/readyz`| 30s      | 10s     | 5       | 10s          |
+| Service    | Check Command                               | Interval | Timeout | Retries | Start Period |
+| ---------- | ------------------------------------------- | -------- | ------- | ------- | ------------ |
+| MongoDB    | `mongosh --eval "db.adminCommand('ping')"`  | 30s      | 10s     | 5       | 30s          |
+| PostgreSQL | `pg_isready -U $POSTGRES_USER`              | 10s      | 5s      | 5       | 10s          |
+| Redis      | `redis-cli ping`                            | 30s      | 10s     | 5       | 30s          |
+| MinIO      | `curl -f http://localhost:9001/health`      | 30s      | 10s     | 5       | 30s          |
+| Mailpit    | `wget -q -O - http://localhost:8025/readyz` | 30s      | 10s     | 5       | 10s          |
 
 **Health Check Benefits**:
 
@@ -1000,16 +1001,16 @@ Users:
 
 The notification service was merged into this backend. Its endpoints moved as follows, and the old paths no longer exist:
 
-| Old path                                | New path                       |
-| --------------------------------------- | ------------------------------ |
-| `POST /noti/api/register`               | `POST /notifications/register` |
-| `POST /noti/api/admin/notification/send`| `POST /admin/notifications/send` |
-| `GET /noti/api/admin/notifications`     | `GET /admin/notifications`     |
-| `POST /noti/api/admin/email/send`       | `POST /admin/emails/send`      |
-| `GET /noti/api/admin/email/logs`        | `GET /admin/emails/logs`       |
-| `GET /noti/api/admin/users`             | `GET /admin/users`             |
-| `GET /noti/api/admin/emails`            | `GET /admin/users/emails`      |
-| `POST /noti/api/webhooks/clerk`         | `POST /webhooks/clerk`         |
+| Old path                                 | New path                         |
+| ---------------------------------------- | -------------------------------- |
+| `POST /noti/api/register`                | `POST /notifications/register`   |
+| `POST /noti/api/admin/notification/send` | `POST /admin/notifications/send` |
+| `GET /noti/api/admin/notifications`      | `GET /admin/notifications`       |
+| `POST /noti/api/admin/email/send`        | `POST /admin/emails/send`        |
+| `GET /noti/api/admin/email/logs`         | `GET /admin/emails/logs`         |
+| `GET /noti/api/admin/users`              | `GET /admin/users`               |
+| `GET /noti/api/admin/emails`             | `GET /admin/users/emails`        |
+| `POST /noti/api/webhooks/clerk`          | `POST /webhooks/clerk`           |
 
 > **Deployment note**: any client already released against the old paths keeps calling them. Either rewrite them at the ingress or ship a client build that uses the new paths before the old service is retired.
 
@@ -1253,48 +1254,48 @@ so there are no broken ones left.
 
 **Stack**
 
-| Command | Description |
-| ------- | ----------- |
-| `make up` | Start the infrastructure containers |
-| `make env-up` | Same, with variable substitution from `.env.docker` |
-| `make down` | Stop the containers, API included |
-| `make env-down` | Same, with `.env.docker` substitution |
-| `make ps` | Container status, the `api` profile included |
+| Command         | Description                                         |
+| --------------- | --------------------------------------------------- |
+| `make up`       | Start the infrastructure containers                 |
+| `make env-up`   | Same, with variable substitution from `.env.docker` |
+| `make down`     | Stop the containers, API included                   |
+| `make env-down` | Same, with `.env.docker` substitution               |
+| `make ps`       | Container status, the `api` profile included        |
 
 **API in a container** (the `api` compose profile)
 
-| Command | Description |
-| ------- | ----------- |
-| `make api-up` | Build and start the API container alongside the stack |
-| `make api-rebuild` | Rebuild and restart the API after a code change |
-| `make api-logs` | Follow the API container logs |
-| `make api-down` | Stop everything, API included |
+| Command            | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| `make api-up`      | Build and start the API container alongside the stack |
+| `make api-rebuild` | Rebuild and restart the API after a code change       |
+| `make api-logs`    | Follow the API container logs                         |
+| `make api-down`    | Stop everything, API included                         |
 
 **Development**
 
-| Command | Description |
-| ------- | ----------- |
-| `make build` | Compile TypeScript to `dist` |
-| `make test` | Run the Vitest suite, needs the stack up |
-| `make coverage` | Run the suite with a coverage report |
-| `make lint` | ESLint |
-| `make typecheck` | `tsc --noEmit` against the base config, tests included |
-| **`make check`** | **lint, typecheck and test. The same three gates CI runs.** |
-| `make fmt` | Format with Prettier |
-| `make seed` | Load the sample documents, on the host |
-| `make refresh-cache` | Trigger the cache refresh job, on the host |
-| `make logs` | Follow logs for every container |
+| Command              | Description                                                 |
+| -------------------- | ----------------------------------------------------------- |
+| `make build`         | Compile TypeScript to `dist`                                |
+| `make test`          | Run the Vitest suite, needs the stack up                    |
+| `make coverage`      | Run the suite with a coverage report                        |
+| `make lint`          | ESLint                                                      |
+| `make typecheck`     | `tsc --noEmit` against the base config, tests included      |
+| **`make check`**     | **lint, typecheck and test. The same three gates CI runs.** |
+| `make fmt`           | Format with Prettier                                        |
+| `make seed`          | Load the sample documents, on the host                      |
+| `make refresh-cache` | Trigger the cache refresh job, on the host                  |
+| `make logs`          | Follow logs for every container                             |
 
 **Postgres (Prisma)**
 
-| Command | Description |
-| ------- | ----------- |
-| `make prisma-generate` | Regenerate the Prisma client after a schema change |
-| `make prisma-migrate` | Create and apply a migration in development |
-| `make prisma-deploy` | Apply existing migrations, used in production |
-| `make prisma-studio` | Browse the Postgres data in a web UI |
-| `make prisma-status` | Show which migrations have been applied |
-| `make db-reset` | Drop and recreate the Postgres schema, **destroys all data** |
+| Command                | Description                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| `make prisma-generate` | Regenerate the Prisma client after a schema change           |
+| `make prisma-migrate`  | Create and apply a migration in development                  |
+| `make prisma-deploy`   | Apply existing migrations, used in production                |
+| `make prisma-studio`   | Browse the Postgres data in a web UI                         |
+| `make prisma-status`   | Show which migrations have been applied                      |
+| `make db-reset`        | Drop and recreate the Postgres schema, **destroys all data** |
 
 > **`make check` is the one worth remembering.** It runs the three gates that
 > block the image build in CI, so a green `make check` means the pipeline will

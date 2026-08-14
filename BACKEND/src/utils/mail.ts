@@ -63,7 +63,8 @@ export const generateEmailTemplate = (
   banner?: string
 ): string => {
   const bannerUrl = banner || config.EMAIL_BANNER_URL
-  const footerText = footer || 'This is an automated email. Please do not reply.'
+  const footerText =
+    footer || 'This is an automated email. Please do not reply.'
 
   return `<!DOCTYPE html>
 <html lang="en">

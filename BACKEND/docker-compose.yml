@@ -176,8 +176,7 @@ services:
     networks:
       - studzee-network
     healthcheck:
-      test:
-        ['CMD', 'wget', '-q', '-O', '-', 'http://localhost:8025/readyz']
+      test: ['CMD', 'wget', '-q', '-O', '-', 'http://localhost:8025/readyz']
       interval: 30s
       timeout: 10s
       retries: 5

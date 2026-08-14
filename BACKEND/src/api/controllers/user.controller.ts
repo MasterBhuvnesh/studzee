@@ -30,7 +30,9 @@ export const listUserEmails = async (
 ) => {
   try {
     const emails = await getUserEmails()
-    return res.status(200).json({ data: emails, meta: { total: emails.length } })
+    return res
+      .status(200)
+      .json({ data: emails, meta: { total: emails.length } })
   } catch (error) {
     next(error)
   }

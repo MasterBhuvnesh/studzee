@@ -25,7 +25,10 @@ export const registerDevice = async (
 ) => {
   try {
     const clerkId = req.auth().userId
-    const { email, expoToken } = req.body as { email: string; expoToken: string }
+    const { email, expoToken } = req.body as {
+      email: string
+      expoToken: string
+    }
 
     const user = await registerOrUpdateUser(clerkId!, email, expoToken)
     logger.info({ clerkId }, 'Device registered for push')

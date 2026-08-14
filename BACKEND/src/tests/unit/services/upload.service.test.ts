@@ -67,9 +67,9 @@ describe('uploadDocumentImage', () => {
   })
 
   it('should reject an empty document id', async () => {
-    await expect(
-      uploadService.uploadDocumentImage('', file())
-    ).rejects.toThrow('Invalid document ID format')
+    await expect(uploadService.uploadDocumentImage('', file())).rejects.toThrow(
+      'Invalid document ID format'
+    )
   })
 
   it('should throw when the document does not exist', async () => {
@@ -114,17 +114,26 @@ describe('uploadDocumentImage', () => {
     getObjectRef.mockReturnValue({ bucket: 'images', key: 'old.png' })
     uploadToS3.mockResolvedValue({ url: 'https://cdn.test/new.png' })
 
-    await uploadService.uploadDocumentImage(DOC_ID, file({ mimetype: 'image/png' }))
+    await uploadService.uploadDocumentImage(
+      DOC_ID,
+      file({ mimetype: 'image/png' })
+    )
 
     expect(getObjectRef).toHaveBeenCalledWith('https://cdn.test/old.png')
-    expect(deleteFromS3).toHaveBeenCalledWith({ bucket: 'images', key: 'old.png' })
+    expect(deleteFromS3).toHaveBeenCalledWith({
+      bucket: 'images',
+      key: 'old.png',
+    })
   })
 
   it('should not attempt a delete when the document has no image yet', async () => {
     DocumentModel.findById.mockResolvedValue(doc())
     uploadToS3.mockResolvedValue({ url: 'https://cdn.test/img.png' })
 
-    await uploadService.uploadDocumentImage(DOC_ID, file({ mimetype: 'image/png' }))
+    await uploadService.uploadDocumentImage(
+      DOC_ID,
+      file({ mimetype: 'image/png' })
+    )
 
     expect(deleteFromS3).not.toHaveBeenCalled()
   })

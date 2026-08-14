@@ -41,12 +41,10 @@ const { clerkAuthMiddleware, requireAuth, registerDevice, order } = vi.hoisted(
           next()
         }
       ),
-      registerDevice: vi.fn(
-        (_req: express.Request, res: express.Response) => {
-          order.push('controller')
-          res.status(200).json({ message: 'Device registered successfully' })
-        }
-      ),
+      registerDevice: vi.fn((_req: express.Request, res: express.Response) => {
+        order.push('controller')
+        res.status(200).json({ message: 'Device registered successfully' })
+      }),
     }
   }
 )
@@ -55,12 +53,9 @@ vi.mock('@/middleware/auth', () => ({ clerkAuthMiddleware, requireAuth }))
 vi.mock('@/api/controllers/notification.controller', () => ({ registerDevice }))
 
 const buildApp = async () => {
-  const { default: notificationRoute } = await import(
-    '@/api/routes/notification.route'
-  )
-  return express()
-    .use(express.json())
-    .use('/notifications', notificationRoute)
+  const { default: notificationRoute } =
+    await import('@/api/routes/notification.route')
+  return express().use(express.json()).use('/notifications', notificationRoute)
 }
 
 const valid = {
@@ -88,10 +83,14 @@ describe('POST /notifications/register', () => {
   })
 
   it('should run auth before the body is validated', async () => {
-    await request(await buildApp()).post('/notifications/register').send(valid)
+    await request(await buildApp())
+      .post('/notifications/register')
+      .send(valid)
 
     expect(order.indexOf('auth')).toBeLessThan(order.indexOf('controller'))
-    expect(order.indexOf('requireAuth')).toBeLessThan(order.indexOf('controller'))
+    expect(order.indexOf('requireAuth')).toBeLessThan(
+      order.indexOf('controller')
+    )
   })
 
   it('should answer 401 without validating when the caller is unauthenticated', async () => {

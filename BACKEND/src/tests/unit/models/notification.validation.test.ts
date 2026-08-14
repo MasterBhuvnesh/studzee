@@ -117,8 +117,11 @@ describe('SendNotificationSchema', () => {
         .success
     ).toBe(false)
     expect(
-      SendNotificationSchema.safeParse({ ...base, message: '', sendToAll: true })
-        .success
+      SendNotificationSchema.safeParse({
+        ...base,
+        message: '',
+        sendToAll: true,
+      }).success
     ).toBe(false)
   })
 

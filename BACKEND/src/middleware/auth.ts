@@ -1,5 +1,8 @@
-import { clerkClient } from '@clerk/clerk-sdk-node'
-import { clerkMiddleware } from '@clerk/express'
+// Both come from @clerk/express. The admin role lookup previously used
+// clerkClient from @clerk/clerk-sdk-node, which is end of life and pinned a
+// second, older copy of @clerk/backend into the tree. @clerk/express re-exports
+// an equivalent client backed by the version it already depends on.
+import { clerkClient, clerkMiddleware } from '@clerk/express'
 import { NextFunction, Request, Response } from 'express'
 import { config } from '@/config'
 import logger from '@/utils/logger'

@@ -6,10 +6,11 @@
  * than the happy paths.
  *
  * No real Clerk token is involved and none should be. Both Clerk entry points
- * are replaced at the module boundary: clerkMiddleware from @clerk/express and
- * clerkClient from @clerk/clerk-sdk-node. A real session JWT would make the
- * suite network dependent and would expire within a minute of being minted.
- * The live token path is verified separately by hand against a running server.
+ * are replaced at the module boundary, and since 14-08-2026 both come from
+ * @clerk/express, so a single vi.mock covers them. A real session JWT would
+ * make the suite network dependent and would expire within a minute of being
+ * minted. The live token path is verified separately by hand against a running
+ * server.
  *
  * auth.ts reads config.NODE_ENV once at module load, into isDevelopmentMode, so
  * each environment has to be exercised through a fresh import rather than by
@@ -37,8 +38,8 @@ const loadAuth = async (
   vi.doMock('@/config', () => ({
     config: { NODE_ENV: 'development', DEV_TOKEN, ...configOverrides },
   }))
-  vi.doMock('@clerk/express', () => ({ clerkMiddleware }))
-  vi.doMock('@clerk/clerk-sdk-node', () => ({
+  vi.doMock('@clerk/express', () => ({
+    clerkMiddleware,
     clerkClient: { users: { getUser } },
   }))
   vi.doMock('@/utils/logger', () => ({
@@ -59,7 +60,10 @@ const buildRes = () => {
   }
 }
 
-const buildReq = (authHeader?: string, auth?: () => { userId: string | null }) =>
+const buildReq = (
+  authHeader?: string,
+  auth?: () => { userId: string | null }
+) =>
   ({
     headers: authHeader ? { authorization: authHeader } : {},
     auth,
