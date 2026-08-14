@@ -10,7 +10,7 @@ This is a record, not a live workflow. GitHub does not read anything in `.docs`.
 
 Every service pipeline follows the same six steps.
 
-1. Trigger on a version tag, `<service>-v*`. Tags come from `code.sh`, which bumps the version in the module `package.json` and prints the tag command.
+1. Trigger on a version tag, `<service>-v*`. Tags come from `release.sh`, renamed from `code.sh` on 14-08-2026, which bumps the version in the module `package.json` and prints the tag command.
 2. Derive the image tag from the git tag, falling back to a short commit SHA.
 3. Set up Docker Buildx.
 4. Log in to Docker Hub with `DOCKER_USERNAME` and `DOCKER_PASSWORD`.
@@ -111,7 +111,7 @@ Taken from `docker-notification.testing.yml`. Same shape as above with a Bun too
 - The `.testing` suffix in the filenames was misleading, because these workflows deployed without testing. It is accurate for the backend as of 13-08-2026 and still misleading for every other module.
 - The website workflow builds `./WEBSITE`, which was removed on 10-08-2026. It will fail on any `website-v*` tag and should be deleted.
 - **The notification workflow is now dead too.** That service was merged into BACKEND on 10-08-2026 and its folder is gone, so `docker-notification.testing.yml` builds a directory that no longer exists.
-- `code.sh` still accepts `website` and `notification` as service names. Only `backend`, `mobile` and `desktop` remain.
+- **Fixed on 14-08-2026.** `code.sh` accepted `website` and `notification` and did not accept `desktop`. It is now `release.sh` and its `VALID_SERVICES` list is `backend mobile desktop`, with a note to add `website` when that module returns.
 - **The backend image build needs a Prisma step.** Done on 13-08-2026. The `test` job runs `npx prisma generate` before the typecheck, because the client is generated into `node_modules` and is not committed, so `@prisma/client` does not resolve without it. The container still runs `prisma migrate deploy` on start, so the deploy target needs `DATABASE_URL` reachable at boot or it exits 1 with `P1001`.
 - **New required environment variables** since this sample was captured: `DATABASE_URL`, the `SMTP_*` block, `EMAIL_FROM`, and the `S3_*` block replacing the old `AWS_*` names. The config schema throws at startup if any is missing, so the deploy fails fast rather than misbehaving.
 - The BACKEND pipeline runs Vitest, ESLint and `tsc --noEmit` as of 13-08-2026. No other module has a lint or typecheck gate yet. Two details are worth carrying to the others: the typecheck uses the base `tsconfig.json` rather than `tsconfig.build.json`, because Vitest transpiles without typechecking and a test file can pass while failing to compile, and the Mongo service container needs `MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` matching the defaults in `globalSetup.ts`, since Mongoose connects lazily and a mismatch fails on the first query rather than at connection.

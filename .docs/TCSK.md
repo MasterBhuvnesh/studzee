@@ -19,7 +19,7 @@ The repository was stripped to the v2 working set on 10-08-2026. Only the follow
 - `DESKTOP` is the Electron admin console.
 - `.github` holds the README, workflows, CODEOWNERS, and community docs.
 - `.docs` holds the process documentation for people and agents.
-- `code.sh` drives the per module version bump and release flow.
+- `release.sh` drives the per module version bump and release flow. Renamed from `code.sh` on 14-08-2026. Releasable modules are `backend`, `mobile` and `desktop`, listed in `VALID_SERVICES` at the top of the script; add `website` there when that module returns. It bumps, stages and prints the git commands, and deliberately does not commit, tag or push, because pushing the tag is what triggers the build and publish pipeline.
 - `WORKLOG.md` is the running record of work.
 
 Removed on 10-08-2026 and recoverable from git history before commit `9ba738d6`: `AGENTS`, `CONVEX`, `K8S`, `PACKAGES`, `SERVICES`, `TERRAFORM`, `WEBSITE`, `.vscode`, and the stray root `package.json`. Convex is out of scope permanently and must not appear in the v2 architecture or implementation.
@@ -33,7 +33,7 @@ Gitignored local files from the removed folders were copied to `D:\Projects\Stud
 - **Supabase Storage** holds uploaded files, spoken to over the S3 protocol with the AWS SDK. Project ref `lammfakgegmrkxdkwukd`, region `ap-northeast-2`. Three public buckets: `images` and `pdfs` for uploads, and `assets` for the email banner, which the application never writes to. The S3 endpoint and the public URL are different hosts, and `forcePathStyle` is required.
 - **MinIO** stands in for Supabase locally, and **Mailpit** stands in for the mail provider. A `minio-init` container creates the same three buckets and marks them public, so local behaviour matches the real project.
 - **`docker-compose.yml` has an `api` service, behind the `api` profile.** Added 14-08-2026, replacing the hand-written `docker run` invocation. `docker compose up -d` still starts infrastructure only, so the host `npm run dev` workflow is unchanged and keeps port 4000. `docker compose --profile api up -d` runs the API as a container instead. The two are mutually exclusive because both bind 4000; set `API_PORT` to run them side by side.
-- **The API container cannot run the seed or job scripts.** They go through `ts-node`, a devDependency, and the image installs with `--omit=dev`. Run `npm run seed` and `npm run job:refresh-cache` on the host. The `make seed`, `make logs` and `make refresh-cache` targets shell into the container and fail for the same reason.
+- **The API container cannot run the seed or job scripts.** They go through `ts-node`, a devDependency, and the image installs with `--omit=dev`. Run `npm run seed` and `npm run job:refresh-cache` on the host. `make seed` and `make refresh-cache` were repaired on 14-08-2026 and now do exactly that instead of shelling into the container.
 
 ### ENVIRONMENT FILES
 
@@ -109,7 +109,8 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 ### KNOWN ENVIRONMENT ISSUES ON THIS MACHINE
 
 - **The Vitest suite runs here now.** Resolved 13-08-2026. Defender no longer quarantines `node_modules/@esbuild/win32-x64/esbuild.exe`, so the ts-node workaround is retired.
-- **`make` is not installed.** Use the `docker-compose` commands directly.
+- **`make` is installed.** GNU Make 4.4.1, added 14-08-2026 with `winget install ezwinports.make`. It lands in the WinGet Packages directory and is added to the user PATH, so an already open shell needs restarting before it resolves. Every target in `BACKEND/Makefile` was repaired the same day, including the three that shelled into a container that did not exist. `make check` runs the three CI gates.
+- **Compose v2 only.** The `docker-compose` v1 binary is not installed. Every command is `docker compose`, the plugin subcommand. Older docs and Makefile targets calling `docker-compose` failed for this reason.
 - **Do not use the PowerShell `Get-Content -Raw` plus `Set-Content` pattern on files containing non-ASCII characters.** PowerShell 5.1 reads them as ANSI and writes UTF-8, which corrupts box drawing characters in the readme directory trees. Use the Edit tool, or `[System.IO.File]::ReadAllText` with an explicit UTF8 encoding.
 
 ### OPEN WORK

@@ -37,9 +37,11 @@ service into it. That folder no longer exists. Routes that used to sit behind
   `package.json` script and the script still runs on Node underneath. The Bun
   **runtime** was dropped on 10-08-2026 by the owner's decision. Do not add
   `bun` to the lockfile, the Dockerfile, or CI.
-- **`make`** is not installed on the maintainer's machine, and its `seed`,
-  `logs` and `refresh-cache` targets are broken. Use `docker compose` and the
-  npm scripts directly.
+- **`make`**, a convenience wrapper over everything below. Installed here on
+  14-08-2026 with `winget install ezwinports.make`, and every target was
+  repaired the same day. `make` with no target lists them. The one worth
+  remembering is **`make check`**, which runs the three gates CI blocks the
+  image build on.
 
 No external account is needed for local development. The compose stack stands
 in for MongoDB Atlas, Postgres, Supabase Storage and the SMTP provider, and
@@ -123,6 +125,9 @@ Before pushing, run the three gates CI runs. The image build will not start
 unless all three pass:
 
 ```bash
+make check                          # all three in one go
+
+# or individually
 npm run lint                        # 0 errors expected
 npx tsc --noEmit -p tsconfig.json   # base config, so tests are typechecked too
 npm test
@@ -152,6 +157,28 @@ storage it uses. Getting it wrong fails at boot with `P1001` from
 declares `EXPOSE 3000` and probes 3000 in its healthcheck. It is published as
 `4000:3000`. With `PORT=4000` inside the container it serves traffic correctly
 and reports `unhealthy` forever.
+
+## RELEASING
+
+`release.sh` at the repository root bumps a module version, stages the
+manifest, and prints the git commands that cut the release. It stops there on
+purpose: pushing the tag is what triggers the build and publish pipeline, so
+that stays a deliberate step the owner takes after review.
+
+```bash
+./release.sh backend patch     # or minor, major
+# or from inside the module
+npm run do-release             # do-release:minor, do-release:major
+```
+
+Releasable modules are `backend`, `mobile` and `desktop`. Add `website` to
+`VALID_SERVICES` in the script when that module returns. `notification` is gone
+for good, having been merged into the backend.
+
+The tag format is `<service>-v<version>`, for example `backend-v3.0.1`, which is
+what `.github/workflows/docker-backend.testing.yml` triggers on. That workflow
+runs lint, typecheck and the test suite before it publishes anything, and a
+version tag is the only thing that moves the `latest` image tag.
 
 ## HOUSE RULES
 

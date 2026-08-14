@@ -19,9 +19,9 @@
     "seed": "ts-node -r tsconfig-paths/register src/cli/seeds/seed.ts",
     "seed:today": "ts-node -r tsconfig-paths/register src/cli/seeds/today.seed.ts",
     "job:refresh-cache": "ts-node -r tsconfig-paths/register src/cli/tools/run-job.ts",
-    "do-release": "bash ../code.sh backend patch",
-    "do-release:minor": "bash ../code.sh backend minor",
-    "do-release:major": "bash ../code.sh backend major"
+    "do-release": "bash ../release.sh backend patch",
+    "do-release:minor": "bash ../release.sh backend minor",
+    "do-release:major": "bash ../release.sh backend major"
   },
   "keywords": [
     "typescript",

@@ -54,8 +54,8 @@ Open items carried forward. Move each into a dated entry once it is done.
   - `SECURITY.md` lists WEBSITE in the supported versions table.
   - `CONTRIBUTING.md` lists `website` as a valid commit scope.
   - `CODEOWNERS`, `CODE_OF_CONDUCT.md` and `assets` need a check for the same.
-  - `code.sh` at the repository root validates `website` as a service name and
-    should be narrowed to the four remaining modules.
+  - Done 14-08-2026. `code.sh` is now `release.sh` and accepts `backend`,
+    `mobile` and `desktop`, with `website` noted for when that module returns.
 
 ## Conventions
 
@@ -107,8 +107,38 @@ Open items carried forward. Move each into a dated entry once it is done.
   through `ts-node` and the image installs with `--omit=dev`.
 - Added a root `CLAUDE.md` covering prerequisites with versions and reasons, the
   startup flow, the three env files and which process each is for, the testing
-  gates, the house rules, and the gotchas that have cost time, so a contributor
-  or agent does not have to read 1600 lines of readme first.
+  gates, releasing, the house rules, and the gotchas that have cost time, so a
+  contributor or agent does not have to read 1600 lines of readme first.
+- Renamed `code.sh` to `release.sh` and rewrote it. The service list was still
+  `notification|backend|mobile|website`: two of those modules no longer exist
+  and `desktop`, which does, was not accepted, so the desktop module could not
+  be released at all. The list is now a `VALID_SERVICES` string matched by word
+  rather than a regex, so adding a module is a one word edit.
+  - The version was read with `grep -oP '"version": "\K[^"]+'`, which takes the
+    first match in the file and can pick up a dependency entry. It now reads
+    through `node -p`.
+  - Added a tag collision check before staging, `set -euo pipefail`, an
+    absolute `SCRIPT_DIR` so it behaves the same from the root or from a module
+    npm script, and a preflight showing the module, current version and bump
+    type before the confirmation prompt. Removed a large commented out block of
+    dead alternative implementation.
+  - It still does not commit, tag or push. That is deliberate: pushing the tag
+    triggers the build and publish pipeline.
+  - `do-release` scripts repointed in BACKEND and MOBILE, and added to DESKTOP,
+    which never had them.
+- Installed GNU Make 4.4.1 with `winget install ezwinports.make`, at the owner's
+  instruction, and repaired every target in `BACKEND/Makefile`.
+  - `seed` and `refresh-cache` ran `docker-compose exec api ...` against a
+    container that did not exist, and could not have worked even with one: both
+    scripts go through `ts-node`, a devDependency the production image omits.
+    They run on the host now.
+  - `logs` had the same problem. It is now `api-logs` and passes the profile.
+  - Every other target called the retired `docker-compose` v1 binary, which is
+    not installed here. All of them use the `docker compose` plugin now.
+  - Added `ps`, `coverage`, `typecheck`, the `api-up`, `api-rebuild`,
+    `api-logs` and `api-down` profile targets, and `check`, which runs lint,
+    typecheck and the suite in one command. Verified: `make check` exits 0 with
+    90 tests passing.
 
 ## 2026-08-13
 

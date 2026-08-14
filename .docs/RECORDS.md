@@ -18,6 +18,8 @@ Date is the date the status last changed.
 | Repository stripped to the v2 working set | BHUVNESH | DONE | 10-08-2026 |
 | Ignore the local `.claude` directory | BHUVNESH | DONE | 10-08-2026 |
 | Gate the backend image build on lint, typecheck and the test suite | BHUVNESH | DONE | 13-08-2026 |
+| Rename `code.sh` to `release.sh` and correct its module list | BHUVNESH | DONE | 14-08-2026 |
+| Install GNU Make and repair every target in `BACKEND/Makefile` | BHUVNESH | DONE | 14-08-2026 |
 | Update the rest of `.github` for the v2 tree, website and notification workflows | BHUVNESH | PLANNED | 13-08-2026 |
 
 ## BACKEND

@@ -87,7 +87,7 @@ Any `"error"` in that response names the store that is not answering. It round t
 | `EADDRINUSE` on port 4000 | `ts-node-dev` can outlive its terminal. Kill the stray node process holding the port. |
 | Hangs with repeated Redis errors | `REDIS_URL` points somewhere unreachable. Use `redis://localhost:6379` for local work. |
 | `NoSuchBucket` on upload | The `minio-init` container did not run. `docker compose up -d minio-init`. |
-| `make` is not recognised | `make` is not installed here. Use the `docker compose` commands directly. |
+| `make` is not recognised | Install it, or use the `docker compose` and npm commands directly. On Windows: `winget install ezwinports.make`, then open a new shell. |
 | `Cannot find package '@/...'` from every test file | Vitest was run from the repository root. It has no `package.json` and no Vitest config. Run from `BACKEND`. |
 | `docker compose --profile api up` fails to bind 4000 | A host `npm run dev` is still holding the port. Stop it, or set `API_PORT` to something else. |
 | API container is `unhealthy` but serves traffic | Its healthcheck probes port 3000. `.env.container` must keep `PORT=3000`. |
@@ -180,7 +180,7 @@ Any `"error"` in that response names the store that is not answering. It round t
 | Tool | Why |
 | ---- | --- |
 | [Bun](https://bun.sh/) | Only as a faster script runner. `bun run dev` and `bun run test` execute the same `package.json` scripts, and the scripts themselves still run on Node through `ts-node-dev`. The Bun **runtime** was dropped from this project on 10-08-2026, so do not add `bun` to the lockfile or the Dockerfile. |
-| `make` | Convenience wrapper. Not installed on the maintainer's machine, and three of its targets are broken. See [Available Commands](#available-commands-makefile). Use the `docker compose` commands directly. |
+| `make` | Convenience wrapper over the commands below, and `make check` runs the three CI gates in one go. Every target works as of 14-08-2026. Install with `winget install ezwinports.make` on Windows, then open a new shell. See [Available Commands](#available-commands-makefile). |
 
 ### Accounts and services
 
@@ -559,14 +559,17 @@ The `docker-compose.yml` defines **7 infrastructure services** plus the **API it
 
 By default the API is **not** running as a container. It runs on the host with `npm run dev`, which hot reloads and can be attached to a debugger, and connects to the containers above over `localhost`.
 
-That default has a consequence worth knowing before you reach for the Makefile: any target that shells into an `api` container only works when the profile is up. `make seed`, `make logs` and `make refresh-cache` all run `docker-compose exec api ...` or `docker-compose logs -f api`, which fails with `service "api" is not running` in the normal host workflow. Run the npm scripts on the host instead:
+The Makefile matches this. `make seed` and `make refresh-cache` run on the host
+rather than shelling into the container, because both scripts go through
+`ts-node`, a devDependency the production image omits. `make api-logs` passes
+the profile, so it works when the container is up; in the host workflow the API
+logs to the terminal running `npm run dev`.
 
 ```bash
-npm run seed              # instead of make seed
-npm run job:refresh-cache # instead of make refresh-cache
+make seed             # or npm run seed
+make refresh-cache    # or npm run job:refresh-cache
+make api-logs         # container mode only
 ```
-
-There is no equivalent of `make logs`, because the API logs to the terminal running `npm run dev`.
 
 Management dashboards for the containers are listed under [Accessing Dashboards](#accessing-dashboards).
 
@@ -806,22 +809,24 @@ docker-compose down -v
 
 ```bash
 # View logs for all services
-docker-compose logs
+docker compose logs
 
-# Follow API logs (if API service is running)
-make logs
+# Follow API logs. The profile is required, or compose reports no such service.
+docker compose --profile api logs -f api
 # OR
-docker-compose logs -f api
+make api-logs
 
 # View logs for specific service
-docker-compose logs mongo
-docker-compose logs postgres
-docker-compose logs redis
-docker-compose logs minio
-docker-compose logs mailpit
+docker compose logs mongo
+docker compose logs postgres
+docker compose logs redis
+docker compose logs minio
+docker compose logs mailpit
 
-# Check service status
-docker-compose ps
+# Check service status, api profile included
+docker compose --profile api ps
+# OR
+make ps
 ```
 
 #### Database Operations
@@ -1243,27 +1248,65 @@ model EmailLog {
 
 ### Available Commands (Makefile)
 
-| Command                 | Description                                          |
-| ----------------------- | ---------------------------------------------------- |
-| `make up`               | Start the infrastructure containers                  |
-| `make env-up`           | Same, using `.env.docker` (MinIO instead of S3)      |
-| `make down`             | Stop all services                                    |
-| `make env-down`         | Stop all services started with `.env.docker`         |
-| `make logs`             | Broken, targets an `api` container that does not exist |
-| `make test`             | Run test suite with vitest                           |
-| `make lint`             | Lint codebase with ESLint                            |
-| `make fmt`              | Format code with Prettier                            |
-| `make seed`             | Broken, use `npm run seed` instead                   |
-| `make refresh-cache`    | Broken, use `npm run job:refresh-cache` instead      |
-| `make build`            | Build TypeScript project                             |
-| `make prisma-generate`  | Regenerate the Prisma client after a schema change   |
-| `make prisma-migrate`   | Create and apply a migration in development          |
-| `make prisma-deploy`    | Apply existing migrations, used in production        |
-| `make prisma-studio`    | Browse the Postgres data in a web UI                 |
-| `make prisma-status`    | Show which migrations have been applied              |
-| `make db-reset`         | Drop and recreate the Postgres schema, destroys data |
+`make` with no target prints this list. Every target was repaired on 14-08-2026,
+so there are no broken ones left.
 
-> **Three targets are broken.** `make seed`, `make logs` and `make refresh-cache` were written when the API was expected to run as a compose service. It does not, so they fail with `service "api" is not running`. The npm equivalents in the next section work. `make` is also not installed on every development machine, in which case use the `docker compose` and npm commands directly.
+**Stack**
+
+| Command | Description |
+| ------- | ----------- |
+| `make up` | Start the infrastructure containers |
+| `make env-up` | Same, with variable substitution from `.env.docker` |
+| `make down` | Stop the containers, API included |
+| `make env-down` | Same, with `.env.docker` substitution |
+| `make ps` | Container status, the `api` profile included |
+
+**API in a container** (the `api` compose profile)
+
+| Command | Description |
+| ------- | ----------- |
+| `make api-up` | Build and start the API container alongside the stack |
+| `make api-rebuild` | Rebuild and restart the API after a code change |
+| `make api-logs` | Follow the API container logs |
+| `make api-down` | Stop everything, API included |
+
+**Development**
+
+| Command | Description |
+| ------- | ----------- |
+| `make build` | Compile TypeScript to `dist` |
+| `make test` | Run the Vitest suite, needs the stack up |
+| `make coverage` | Run the suite with a coverage report |
+| `make lint` | ESLint |
+| `make typecheck` | `tsc --noEmit` against the base config, tests included |
+| **`make check`** | **lint, typecheck and test. The same three gates CI runs.** |
+| `make fmt` | Format with Prettier |
+| `make seed` | Load the sample documents, on the host |
+| `make refresh-cache` | Trigger the cache refresh job, on the host |
+| `make logs` | Follow logs for every container |
+
+**Postgres (Prisma)**
+
+| Command | Description |
+| ------- | ----------- |
+| `make prisma-generate` | Regenerate the Prisma client after a schema change |
+| `make prisma-migrate` | Create and apply a migration in development |
+| `make prisma-deploy` | Apply existing migrations, used in production |
+| `make prisma-studio` | Browse the Postgres data in a web UI |
+| `make prisma-status` | Show which migrations have been applied |
+| `make db-reset` | Drop and recreate the Postgres schema, **destroys all data** |
+
+> **`make check` is the one worth remembering.** It runs the three gates that
+> block the image build in CI, so a green `make check` means the pipeline will
+> not fail on lint, types or tests.
+
+**What was wrong before 14-08-2026**, in case an older checkout is in play:
+`make seed`, `make logs` and `make refresh-cache` shelled into an `api`
+container that did not exist. `seed` and `refresh-cache` now run on the host,
+because they go through `ts-node` and the production image installs with
+`--omit=dev`, so it could never have run them. Every other target called the
+retired `docker-compose` v1 binary, which is not installed; they all use the
+`docker compose` plugin subcommand now.
 
 ### Additional npm Scripts
 
@@ -1513,7 +1556,7 @@ For hosting on Render (or similar platforms with automatic spin-down):
 
 - **Liveness Probe**: Use `/health/liveness` for container health checks. It touches no dependency, so a store outage does not restart an otherwise healthy container.
 - **Readiness Probe**: Use `/health/readiness` for load balancer health checks. It round trips MongoDB, Postgres and Redis in parallel with a 2 second timeout each, and returns 503 if any one of them fails.
-- **Logging**: Structured JSON logs via pino (check with `make logs`)
+- **Logging**: Structured JSON logs via pino (on the host, the terminal running `npm run dev`; in a container, `make api-logs`)
 - **Cache Metrics**: Monitor cache hit/miss rates in application logs
 
 ## Troubleshooting
