@@ -1,4 +1,49 @@
 services:
+  # The API itself, behind the `api` profile so it does not start by default.
+  # `docker compose up -d` still brings up infrastructure only, which is what the
+  # host workflow needs: the stack runs in Docker and the app runs on the host
+  # under `npm run dev`, holding port 4000. Starting both without the profile
+  # would fight over that port.
+  #
+  #   docker compose up -d                  infrastructure only, host runs the app
+  #   docker compose --profile api up -d    infrastructure plus the API container
+  #
+  # Replaces running `docker run` by hand against the built image.
+  api:
+    build:
+      context: .
+      target: production
+    image: studzee-backend:local
+    container_name: studzee_api
+    profiles: [api]
+    restart: unless-stopped
+    # The only env file that resolves the stack by compose service name. The
+    # other two address localhost and are for a host process, despite the name
+    # on .env.docker. Using them here fails at boot with P1001 from
+    # prisma migrate deploy.
+    env_file:
+      - .env.container
+    # The image declares EXPOSE 3000 and probes 3000 in its healthcheck, and
+    # .env.container sets PORT=3000 to match. Publishing on 4000 keeps the URL
+    # the same as the previous hand-run container.
+    ports:
+      - '${API_PORT:-4000}:3000'
+    networks:
+      - studzee-network
+    # Every store has to be accepting connections before the entrypoint runs
+    # prisma migrate deploy, or the container exits 1 rather than retrying.
+    depends_on:
+      mongo:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+
   mongo:
     image: mongo:7
     container_name: studzee_mongo

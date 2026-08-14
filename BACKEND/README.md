@@ -8,6 +8,17 @@ The service uses MongoDB for content, PostgreSQL for users and delivery logs, Re
 
 ## Quickstart
 
+There are two ways to run the API, and they are mutually exclusive because both
+want port 4000. Pick one.
+
+| Mode | Command | Use it when |
+| ---- | ------- | ----------- |
+| **Host** | `docker compose up -d` then `npm run dev` | Writing code. Hot reloads on save and attaches to a debugger. |
+| **Container** | `docker compose --profile api up -d` | Checking the image that actually ships. No hot reload, a code change needs `--build`. |
+
+The API is behind the `api` compose profile, so a plain `docker compose up -d`
+starts the infrastructure only and leaves port 4000 free for the host process.
+
 **Already set up?** One command:
 
 ```bash
@@ -32,6 +43,19 @@ npm run prisma:migrate      # create the Postgres tables
 npm run seed                # load the sample documents
 npm run dev
 ```
+
+**Or run the API in a container instead of on the host:**
+
+```bash
+docker compose --profile api up -d --build
+docker compose logs -f api
+```
+
+That builds the production image from the `Dockerfile`, applies any pending
+Postgres migrations on start, and publishes the API on
+[http://localhost:4000](http://localhost:4000), the same URL as the host mode.
+It reads `.env.container`, which is the only env file that addresses the stack
+by compose service name. Stop it with `docker compose --profile api down`.
 
 **Confirm it is healthy:**
 
@@ -64,7 +88,9 @@ Any `"error"` in that response names the store that is not answering. It round t
 | Hangs with repeated Redis errors | `REDIS_URL` points somewhere unreachable. Use `redis://localhost:6379` for local work. |
 | `NoSuchBucket` on upload | The `minio-init` container did not run. `docker compose up -d minio-init`. |
 | `make` is not recognised | `make` is not installed here. Use the `docker compose` commands directly. |
-| `npm test` fails to start | Windows Defender may quarantine the esbuild binary Vitest needs. See [Testing](#testing). |
+| `Cannot find package '@/...'` from every test file | Vitest was run from the repository root. It has no `package.json` and no Vitest config. Run from `BACKEND`. |
+| `docker compose --profile api up` fails to bind 4000 | A host `npm run dev` is still holding the port. Stop it, or set `API_PORT` to something else. |
+| API container is `unhealthy` but serves traffic | Its healthcheck probes port 3000. `.env.container` must keep `PORT=3000`. |
 
 ## Table of Contents
 
@@ -140,14 +166,34 @@ Any `"error"` in that response names the store that is not answering. It round t
 
 ## Prerequisites
 
-- [Docker](https://www.docker.com/) and Docker Compose
-- [Node.js](https://nodejs.org/) 22 and npm. The Dockerfile builds on `node:22-alpine`, so 22 is what the deployed image runs
-- `make` (optional, and three of its targets are broken, see [Available Commands](#available-commands-makefile))
-- Clerk account for authentication
-- MongoDB Atlas account (or local MongoDB instance)
-- PostgreSQL instance (the Docker Compose file provides one)
-- Supabase project with a public storage bucket (local development can use the MinIO container instead)
-- SMTP credentials for outbound email (local development can use the Mailpit container instead)
+### Required
+
+| Tool | Version | Why |
+| ---- | ------- | --- |
+| [Docker Desktop](https://www.docker.com/) | any current release | Runs Mongo, Postgres, Redis, MinIO and Mailpit, and optionally the API itself. Must be running before `docker compose`. |
+| Docker Compose | v2 | Ships inside Docker Desktop. The commands here are `docker compose`, not the older `docker-compose` binary. Profiles are a v2 feature. |
+| [Node.js](https://nodejs.org/) | 22 | The Dockerfile builds on `node:22-alpine`, so 22 is what the deployed image runs. Newer versions work locally but are not what CI or production use. |
+| npm | 10, ships with Node 22 | `package-lock.json` is the lockfile. CI runs `npm ci` against it, so it is the one that must stay accurate. |
+
+### Optional
+
+| Tool | Why |
+| ---- | --- |
+| [Bun](https://bun.sh/) | Only as a faster script runner. `bun run dev` and `bun run test` execute the same `package.json` scripts, and the scripts themselves still run on Node through `ts-node-dev`. The Bun **runtime** was dropped from this project on 10-08-2026, so do not add `bun` to the lockfile or the Dockerfile. |
+| `make` | Convenience wrapper. Not installed on the maintainer's machine, and three of its targets are broken. See [Available Commands](#available-commands-makefile). Use the `docker compose` commands directly. |
+
+### Accounts and services
+
+Local development needs none of these. The compose stack substitutes for all
+four, so a fresh clone runs with no external account.
+
+| Service | Local stand-in | Needed for real when |
+| ------- | -------------- | -------------------- |
+| Clerk | `DEV_TOKEN` bearer bypass, development only | Testing real sign-in, or the `/webhooks/clerk` route |
+| MongoDB Atlas | `mongo` container | Deploying |
+| PostgreSQL | `postgres` container | Deploying |
+| Supabase Storage | `minio` plus `minio-init` | Deploying, or verifying against the real buckets |
+| SMTP provider | `mailpit` container | Sending mail that leaves the machine |
 
 ## Installation
 
@@ -327,7 +373,7 @@ A one-shot `minio-init` container creates the `images`, `pdfs` and `assets` buck
 
 ### Development
 
-> **Note**: `docker-compose.yml` runs the infrastructure only. The API is run separately for local development, so it hot reloads and can be debugged directly.
+> **Note**: `docker compose up -d` runs the infrastructure only. The API stays on the host for local development, so it hot reloads and can be debugged directly. To run it as a container instead, see [Running the API in a container](#running-the-api-in-a-container).
 
 **1. Start infrastructure services:**
 
@@ -365,7 +411,32 @@ This setup allows you to:
 - Use your local Node.js environment
 - Easily debug the application
 
-> **Note**: there is no `api` service in `docker-compose.yml` to enable. Running the API in Docker means building the image from the `Dockerfile` and adding a service yourself, see [Docker Production Build](#docker-production-build).
+### Running the API in a container
+
+`docker-compose.yml` defines an `api` service behind the `api` profile. The
+profile is what keeps it out of a plain `docker compose up -d`, so the default
+still starts infrastructure only and leaves port 4000 to the host process.
+
+```bash
+# Build the production image and start it along with every dependency
+docker compose --profile api up -d --build
+
+# Follow its logs
+docker compose logs -f api
+
+# Rebuild after a code change, there is no hot reload in this mode
+docker compose --profile api up -d --build api
+
+# Stop everything, including the API
+docker compose --profile api down
+```
+
+Details worth knowing:
+
+- It builds the `production` target of the `Dockerfile`, so it is the image that ships, not a development variant. Test code and the toolchain are not in it.
+- It reads `.env.container`. That is the only env file that addresses the stack by compose service name rather than `localhost`, which is what a process inside the network needs. Using `.env` or `.env.docker` here fails at boot with `P1001` from `prisma migrate deploy`.
+- It publishes `${API_PORT:-4000}:3000`. The container listens on 3000 because the image declares `EXPOSE 3000` and probes 3000 in its healthcheck. Set `API_PORT` if 4000 is taken.
+- Its entrypoint runs `prisma migrate deploy` before the app, which is why every dependency is a `service_healthy` dependency. If Postgres is not accepting connections the container exits 1 rather than retrying.
 
 ### Production
 
@@ -395,9 +466,9 @@ The project includes a comprehensive Docker Compose setup for local development 
 
 ### Service Architecture
 
-The `docker-compose.yml` defines **7 infrastructure services** that together provide a complete development environment. Six are long running and one, `minio-init`, runs once and exits.
+The `docker-compose.yml` defines **7 infrastructure services** plus the **API itself**. Of the infrastructure, six are long running and one, `minio-init`, runs once and exits.
 
-> **There is no `api` service in the compose file.** The API always runs on the host with `npm run dev` or `npm start`. Nothing in the stack builds or serves the application itself.
+> **The `api` service does not start by default.** It sits behind the `api` compose profile, so `docker compose up -d` brings up infrastructure only and the API runs on the host under `npm run dev`. Add `--profile api` to run it as a container instead. Both bind port 4000, so only one can run at a time.
 
 #### 1. **MongoDB (`mongo`)**
 
@@ -474,11 +545,21 @@ The `docker-compose.yml` defines **7 infrastructure services** that together pro
 - **Features**: Browse collections, run queries, manage documents
 - **Depends On**: MongoDB service must be healthy before starting
 
-#### The API itself
+#### 8. **The API (`api`)**
 
-The API is **not** a compose service. It runs on the host with `npm run dev`, which hot reloads and can be attached to a debugger, and connects to the containers above over `localhost`.
+- **Build**: the `production` target of the local `Dockerfile`, tagged `studzee-backend:local`
+- **Purpose**: the service itself, for checking the image that actually ships
+- **Container Name**: `studzee_api`
+- **Profile**: `api`, so it is skipped unless you pass `--profile api`
+- **Port**: `${API_PORT:-4000}` on the host, mapped to `3000` in the container
+- **Env**: `.env.container`, the only file that resolves dependencies by compose service name
+- **Depends On**: mongo, postgres, redis, minio and mailpit must all report healthy first, because the entrypoint runs `prisma migrate deploy` before the app
+- **Health Check**: `GET /health/liveness` on port 3000 every 30 seconds
+- **No hot reload**: a code change needs `docker compose --profile api up -d --build api`
 
-This has a consequence worth knowing before you reach for the Makefile: any target that shells into an `api` container cannot work. `make seed`, `make logs` and `make refresh-cache` all run `docker-compose exec api ...` or `docker-compose logs -f api`, which fails with `service "api" is not running`. Run the npm scripts on the host instead:
+By default the API is **not** running as a container. It runs on the host with `npm run dev`, which hot reloads and can be attached to a debugger, and connects to the containers above over `localhost`.
+
+That default has a consequence worth knowing before you reach for the Makefile: any target that shells into an `api` container only works when the profile is up. `make seed`, `make logs` and `make refresh-cache` all run `docker-compose exec api ...` or `docker-compose logs -f api`, which fails with `service "api" is not running` in the normal host workflow. Run the npm scripts on the host instead:
 
 ```bash
 npm run seed              # instead of make seed
@@ -746,15 +827,14 @@ docker-compose ps
 #### Database Operations
 
 ```bash
-# Seed the database (requires API service running in Docker)
-make seed
-# OR
-docker-compose exec api npm run seed
+# Seed the database. Run on the host, not in the container: the image ships
+# without devDependencies, so it has no ts-node and these scripts cannot run
+# inside it. `make seed` and `make refresh-cache` shell into the container and
+# fail for the same reason.
+npm run seed
 
-# Refresh cache (requires API service running in Docker)
-make refresh-cache
-# OR
-docker-compose exec api npm run job:refresh-cache
+# Refresh cache
+npm run job:refresh-cache
 
 # Access MongoDB shell
 docker-compose exec mongo mongosh -u root -p password
@@ -1283,34 +1363,55 @@ For easier local development, you can bypass Clerk authentication:
 
 ## Testing
 
-> [!IMPORTANT]
-> For accurate testing that mirrors the production environment, it is strongly recommended to use Docker for running tests. Start the Docker services (`make up` or `docker-compose up -d`) before running your tests to ensure MongoDB and Redis are available. This provides a consistent testing environment and prevents issues related to local database configurations.
+The project uses **Vitest**. The suite stands at **90 tests across 11 files, all passing**, last verified 14-08-2026.
 
-The project uses **vitest** for comprehensive testing:
+> [!IMPORTANT]
+> Two things decide whether the suite runs at all.
+>
+> 1. **Run it from `BACKEND`.** The repository root has no `package.json` and no Vitest config. `npx vitest` there downloads an unrelated Vitest from the registry, resolves no `@/*` aliases and never loads the setup file, so every suite fails with `Cannot find package '@/...'`. That looks like a code fault and is not one.
+> 2. **Start the stack first.** `docker compose up -d`. The integration tests in `content.route.test.ts` use a real Mongo and Redis. Everything else is mocked and needs nothing running.
 
 ```bash
-# Run all tests
+# From BACKEND, with the stack up
 npm test
 
-# Run tests in watch mode
+# Watch mode
 npm run test:watch
 
-# Run specific test file
-npm test -- document.test.ts
+# One file
+npm test -- notification.service
+
+# Coverage, HTML report lands in coverage/index.html
+npm test -- --coverage
 ```
 
-### If `npm test` will not start
+### Run the same gates CI runs
 
-Vitest compiles through esbuild, and Windows Defender has been observed quarantining `node_modules/@esbuild/win32-x64/esbuild.exe` as a false positive. Vitest cannot load its config without that binary, so the run fails before a single test executes.
+The image build is gated on all three of these passing. Running them locally
+before pushing avoids a red pipeline:
 
 ```bash
-# Confirm the binary is actually there
-ls node_modules/@esbuild/win32-x64/esbuild.exe
+npm run lint                        # 0 errors expected, warnings are CRLF noise on Windows
+npx tsc --noEmit -p tsconfig.json   # the base config, so test files are typechecked too
+npm test
 ```
 
-If it is missing, restore it from the Defender protection history and add an exclusion for the path, or reinstall with `npm install` once the exclusion is in place. Reinstalling without the exclusion just gets the file quarantined again.
+The typecheck deliberately uses `tsconfig.json` rather than `tsconfig.build.json`.
+`tsconfig.build.json` excludes `src/tests` so test code stays out of `dist`, but
+that means the build never typechecks the tests. **Vitest transpiles without
+typechecking**, so a test file can pass at runtime and still not compile. This
+step is what catches that, and it has caught it before.
 
-> **The suite has not been run on the current machine for this reason.** Logic changed during the v2 work was verified by executing the same assertions under `ts-node`, which does not use esbuild, and by driving the running service with Newman and curl. Treat the vitest suite as unproven until someone reports a green run, and say so rather than implying coverage that has not executed.
+### Test environment
+
+`src/tests/setup/globalSetup.ts` supplies a default for every variable the
+config schema requires, so the suite runs on a checkout with no `.env` at all.
+A real `.env` still wins where set. Two defaults in it are load bearing:
+
+- **The Mongo URI carries credentials and `authSource=admin`**, matching the compose defaults. Without them Mongoose still connects, because it connects lazily, and the failure surfaces only on the first query as `Command aggregate requires authentication`.
+- **`CLERK_PUBLISHABLE_KEY` must stay structurally valid**, meaning `pk_test_` followed by base64 of a domain. Clerk decodes it to find its API host and throws `Publishable key not valid` on anything else, which reaches the error handler as a 500 and makes an unauthenticated request look like a server fault instead of a 401.
+
+See [`src/tests/TESTING.md`](src/tests/TESTING.md) for how to write tests.
 
 ## Deployment
 
