@@ -45,24 +45,12 @@ Open items carried forward. Move each into a dated entry once it is done.
 - **Provision an admin in the deployed Clerk instance.** The role comes from
   `publicMetadata.role`, set by hand in the dashboard. No code path grants it,
   so without this step the deployed admin surface is unreachable by anyone.
-- **Update everything under `.github` for the v2 tree.** The strip on 10-08-2026
-  left it describing modules that no longer exist. Known stale points:
-  - `README.md` documents the full old architecture, including the website,
-    the agentic AI folder, the Terraform and Kubernetes topology, and the
-    two deployment panels. It needs rewriting once the v2 design is settled.
-  - `workflows/docker-website.testing.yml` builds `./WEBSITE`, which is gone.
-    The workflow will fail on its `website-v*` tag trigger.
-  - `workflows/docker-backend.testing.yml` was rewritten on 13-08-2026 to gate
-    the image on lint, typecheck and the test suite, and hardened on
-    14-08-2026 around tagging, permissions, concurrency and timeouts. It is
-    the only workflow in a good state.
-    `workflows/docker-notification.testing.yml` builds a folder that no longer
-    exists and should be deleted.
-  - `SECURITY.md` lists WEBSITE in the supported versions table.
-  - `CONTRIBUTING.md` lists `website` as a valid commit scope.
-  - `CODEOWNERS`, `CODE_OF_CONDUCT.md` and `assets` need a check for the same.
-  - Done 14-08-2026. `code.sh` is now `release.sh` and accepts `backend`,
-    `mobile` and `desktop`, with `website` noted for when that module returns.
+- **Revisit `.github/README.md` once the v2 architecture is settled.** It was
+  corrected on 14-08-2026 rather than rewritten: the factually wrong present
+  tense claims are fixed and the aspirational sections are marked as roadmap,
+  but the architecture description still reflects the pre-merge design. A
+  rewrite now would mean inventing decisions that have not been taken, so it
+  waits on the data storage layer being specified.
 
 ## Conventions
 
@@ -177,6 +165,30 @@ Open items carried forward. Move each into a dated entry once it is done.
     depends on two Clerk SDKs of which one is end of life.
   - Test data cleaned up: the throwaway Clerk user was deleted and the
     `probe@studzee.test` row the registration check wrote to Postgres removed.
+- Brought `.github` up to date with the v2 tree, the last item outstanding from
+  the 10-08-2026 strip.
+  - Deleted `docker-website.testing.yml` and `docker-notification.testing.yml`.
+    Both built directories removed on 10-08-2026, so both were guaranteed to
+    fail on their tag triggers. Two workflows remain, the gated backend build
+    and the bug reproduction helper, which is independent of the module layout.
+  - `SECURITY.md` no longer lists NOTIFICATION and WEBSITE as supported
+    services, and says where to report anything affecting the notification
+    surface now that BACKEND owns it.
+  - `CONTRIBUTING.md`: dropped `notification` and `website` as commit scopes,
+    replaced the dead NOTIFICATION readme link with DESKTOP, corrected the
+    prerequisites to Node 22 and Compose v2, noted Bun is a script runner only,
+    and pointed the test step at `make check` with a note that the typecheck is
+    separate because Vitest does not typecheck.
+  - `.github/README.md` was corrected rather than rewritten. It is largely
+    roadmap and much of it is still the intended direction, but it described
+    NOTIFICATION as a separate service, listed a web client, and presented
+    Terraform and Kubernetes in the present tense after both were removed. It
+    now carries a status header separating intent from what exists, and those
+    claims are fixed. A full rewrite waits on the v2 architecture being settled,
+    since doing it now would mean inventing decisions.
+  - Removed the two emoji, per the house style rule.
+  - `CODEOWNERS` needed no change, and the four asset files are all referenced
+    or unused rather than broken.
 - Installed GNU Make 4.4.1 with `winget install ezwinports.make`, at the owner's
   instruction, and repaired every target in `BACKEND/Makefile`.
   - `seed` and `refresh-cache` ran `docker-compose exec api ...` against a

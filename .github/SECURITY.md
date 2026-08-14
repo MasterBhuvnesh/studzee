@@ -2,13 +2,16 @@
 
 ## Supported Versions
 
-| Service      | Version | Supported          |
-| ------------ | ------- | ------------------ |
-| BACKEND      | latest  | :white_check_mark: |
-| NOTIFICATION | latest  | :white_check_mark: |
-| MOBILE       | latest  | :white_check_mark: |
-| WEBSITE      | latest  | :white_check_mark: |
-| DESKTOP      | latest  | :white_check_mark: |
+| Service | Version | Supported |
+| ------- | ------- | --------- |
+| BACKEND | latest  | Yes |
+| MOBILE  | latest  | Yes |
+| DESKTOP | latest  | Yes |
+
+NOTIFICATION was merged into BACKEND on 10-08-2026 and WEBSITE was removed the
+same day. Neither is deployed, so neither receives security updates. Report
+anything affecting the notification or email surface against BACKEND, which now
+owns it.
 
 ## Reporting a Vulnerability
 

@@ -35,28 +35,40 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 Each service has its own setup requirements. Refer to the respective README files:
 
-| Service      | Setup Guide                                         |
-| ------------ | --------------------------------------------------- |
-| BACKEND      | [BACKEND/README.md](../BACKEND/README.md)           |
-| NOTIFICATION | [NOTIFICATION/README.md](../NOTIFICATION/README.md) |
-| MOBILE       | [MOBILE/README.md](../MOBILE/README.md)             |
+| Service | Setup Guide                               |
+| ------- | ----------------------------------------- |
+| BACKEND | [BACKEND/README.md](../BACKEND/README.md) |
+| MOBILE  | [MOBILE/README.md](../MOBILE/README.md)   |
+| DESKTOP | [DESKTOP/README.md](../DESKTOP/README.md) |
+
+Start with [CLAUDE.md](../CLAUDE.md) at the repository root for the fastest
+route to a running project.
 
 ### Prerequisites
 
-- **Node.js** v18+ or **Bun** v1.1.30+
-- **Docker** and Docker Compose
-- **Git** for version control
+- **Node.js** v22. The backend Dockerfile builds on `node:22-alpine`, so that is
+  what CI and production run.
+- **Docker Desktop** with Compose v2. Commands are `docker compose`, not the
+  retired `docker-compose` binary.
+- **Git** for version control.
+
+Bun is optional and only as a script runner. The Bun runtime was dropped on
+10-08-2026, so do not add it to a lockfile, a Dockerfile or CI.
 
 ### Environment Setup
 
+Run these from the service directory, not the repository root.
+
 1. Copy the example environment file:
    ```bash
+   cd BACKEND
    cp .env.example .env
    ```
-2. Fill in required environment variables
+2. Fill in required environment variables. The config schema validates at import
+   time and the service exits at boot naming anything missing.
 3. Start infrastructure services:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 ## Making Changes
@@ -97,30 +109,43 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) specifica
 
 ### Scopes
 
-- `backend` - BACKEND service changes
-- `notification` - NOTIFICATION service changes
+- `backend` - BACKEND service changes, including notifications and email
 - `mobile` - MOBILE app changes
-- `website` - WEBSITE changes
 - `desktop` - DESKTOP app changes
 - `docs` - Documentation updates
+
+`notification` and `website` are no longer valid scopes. NOTIFICATION was merged
+into BACKEND on 10-08-2026 and WEBSITE was removed the same day.
 
 ### Examples
 
 ```bash
 feat(backend): add user profile endpoint
 fix(mobile): resolve navigation crash on iOS
-docs(notification): update API documentation
+docs(backend): update the notification API documentation
 chore(backend): upgrade express to v4.19
 ```
+
+A commit message needs a body, not just a subject line. State what changed, why
+it changed, and anything a reviewer needs to know. Do not add co-author or model
+trailers of any kind.
 
 ## Pull Request Process
 
 1. **Update documentation** if your changes require it
-2. **Ensure all tests pass**. Test commands vary by service; check the `package.json` or `README.md` in the respective service directory (e.g., `BACKEND/`, `NOTIFICATION/`).
+2. **Ensure all tests pass.** In BACKEND, `make check` runs lint, typecheck and
+   the suite, which are the three gates that block the image build in CI. Start
+   the compose stack first, because the integration tests use a real Mongo and
+   Redis. Test commands for the other modules are in their own `package.json`.
 3. **Run linting and formatting**:
    ```bash
    npm run lint
-   npm run format
+   npm run fmt
+   ```
+   The typecheck is separate and matters: Vitest transpiles without
+   typechecking, so a test file can pass at runtime and still not compile.
+   ```bash
+   npx tsc --noEmit -p tsconfig.json
    ```
 4. **Push your branch** to your fork:
    ```bash
@@ -153,7 +178,7 @@ chore(backend): upgrade express to v4.19
 - Use **ESLint** for linting
 - Follow existing patterns in the codebase
 
-Formatting and linting commands vary by service. Refer to the `package.json` or `README.md` in the respective service directory (e.g., `BACKEND/`, `NOTIFICATION/`) for the correct commands.
+Formatting and linting commands vary by service. Refer to the `package.json` or `README.md` in the respective service directory (`BACKEND/`, `MOBILE/`, `DESKTOP/`) for the correct commands.
 
 ```bash
 # Format code
