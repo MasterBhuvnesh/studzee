@@ -91,6 +91,8 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 
 **Runtime decided on 10-08-2026: keep what BACKEND already has.** Node 22 with the `tsc` plus `tsc-alias` build, `ts-node-dev` in development, Vitest for tests, and the existing Node Dockerfile. Bun is dropped, along with `bun.lock` and the Bun based Dockerfile. Prisma runs on Node without change, so the Postgres layer moves across as is.
 
+**Decision taken 14-08-2026: the `Co-Authored-By` trailers already in history stay.** Commits `1ac80b60`, `f6963af2`, `1a20d945` and `d19adbb5`, plus some earlier ones, carry a `Co-Authored-By: Claude ...` trailer that [`RULES.md`](RULES.md) forbids. They were pushed to `origin/feat/v2-architecture` on 14-08-2026. Removing them would need a history rewrite and a force push, and the owner decided it is not worth it. **Do not raise this again and do not offer to rewrite it.** The rule still applies to every new commit: `a935812a` onwards are clean and it stays that way.
+
 **Decisions taken 10-08-2026 and 11-08-2026, do not re-litigate:**
 
 - Notification routes were renamespaced to backend conventions rather than keeping the `/noti/api` prefix. `/notifications/register`, `/admin/notifications`, `/admin/emails`, `/admin/users`, `/webhooks/clerk`.
