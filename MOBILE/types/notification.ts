@@ -10,16 +10,19 @@ export interface NotificationContextType {
   checkPermissionStatus: () => Promise<void>;
 }
 
+/**
+ * Response from POST /notifications/register.
+ *
+ * The merged backend returns a summary rather than the stored row, so the
+ * Clerk ID and the raw token list are no longer sent back to the client.
+ */
 export interface BackendTokenResponse {
-  success: boolean;
   message: string;
   data: {
     id: string;
-    clerkId: string;
     email: string;
-    expoTokens: string[];
-    createdAt: string;
-    updatedAt: string;
+    /** Number of devices currently registered for this user. */
+    devices: number;
   };
 }
 

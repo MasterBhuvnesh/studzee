@@ -33,9 +33,6 @@ export const getDocumentById = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.auth().userId
-    console.log(`User ${userId} is requesting document ${req.params.id}`)
-
     const { id } = req.params
     const document = await ContentService.getContentById(id)
 

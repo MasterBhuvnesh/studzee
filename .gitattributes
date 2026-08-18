@@ -1,0 +1,38 @@
+# Line endings.
+#
+# The index already stores text as LF. What produced the several thousand
+# `Delete CR` warnings from Prettier and ESLint on Windows was the checkout:
+# core.autocrlf=true rewrites files to CRLF in the working tree, and Prettier
+# defaults to endOfLine: "lf", so every line of every affected file was flagged.
+#
+# eol=lf overrides core.autocrlf for this repository, so the working tree
+# matches the index on every platform and the warnings stop at the source
+# rather than being suppressed in the Prettier config. That matters because
+# `npm run fmt:check` is a CI gate as of 14-08-2026, and CI checks out on Linux
+# while the maintainer works on Windows. Without this the two disagree.
+
+* text=auto eol=lf
+
+# Shell scripts break outright with CRLF: the interpreter reads the carriage
+# return as part of the shebang path and reports "No such file or directory".
+*.sh text eol=lf
+Makefile text eol=lf
+
+# Binary, so Git never attempts line ending conversion or diffing.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.keystore binary
+*.jks binary
+
+# Lockfiles are generated. Marking them keeps them out of diff review noise
+# while still storing them as LF text.
+package-lock.json text eol=lf linguist-generated=true
+bun.lock text eol=lf linguist-generated=true

@@ -1,5 +1,5 @@
 import { DocumentModel } from '@/models/document.model'
-import { uploadToS3, deleteFromS3, getKeyFromUrl } from '@/config'
+import { config, uploadToS3, deleteFromS3, getObjectRef } from '@/config'
 import { invalidateAllCache, invalidateDocumentCache } from '@/utils/cache'
 import logger from '@/utils/logger'
 
@@ -43,21 +43,20 @@ export class UploadService {
       // Delete old image if it exists
       if (document.imageUrl) {
         try {
-          const key = getKeyFromUrl(document.imageUrl)
-          await deleteFromS3(key)
+          await deleteFromS3(getObjectRef(document.imageUrl))
         } catch (error) {
-          logger.error(error, 'Failed to delete old image from S3')
-          // Continue with upload even if deletion fails
+          logger.error(error, 'Failed to delete the previous image')
+          // Continue with the upload even if the deletion fails
         }
       }
 
-      // Upload new image to S3
-      // Determine file extension from mimetype
+      // Upload the new image. The document ID is the key, so a re-upload with
+      // the same extension overwrites rather than accumulating orphans.
       const ext = file.mimetype.split('/')[1] || 'jpg'
       const { url } = await uploadToS3(
         file.buffer,
-        'images',
-        `${documentId}.${ext}`, // Use document ID with extension as filename
+        config.S3_BUCKET_IMAGES,
+        `${documentId}.${ext}`,
         file.mimetype
       )
 
@@ -95,11 +94,11 @@ export class UploadService {
       const sanitizedTitle = sanitizeFilename(document.title)
       const originalFilename = file.originalname
 
-      // Upload new PDF to S3 (add .pdf extension to filename)
+      // Upload the PDF into the pdfs bucket, keyed by the sanitised title.
       const { url, uploadedAt, size } = await uploadToS3(
         file.buffer,
-        'pdfs',
-        `${sanitizedTitle}.pdf`, // Include .pdf extension in filename
+        config.S3_BUCKET_PDFS,
+        `${sanitizedTitle}.pdf`,
         'application/pdf',
         originalFilename
       )

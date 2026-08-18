@@ -1,5 +1,20 @@
 ![Studzee Banner](./assets/studzee_banner.png)
 
+> **Status as of 14-08-2026.** This document is part description and part
+> roadmap, and the two were not previously separated. The repository is midway
+> through a v2 rewrite on the `feat/v2-architecture` branch, so read the
+> architecture sections below as intent rather than as a description of what is
+> deployed.
+>
+> What actually exists today: **BACKEND**, a single service that owns content,
+> notifications and email, plus the **MOBILE** and **DESKTOP** clients. The
+> separate NOTIFICATION service was merged into BACKEND on 10-08-2026, and
+> WEBSITE, CONVEX, AGENTS, SERVICES, PACKAGES, TERRAFORM and K8S were removed
+> the same day. Sections describing those as present tense have been marked.
+>
+> For how to actually run the project, see [CLAUDE.md](../CLAUDE.md) at the
+> repository root, then [BACKEND/README.md](../BACKEND/README.md).
+
 ## What is Studzee?
 
 **Studzee** is a **full-stack SaaS educational platform** designed to transform how educational content is created, structured, delivered, and consumed across multiple platforms.
@@ -32,18 +47,19 @@ Studzee follows a **distributed, service-oriented architecture** with clear sepa
 
 ### System Flow Overview
 
-1. **Client Applications** (Mobile, Website, Desktop) interact with the Backend API.
+1. **Client Applications** (Mobile, Desktop) interact with the Backend API. The
+   web client was removed on 10-08-2026.
 2. **Backend (API)** handles:
 
-   - Authentication & authorization
+   - Authentication and authorization
    - Content management
    - Caching and persistence
+   - Push notifications (Expo) and transactional email
    - Orchestration of downstream services
 
-3. **Notification Service** operates asynchronously:
-
-   - Push notifications (Expo)
-   - Transactional emails
+3. **Notifications and email** are part of BACKEND, not a separate service. They
+   were merged in on 10-08-2026, and the routes moved from `/noti/api` to
+   `/notifications`, `/admin` and `/webhooks`.
 
 4. **Storage & Caching Layers**
 
@@ -68,24 +84,22 @@ Clear responsibility boundaries ensure maintainability and scalability.
 
 ### BACKEND (API)
 
+The only service. Since the merge on 10-08-2026 it owns:
+
 - Core business logic
 - Content lifecycle management
 - Caching strategy and orchestration
 - Secure authentication via Clerk
+- Push notification delivery through Expo
+- Transactional email and the Clerk webhook
+- The notification and email audit logs
 - Integration point for AI and processing services
-
-### NOTIFICATION Service
-
-- Push notification delivery
-- Transactional email handling
-- Event-driven communication only
-- **No business logic or data ownership**
 
 ### CLIENT APPLICATIONS
 
-- Mobile, Web, and Desktop clients
+- Mobile and Desktop clients. The web client was removed on 10-08-2026.
 - Content consumption and interaction
-- Platform-specific UI/UX
+- Platform-specific UI and UX
 - Authentication handled centrally via Backend
 
 ### Future SERVICE Layer (Planned)
@@ -150,6 +164,11 @@ All AI logic will reside in the upcoming `Agent` folder.
 
 ## Deployment Strategy & Infrastructure Panels
 
+> **Roadmap, not current state.** The Terraform and Kubernetes definitions were
+> removed from the repository on 10-08-2026, so the deployed topology is being
+> redecided as part of v2. Neither panel below is provisioned from anything in
+> this repository today.
+
 Studzee supports **two distinct deployment panels**, designed for flexibility and cost optimization.
 
 ### Panel 1: Free / Community Deployment
@@ -180,16 +199,22 @@ This panel is optimized for **performance, reliability, and scale**.
 
 ## Website & Public Access
 
-- 🌐 **Official Website:** `https://studzee.in`
+- **Official Website:** `https://studzee.in`
 - Domain management and DNS are handled through AWS Route 53 for production deployments.
+- The `WEBSITE` module that served it was removed from this repository on 10-08-2026.
 
 ---
 
 ## Minor Documentation Notes
 
-- Folder `VERSION` and `BRANCH` values are tied to automated deployment workflows.
-- Production pushes trigger redeployment of all listed services.
-- Always validate changes locally before pushing to production branches.
+- Releases are cut with `release.sh` at the repository root, which bumps the
+  module version and prints the git commands. Releasable modules are `backend`,
+  `mobile` and `desktop`.
+- The tag format is `<service>-v<version>`. Pushing one triggers that service's
+  workflow. A version tag is the only thing that moves the `latest` image tag;
+  a manual `workflow_dispatch` publishes the commit SHA only.
+- Always validate changes locally before pushing to production branches. In
+  BACKEND, `make check` runs the same three gates CI does.
 
 ---
 
@@ -199,13 +224,16 @@ All Studzee services are designed with **production-readiness** as a first-class
 
 ### Testing Strategy
 
-Each service includes:
-
 - Unit and integration testing
 - Environment-specific configurations
 - Automated test execution in CI pipelines
 
 Testing ensures service stability, contract safety, and confidence during deployments.
+
+**Where this stands today.** BACKEND has 235 tests across 26 files at 91 percent
+statement coverage, and its image build is gated on lint, typecheck and the
+suite passing, so a version tag cannot publish an image that fails its own
+tests. MOBILE and DESKTOP have no test or lint gate yet.
 
 ### Containerization
 
@@ -231,6 +259,9 @@ This approach enables fast iteration while maintaining parity with production en
 ---
 
 ## Future Infrastructure: Kubernetes & AWS (EKS)
+
+> **Roadmap.** The `K8S` manifests were removed on 10-08-2026 along with the
+> Terraform definitions. Nothing below is provisioned today.
 
 Once the **core Studzee platform is fully stabilized**, all services will transition to a **unified cloud-native deployment model**.
 
@@ -262,7 +293,10 @@ This evolution ensures long-term scalability, resilience, and operational clarit
 ### Android Application (v1)
 
 - The **first version of the Studzee Android app** is nearing completion
-- 📱 **Planned Release:** Google Play Store (v1)
+- **Planned Release:** Google Play Store (v1)
+- Version 1.1.4 is already released. It calls `POST /noti/api/register`, which
+  no longer exists after the merge, so the ingress has to rewrite that path to
+  `/notifications/register` or those installs cannot register for push.
 - The initial release will focus on:
 
   - Content consumption

@@ -376,36 +376,17 @@ describe('ContentController - getDocumentById', () => {
   })
 
   /**
-   * TEST CASE 3: Authentication Check
+   * There is deliberately no test here asserting that the controller calls
+   * req.auth(). It does not, and it should not: GET /content/:id is guarded by
+   * clerkAuthMiddleware and requireAuth in content.route.ts, so a request that
+   * reaches this controller has already been authenticated. A controller that
+   * re-checked would be duplicating the middleware.
    *
-   * Verifies that auth().userId is called
+   * The guarantee that the route rejects an unauthenticated caller is covered
+   * where it actually holds, in the integration test
+   * "GET /content/:id - Document Detail > should return 401 without
+   * authentication".
    */
-  it('should check authentication before fetching document', async () => {
-    // ARRANGE
-    const fakeDocument = {
-      _id: 'test',
-      title: 'Test',
-      content: { text: 'Test content' },
-      quiz: {
-        q1: {
-          que: 'Test question?',
-          ans: 'Test answer',
-          options: ['Option 1', 'Option 2'],
-        },
-      },
-    }
-    vi.mocked(ContentService.getContentById).mockResolvedValue(fakeDocument)
-
-    // ACT
-    await ContentController.getDocumentById(
-      mockReq as Request,
-      mockRes as Response,
-      mockNext
-    )
-
-    // ASSERT: auth() was called
-    expect(mockReq.auth).toHaveBeenCalled()
-  })
 })
 
 /**

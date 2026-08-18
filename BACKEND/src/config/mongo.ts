@@ -18,12 +18,22 @@ export const connectDB = async () => {
     await mongoose.connect(config.MONGO_URI, { dbName: config.DB_NAME })
 
     isConnected = true
-    logger.info(`SUCCESS: MongoDB connected successfully to database: ${config.DB_NAME}`)
-  } catch (error: any) {
-    console.error("MongoDB connection error:", error)
-    logger.error(`ERROR: MongoDB connection error (${error.code || 'UNKNOWN'}): ${error.message}`)
-    if (error.code === 'ECONNREFUSED') {
-      logger.error('TIP: Check your network/DNS settings or if your IP is whitelisted in Atlas.')
+    logger.info(
+      `SUCCESS: MongoDB connected successfully to database: ${config.DB_NAME}`
+    )
+  } catch (error) {
+    // Narrowed rather than typed `any`. Mongoose surfaces driver errors that
+    // carry a `code`, which is what distinguishes a refused connection from a
+    // bad URI, but that field is not on the Error interface.
+    const { code, message } = error as { code?: string; message?: string }
+
+    logger.error(
+      `ERROR: MongoDB connection error (${code || 'UNKNOWN'}): ${message}`
+    )
+    if (code === 'ECONNREFUSED') {
+      logger.error(
+        'TIP: Check your network/DNS settings or if your IP is whitelisted in Atlas.'
+      )
     }
     process.exit(1)
   }

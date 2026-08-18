@@ -30,7 +30,7 @@ const sanitizeFilename = (filename: string): string => {
 const seedDatabaseWithFiles = async () => {
   logger.info('Starting database seeding with S3 file uploads...')
   // Set DNS servers to avoid local network issues
-  dns.setServers(["1.1.1.1", "8.8.8.8"])
+  dns.setServers(['1.1.1.1', '8.8.8.8'])
   // Connect to databases
   await connectDB()
   await connectRedis()

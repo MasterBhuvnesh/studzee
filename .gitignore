@@ -1,1 +1,8 @@
 node_modules/
+
+# Local agent and editor state. Machine specific, never committed.
+.claude/
+
+# Scratch logs from running a dev server in the background.
+.dev.log
+.dev.err

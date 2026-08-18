@@ -3,13 +3,18 @@ import { DocumentSchema } from '@/models/document.validation'
 import { TDocument } from '@/types/document'
 import { invalidateAllCache } from '@/utils/cache'
 import logger from '@/utils/logger'
-import { z } from 'zod'
 
-const documentUpdateSchema = z.object({
-  title: z.string().min(1),
-  content: z.string().min(1),
-  tags: z.array(z.string()).optional(),
-})
+/**
+ * Updates are a partial document validated against the real document schema.
+ *
+ * The previous schema here required a string `content` and an unknown `tags`
+ * field, neither of which exists on a document, so every genuine update payload
+ * was rejected.
+ */
+const documentUpdateSchema = DocumentSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  { message: 'At least one field must be provided' }
+)
 
 export class AdminService {
   /**

@@ -1,91 +1,145 @@
 # API Documentation
 
+Reference for the Studzee backend. The notification service was merged into this backend on 10-08-2026, so push registration, email, the Clerk webhook and the user admin endpoints are served here rather than behind the old `/noti` prefix. See [Migrated Endpoints](#migrated-endpoints) for the mapping.
+
+Every response body below is what the handler actually returns. Import [postman.collection.json](./postman.collection.json) for ready made requests.
+
+## Contents
+
+- [Authentication](#authentication)
+- [File URLs](#file-urls)
+- [Health Check Endpoints](#health-check-endpoints)
+- [Content Endpoints](#content-endpoints)
+- [PDF Endpoints](#pdf-endpoints)
+- [Notification Endpoints](#notification-endpoints)
+- [Webhook Endpoints](#webhook-endpoints)
+- [Admin Endpoints](#admin-endpoints)
+- [Migrated Endpoints](#migrated-endpoints)
+- [Response Format](#response-format)
+- [Rate Limiting](#rate-limiting)
+- [Caching](#caching)
+
 ## Authentication
 
-All protected endpoints require a Bearer token in the Authorization header:
+Protected endpoints require a Clerk session token in the Authorization header:
 
 ```
 Authorization: Bearer <CLERK_JWT_TOKEN>
 ```
 
-Admin endpoints additionally require the user to have the admin role configured in Clerk.
+Admin endpoints additionally require the user to carry `publicMetadata.role = "admin"` in Clerk.
 
-## Endpoints
+In development only, setting `NODE_ENV=development` and `DEV_TOKEN` lets you send `Authorization: Bearer <DEV_TOKEN>` instead. That bypass resolves to a synthetic `dev-user-id` with admin rights and is ignored in every other environment.
 
-### Health Check Endpoints
+The Clerk webhook is the one exception. It carries no user token and is authenticated by its svix signature instead.
 
-#### Liveness Check
+---
 
-- **Route:** `GET /health/liveness`
-- **Description:** Checks if the application is running
+## File URLs
+
+Every `imageUrl`, `pdfUrl` and `banner` in this document is shown with a Supabase host, because that is what a deployed environment returns. The host is not fixed. Uploads are stored over the S3 protocol and the URL written onto the document is built from `S3_PUBLIC_URL`, so it changes with the environment:
+
+| Environment | `S3_PUBLIC_URL`                                                     | Example URL                                                 |
+| ----------- | ------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Deployed    | `https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public` | `.../public/pdfs/introduction-to-typescript.pdf`            |
+| Local       | `http://localhost:9000`                                             | `http://localhost:9000/pdfs/introduction-to-typescript.pdf` |
+
+Local development runs MinIO with the same three buckets, `images`, `pdfs` and `assets`, all public read. Clients must treat these as opaque absolute URLs and never rebuild them from a hardcoded host.
+
+> **Note:** the URL is persisted at upload time, not generated on read. A document uploaded against one `S3_PUBLIC_URL` keeps that host after the setting changes, so a database that has been through a storage switch can return a mix of hosts from the same endpoint. Existing rows have to be rewritten to move them.
+
+---
+
+## Health Check Endpoints
+
+### Welcome
+
+- **Route:** `GET /`
+- **Description:** Root route. Returns the service name and a map of the main endpoints, which is the quickest way to confirm which build is answering on a host.
 - **Protected:** No
-- **Request:**
-  - Body: None
 - **Response:**
   - `200 OK`
     ```json
     {
-      "status": "ok"
+      "message": "Studzee Backend API",
+      "status": "running",
+      "endpoints": {
+        "health": "/healthcheck",
+        "liveness": "/health/liveness",
+        "readiness": "/health/readiness",
+        "content": "/content",
+        "pdfs": "/pdfs",
+        "notifications": "/notifications/register",
+        "admin": "/admin",
+        "webhooks": "/webhooks/clerk"
+      }
     }
     ```
 
-#### Healthcheck (Render/Production)
+> **Note:** the map is written by hand in `src/index.ts` rather than derived from the router, so it lists the main entry points rather than every route. Treat this document as the complete list.
+
+### Liveness Check
+
+- **Route:** `GET /health/liveness`
+- **Description:** Checks if the application is running
+- **Protected:** No
+- **Response:**
+  - `200 OK`
+    ```json
+    { "status": "ok" }
+    ```
+
+### Healthcheck (Render/Production)
 
 - **Route:** `GET /healthcheck`
-- **Description:** Simple health check endpoint for Render or other hosting platforms
+- **Description:** Simple health check for Render or other hosting platforms. This is the URL the heartbeat job pings.
 - **Protected:** No
-- **Request:**
-  - Body: None
 - **Response:**
   - `200 OK`
     ```json
     {
       "status": "ok",
-      "timestamp": "2024-01-15T10:30:00.000Z"
+      "timestamp": "2026-08-10T10:30:00.000Z"
     }
     ```
 
-#### Readiness Check
+### Readiness Check
 
 - **Route:** `GET /health/readiness`
-- **Description:** Checks if database and Redis are connected and ready
+- **Description:** Checks every backing store the service needs to serve traffic: MongoDB for content, Postgres for users and notifications, and Redis for caching
 - **Protected:** No
-- **Request:**
-  - Body: None
 - **Response:**
-  - `200 OK` (all services healthy)
+  - `200 OK` (all stores healthy)
     ```json
     {
       "status": "ready",
-      "checks": {
-        "db": "ok",
-        "redis": "ok"
-      }
+      "checks": { "db": "ok", "postgres": "ok", "redis": "ok" }
     }
     ```
-  - `503 Service Unavailable` (one or more services unhealthy)
+  - `503 Service Unavailable` (one or more unhealthy)
     ```json
     {
       "status": "unavailable",
-      "checks": {
-        "db": "error",
-        "redis": "ok"
-      }
+      "checks": { "db": "error", "postgres": "ok", "redis": "ok" }
     }
     ```
 
+> **Note:** `db` is MongoDB. The key kept its original name so existing probes that parse the body do not break.
+
+> **Note:** each check issues a real round trip, `admin().ping()` on MongoDB, `SELECT 1` on Postgres and `PING` on Redis, rather than reading a driver connection flag. A flag reports what the driver believes about its socket, which stays optimistic through a network partition or a server that has stopped answering. Probes run in parallel with a 2 second timeout each, so the endpoint always settles rather than hanging, and every failure is reported in one response rather than stopping at the first.
+
+> **Note:** liveness deliberately touches no dependency. A database outage should not get an otherwise healthy container restarted.
+
 ---
 
-### Content Endpoints
+## Content Endpoints
 
-#### Get Today's Content
+### Get Today's Content
 
 - **Route:** `GET /content/today`
-- **Description:** Retrieve documents created today (India Standard Time / IST timezone)
+- **Description:** Documents created during the current IST day, which runs from 18:30 UTC to 18:30 UTC
 - **Protected:** No
-- **Cache:** Uses `TODAY_CACHE_TTL` (default: 1 hour)
-- **Request:**
-  - Body: None
+- **Cache:** `TODAY_CACHE_TTL`, default 1 hour
 - **Response:**
   - `200 OK`
     ```json
@@ -93,31 +147,29 @@ Admin endpoints additionally require the user to have the admin role configured 
       "data": [
         {
           "_id": "507f1f77bcf86cd799439011",
+          "id": "507f1f77bcf86cd799439011",
           "title": "Introduction to TypeScript",
           "summary": "A comprehensive guide to TypeScript basics",
-          "createdAt": "2024-01-15T10:30:00.000Z"
+          "createdAt": "2026-08-10T10:30:00.000Z"
         }
       ],
-      "meta": {
-        "date": "2024-01-15",
-        "total": 1
-      }
+      "meta": { "date": "2026-08-10", "total": 1 }
     }
     ```
-- **Example Request:**
+- **Example:**
   ```bash
   curl "http://localhost:4000/content/today"
   ```
 
-#### Get Paginated Content
+### Get Paginated Content
 
 - **Route:** `GET /content`
-- **Description:** Retrieve a paginated list of documents (cached for 5 minutes)
+- **Description:** Paginated list of documents
 - **Protected:** No
-- **Request:**
-  - Query Parameters:
-    - `page` (number, optional, default: 1, min: 1) - Page number
-    - `limit` (number, optional, default: 20, min: 1, max: 100) - Items per page
+- **Cache:** `LIST_CACHE_TTL`, default 5 minutes
+- **Query Parameters:**
+  - `page` (number, optional, default 1, min 1)
+  - `limit` (number, optional, default 20, min 1, max 100)
 - **Response:**
   - `200 OK`
     ```json
@@ -125,53 +177,61 @@ Admin endpoints additionally require the user to have the admin role configured 
       "data": [
         {
           "_id": "507f1f77bcf86cd799439011",
+          "id": "507f1f77bcf86cd799439011",
           "title": "Introduction to TypeScript",
           "summary": "A comprehensive guide to TypeScript basics",
-          "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.jpg",
-          "createdAt": "2024-01-15T10:30:00.000Z",
-          "updatedAt": "2024-01-15T10:30:00.000Z"
+          "createdAt": "2026-08-10T10:30:00.000Z"
         }
       ],
-      "pagination": {
-        "page": 1,
-        "limit": 10,
-        "totalPages": 5,
-        "totalItems": 50
-      }
+      "meta": { "page": 1, "limit": 20, "total": 50 }
     }
     ```
-- **Example Request:**
+  - `400 Bad Request` - Invalid query parameters
+
+> **Note:** the list projection returns only `title`, `summary` and `createdAt` alongside the identifiers. Fetch a document by ID for its full body.
+
+- **Example:**
   ```bash
   curl "http://localhost:4000/content?page=1&limit=10"
   ```
 
-#### Get Document by ID
+### Get Document by ID
 
 - **Route:** `GET /content/:id`
-- **Description:** Retrieve a complete document by its ID (cached for 24 hours)
-- **Protected:** Yes (Requires Clerk authentication)
-- **Request:**
-  - Headers:
-    ```
-    Authorization: Bearer <CLERK_JWT_TOKEN>
-    ```
-  - URL Parameters:
-    - `id` (string, required) - MongoDB document ID
+- **Description:** Complete document by its ID
+- **Protected:** Yes
+- **Cache:** `DOC_CACHE_TTL`, default 24 hours
+- **URL Parameters:**
+  - `id` (string, required) - MongoDB document ID
 - **Response:**
   - `200 OK`
     ```json
     {
       "_id": "507f1f77bcf86cd799439011",
       "title": "Introduction to TypeScript",
-      "content": "TypeScript is a typed superset of JavaScript...",
+      "content": [
+        {
+          "title": "Introduction",
+          "content": [
+            {
+              "type": "text",
+              "value": "TypeScript is a typed superset of JavaScript."
+            },
+            {
+              "type": "list",
+              "items": ["Static types", "Compiles to JavaScript"]
+            }
+          ]
+        }
+      ],
       "summary": "A comprehensive guide to TypeScript basics",
       "facts": "TypeScript was developed by Microsoft",
-      "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.jpg",
+      "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/507f1f77bcf86cd799439011.png",
       "pdfUrl": [
         {
           "name": "typescript-guide.pdf",
-          "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
-          "uploadedAt": "2024-01-15T10:30:00.000Z",
+          "url": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/introduction-to-typescript.pdf",
+          "uploadedAt": "2026-08-10T10:30:00.000Z",
           "size": 1234567
         }
       ],
@@ -189,13 +249,16 @@ Admin endpoints additionally require the user to have the admin role configured 
         "note1": "TypeScript adds static types to JavaScript",
         "note2": "It compiles down to plain JavaScript"
       },
-      "createdAt": "2024-01-15T10:30:00.000Z",
-      "updatedAt": "2024-01-15T10:30:00.000Z"
+      "createdAt": "2026-08-10T10:30:00.000Z",
+      "updatedAt": "2026-08-10T10:30:00.000Z"
     }
     ```
   - `401 Unauthorized` - Missing or invalid authentication token
   - `404 Not Found` - Document does not exist
-- **Example Request:**
+
+> **Note:** `content` is structured, either an array of sections or an object. It is not a plain string. Each block carries a `type` of `text`, `list`, `table`, `formula` or `code`.
+
+- **Example:**
   ```bash
   curl -H "Authorization: Bearer eyJhbGc..." \
        http://localhost:4000/content/507f1f77bcf86cd799439011
@@ -203,17 +266,16 @@ Admin endpoints additionally require the user to have the admin role configured 
 
 ---
 
-### PDF Endpoints
+## PDF Endpoints
 
-#### List All PDFs
+### List All PDFs
 
 - **Route:** `GET /pdfs`
-- **Description:** Retrieve a paginated list of all documents with uploaded PDFs
+- **Description:** Paginated list of PDFs, flattened to one entry per file rather than grouped by document
 - **Protected:** No
-- **Request:**
-  - Query Parameters:
-    - `page` (number, optional, default: 1, min: 1) - Page number
-    - `limit` (number, optional, default: 20, min: 1, max: 100) - Items per page
+- **Query Parameters:**
+  - `page` (number, optional, default 1, min 1)
+  - `limit` (number, optional, default 20, min 1, max 100)
 - **Response:**
   - `200 OK`
     ```json
@@ -222,78 +284,157 @@ Admin endpoints additionally require the user to have the admin role configured 
         {
           "documentId": "507f1f77bcf86cd799439011",
           "title": "Introduction to TypeScript",
-          "pdfs": [
-            {
-              "name": "typescript-guide.pdf",
-              "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
-              "uploadedAt": "2024-01-15T10:30:00.000Z",
-              "size": 1234567
-            }
-          ]
+          "pdfName": "typescript-guide.pdf",
+          "pdfUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/introduction-to-typescript.pdf",
+          "uploadedAt": "2026-08-10T10:30:00.000Z",
+          "size": 1234567
         }
       ],
-      "meta": {
-        "page": 1,
-        "limit": 10,
-        "total": 25
-      }
+      "meta": { "page": 1, "limit": 20, "total": 25 }
     }
     ```
-- **Example Request:**
+  - `400 Bad Request` - Invalid query parameters
+
+> **Note:** `total` counts documents that hold at least one PDF, while `data` counts individual PDFs. A document with three PDFs contributes one to `total` and three to `data`.
+
+- **Example:**
   ```bash
   curl "http://localhost:4000/pdfs?page=1&limit=10"
   ```
 
 ---
 
-### Admin Endpoints
+## Notification Endpoints
 
-All admin endpoints require authentication AND admin role.
+### Register Device
 
-**Required Headers:**
+- **Route:** `POST /notifications/register`
+- **Description:** Register the caller's device for push notifications, or attach another device token to an existing registration
+- **Protected:** Yes
+- **Rate Limit:** 10 requests per minute
+- **Request Body:**
+
+  ```json
+  {
+    "email": "learner@example.com",
+    "expoToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+  }
+  ```
+
+  - `email` (string, required) - Must be a valid email address
+  - `expoToken` (string, required) - Must start with `ExponentPushToken[`
+
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "message": "Device registered successfully",
+      "data": {
+        "id": "clx1234567890",
+        "email": "learner@example.com",
+        "devices": 2
+      }
+    }
+    ```
+  - `400 Bad Request` - Validation error
+  - `401 Unauthorized` - Missing or invalid authentication token
+  - `429 Too Many Requests` - Rate limit exceeded
+
+> **Note:** the Clerk identity comes from the bearer token, never from the body, so a caller cannot register a device against somebody else's account. Tokens are deduplicated, so re-registering the same device does not create a second entry. `devices` reports how many tokens the user now holds.
+
+- **Example:**
+  ```bash
+  curl -X POST http://localhost:4000/notifications/register \
+       -H "Authorization: Bearer eyJhbGc..." \
+       -H "Content-Type: application/json" \
+       -d '{"email":"learner@example.com","expoToken":"ExponentPushToken[xxx]"}'
+  ```
+
+---
+
+## Webhook Endpoints
+
+### Clerk Webhook
+
+- **Route:** `POST /webhooks/clerk`
+- **Description:** Receives Clerk events. Only `user.created` is acted on, which sends the welcome email. Every other event type is acknowledged and ignored.
+- **Protected:** Public route, authenticated by svix signature
+- **Required Headers:** `svix-id`, `svix-timestamp`, `svix-signature`, all supplied by Clerk
+- **Response:**
+  - `200 OK` - Signature verified and the event processed
+    ```json
+    { "message": "Webhook processed", "emailSent": true }
+    ```
+  - `200 OK` - Event type not handled
+    ```json
+    { "message": "Ignored event: session.created" }
+    ```
+  - `400 Bad Request` - Missing svix headers, or signature verification failed
+  - `500 Internal Server Error` - `CLERK_WEBHOOK_SIGNING_SECRET` is not configured, or a body parser ran before the handler
+
+> **Note:** the router mounts `express.raw` ahead of the global JSON parser, so the signature is verified against the exact bytes Clerk signed. Verifying a re-serialized body is unsound, because `JSON.stringify` does not reproduce the original key order, whitespace or unicode escaping.
+
+> **Note:** the endpoint answers 2xx once the signature verifies, even when the welcome email fails. A non 2xx would make Clerk redeliver the event, which resends the email rather than fixing the mail transport.
+
+---
+
+## Admin Endpoints
+
+Every route below requires authentication and the admin role.
+
+**Required headers:**
 
 ```
 Authorization: Bearer <CLERK_JWT_TOKEN>
 ```
 
+Common failures on all admin routes:
+
+- `401 Unauthorized` - Missing or invalid authentication token
+- `403 Forbidden` - Authenticated but not an admin
+- `429 Too Many Requests` - Per route rate limit exceeded
+
+### Documents
+
 #### Create Document
 
 - **Route:** `POST /admin/documents`
-- **Description:** Create a new document
-- **Protected:** Yes (Requires Admin role)
-- **Request:**
-  - Headers:
-    ```
-    Authorization: Bearer <CLERK_JWT_TOKEN>
-    ```
-  - Body:
-    ```json
-    {
-      "title": "New Tutorial",
-      "content": "Complete tutorial content goes here...",
-      "summary": "Optional summary of the content",
-      "facts": "Optional interesting facts",
-      "quiz": {
-        "q1": {
-          "que": "Sample question?",
-          "ans": "Correct answer",
-          "options": ["Option 1", "Option 2", "Correct answer", "Option 4"]
-        }
-      },
-      "key_notes": {
-        "note1": "Important point 1",
-        "note2": "Important point 2"
+- **Request Body:**
+
+  ```json
+  {
+    "title": "New Tutorial",
+    "content": [
+      {
+        "title": "Introduction",
+        "content": [
+          { "type": "text", "value": "Opening paragraph." },
+          { "type": "list", "items": ["First point", "Second point"] }
+        ]
       }
+    ],
+    "summary": "Optional summary of the content",
+    "facts": "Optional interesting facts",
+    "quiz": {
+      "q1": {
+        "que": "Sample question?",
+        "ans": "Correct answer",
+        "options": ["Option 1", "Option 2", "Correct answer", "Option 4"]
+      }
+    },
+    "key_notes": {
+      "note1": "Important point 1",
+      "note2": "Important point 2"
     }
-    ```
-  - **Required Fields:**
-    - `title` (string, min: 3 chars) - Document title
-    - `content` (string, min: 10 chars) - Full document content
-    - `quiz` (object) - Quiz questions (at least one question required)
-  - **Optional Fields:**
-    - `summary` (string) - Brief summary
-    - `facts` (string) - Interesting facts
-    - `key_notes` (object) - Important notes
+  }
+  ```
+
+  - **Required:**
+    - `title` (string, min 3 chars)
+    - `content` (array or object, structured, not a string)
+    - `quiz` (object keyed by question ID, each with `que`, `ans` and at least two `options`)
+  - **Optional:** `summary`, `facts`, `key_notes`, `imageUrl`, `pdfUrl`
+
 - **Response:**
   - `201 Created`
     ```json
@@ -302,84 +443,77 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
       "doc": {
         "_id": "507f1f77bcf86cd799439013",
         "title": "New Tutorial",
-        "content": "Complete tutorial content...",
-        "createdAt": "2024-01-17T09:15:00.000Z",
-        "updatedAt": "2024-01-17T09:15:00.000Z"
+        "createdAt": "2026-08-10T09:15:00.000Z",
+        "updatedAt": "2026-08-10T09:15:00.000Z"
       }
     }
     ```
   - `400 Bad Request` - Invalid document data
-  - `401 Unauthorized` - Missing or invalid authentication
-  - `403 Forbidden` - User does not have admin role
 
 #### Update Document
 
 - **Route:** `PUT /admin/documents/:id`
-- **Description:** Update an existing document
-- **Protected:** Yes (Requires Admin role)
-- **Request:**
-  - Headers:
-    ```
-    Authorization: Bearer <CLERK_JWT_TOKEN>
-    ```
-  - URL Parameters:
-    - `id` (string, required) - MongoDB document ID
-  - Body: Partial document updates (same schema as create, but all fields optional)
+- **URL Parameters:** `id` (string, required) - MongoDB document ID
+- **Request Body:** A partial document. Every field is optional, validated against the same schema as create, and at least one field is required.
+  ```json
+  {
+    "title": "Updated Tutorial Title",
+    "summary": "Updated summary text"
+  }
+  ```
 - **Response:**
-  - `200 OK` - Returns the updated document
+  - `200 OK` - The updated document
   - `400 Bad Request` - Invalid update data
-  - `401 Unauthorized` - Missing or invalid authentication
-  - `403 Forbidden` - User does not have admin role
   - `404 Not Found` - Document does not exist
 
 #### Delete Document
 
 - **Route:** `DELETE /admin/documents/:id`
-- **Description:** Delete a document by its ID
-- **Protected:** Yes (Requires Admin role)
-- **Request:**
-  - Headers:
-    ```
-    Authorization: Bearer <CLERK_JWT_TOKEN>
-    ```
-  - URL Parameters:
-    - `id` (string, required) - MongoDB document ID
+- **URL Parameters:** `id` (string, required)
 - **Response:**
-  - `204 No Content` - Document successfully deleted (empty response)
-  - `401 Unauthorized` - Missing or invalid authentication
-  - `403 Forbidden` - User does not have admin role
+  - `204 No Content` - Deleted, empty body
   - `404 Not Found` - Document does not exist
 
 #### Upload Document Image
 
 - **Route:** `POST /admin/documents/:id/upload-image`
-- **Description:** Upload an image for a document (replaces existing image if present)
-- **Protected:** Yes (Requires Admin role)
+- **Description:** Uploads the cover image, replacing any existing one. The old object is deleted from storage.
 - **Content-Type:** `multipart/form-data`
-- **Request:**
-  - Headers:
-    ```
-    Authorization: Bearer <CLERK_JWT_TOKEN>
-    ```
-  - URL Parameters:
-    - `id` (string, required) - MongoDB document ID
-  - Body (multipart/form-data):
-    - `file` (file, required) - Image file (JPG, PNG, or WebP, max 10MB)
+- **Body:** `file` (required) - JPG, PNG or WebP, max 10MB
+
+> **The form field must be named `file`.** Three mistakes produce a 400, each with its own message: sending a JSON body rather than `multipart/form-data`, naming the field something other than `file`, and sending multipart with no file attached. In Postman, a `file` row in the form-data tab is not enough on its own, you also have to pick a file with the Select Files button, otherwise nothing is sent.
+
 - **Response:**
   - `200 OK`
     ```json
     {
       "message": "Image uploaded successfully",
-      "imageUrl": "https://bucket.s3.region.amazonaws.com/images/507f1f77bcf86cd799439011.png",
+      "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/507f1f77bcf86cd799439011.png",
       "documentId": "507f1f77bcf86cd799439011"
     }
     ```
-  - `400 Bad Request` - No file uploaded or invalid file type
-  - `401 Unauthorized` - Missing or invalid authentication
-  - `403 Forbidden` - User does not have admin role
+  - `400 Bad Request` - Wrong content type, wrong field name, no file, invalid file type, size exceeded, or malformed document ID
+    ```json
+    {
+      "message": "Uploads must be sent as multipart/form-data",
+      "details": "Received Content-Type: application/json. Attach the file as a form field named \"file\" rather than sending a JSON body."
+    }
+    ```
+    ```json
+    {
+      "message": "Unexpected form field \"image\"",
+      "details": "The file must be sent in a form field named \"file\"."
+    }
+    ```
+    ```json
+    {
+      "message": "No file uploaded",
+      "details": "Please include a file in the request with field name \"file\""
+    }
+    ```
   - `404 Not Found` - Document does not exist
-  - `500 Internal Server Error` - S3 upload failure
-- **Example Request:**
+  - `500 Internal Server Error` - Storage upload failure
+- **Example:**
   ```bash
   curl -X POST http://localhost:4000/admin/documents/507f1f77bcf86cd799439011/upload-image \
        -H "Authorization: Bearer eyJhbGc..." \
@@ -389,18 +523,9 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
 #### Upload Document PDF
 
 - **Route:** `POST /admin/documents/:id/upload-pdf`
-- **Description:** Upload a PDF for a document (adds to PDF array)
-- **Protected:** Yes (Requires Admin role)
+- **Description:** Appends a PDF. Documents hold an array, so this adds rather than replaces.
 - **Content-Type:** `multipart/form-data`
-- **Request:**
-  - Headers:
-    ```
-    Authorization: Bearer <CLERK_JWT_TOKEN>
-    ```
-  - URL Parameters:
-    - `id` (string, required) - MongoDB document ID
-  - Body (multipart/form-data):
-    - `file` (file, required) - PDF file (max 50MB)
+- **Body:** `file` (required) - PDF, max 50MB
 - **Response:**
   - `200 OK`
     ```json
@@ -408,25 +533,227 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
       "message": "PDF uploaded successfully",
       "pdf": {
         "name": "document.pdf",
-        "url": "https://bucket.s3.region.amazonaws.com/pdfs/introduction-to-typescript.pdf",
-        "uploadedAt": "2024-01-15T10:30:00.000Z",
+        "url": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/introduction-to-typescript.pdf",
+        "uploadedAt": "2026-08-10T10:30:00.000Z",
         "size": 1234567
       },
       "documentId": "507f1f77bcf86cd799439011",
       "title": "Introduction to TypeScript"
     }
     ```
-  - `400 Bad Request` - No file uploaded, invalid file type, or file size exceeded
-  - `401 Unauthorized` - Missing or invalid authentication
-  - `403 Forbidden` - User does not have admin role
+  - `400 Bad Request` - No file, invalid type, or size exceeded
   - `404 Not Found` - Document does not exist
   - `500 Internal Server Error` - S3 upload failure
-- **Example Request:**
-  ```bash
-  curl -X POST http://localhost:4000/admin/documents/507f1f77bcf86cd799439011/upload-pdf \
-       -H "Authorization: Bearer eyJhbGc..." \
-       -F "file=@/path/to/document.pdf"
+
+### Notifications
+
+#### Send Push Notification
+
+- **Route:** `POST /admin/notifications/send`
+- **Rate Limit:** 20 requests per minute
+- **Request Body:**
+
+  ```json
+  {
+    "title": "New notes published",
+    "message": "System Design chapter 4 is now available.",
+    "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/banner.png",
+    "sendToAll": true,
+    "emails": ["learner@example.com"]
+  }
   ```
+
+  - `title` (string, required)
+  - `message` (string, required)
+  - `imageUrl` (string, optional) - Must be a valid URL
+  - `sendToAll` (boolean, required)
+  - `emails` (array of emails) - Required and non empty whenever `sendToAll` is false, ignored otherwise
+
+- **Response:**
+  - `200 OK` - Every message accepted
+    ```json
+    {
+      "message": "Notification sent",
+      "data": { "targeted": 250, "sent": 250, "failed": 0, "prunedTokens": 0 }
+    }
+    ```
+  - `207 Multi-Status` - Partially delivered
+    ```json
+    {
+      "message": "Notification partially delivered",
+      "data": { "targeted": 250, "sent": 247, "failed": 3, "prunedTokens": 2 }
+    }
+    ```
+  - `400 Bad Request` - Validation error
+  - `404 Not Found` - No registered devices for the target
+    ```json
+    { "message": "No registered devices found" }
+    ```
+
+> **Note:** messages are chunked to the Expo limit of 100 per request, so a broadcast larger than that is split across several calls and a failing chunk does not abort the rest. Tokens Expo reports as `DeviceNotRegistered` are deleted immediately and counted in `prunedTokens`.
+
+#### List Sent Notifications
+
+- **Route:** `GET /admin/notifications`
+- **Rate Limit:** 30 requests per minute
+- **Query Parameters:**
+  - `page` (number, optional, default 1)
+  - `limit` (number, optional, default 20, max 100)
+  - `sortBy` (string, optional, default `createdAt`) - One of `createdAt`, `status`, `sentBy`. Anything else falls back to `createdAt`.
+  - `order` (string, optional, default `desc`) - `asc` or `desc`
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "notifications": [
+        {
+          "id": "clx1234567890",
+          "title": "New notes published",
+          "message": "System Design chapter 4 is now available.",
+          "imageUrl": null,
+          "sentBy": "user_2abcdef",
+          "sentTo": [],
+          "sentToAll": true,
+          "status": "sent",
+          "createdAt": "2026-08-10T10:30:00.000Z"
+        }
+      ],
+      "pagination": { "page": 1, "limit": 20, "total": 42, "totalPages": 3 }
+    }
+    ```
+
+### Email
+
+#### Send Email
+
+- **Route:** `POST /admin/emails/send`
+- **Rate Limit:** 10 requests per minute
+- **Request Body:**
+
+  ```json
+  {
+    "emails": ["learner@example.com"],
+    "subject": "New notes are available",
+    "title": "New notes are available",
+    "body": "<p>Chapter 4 of System Design is published.</p>",
+    "banner": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/assets/banner.png",
+    "footer": "This is an automated email from Studzee.",
+    "pdfUrls": [
+      "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/system-design.pdf"
+    ]
+  }
+  ```
+
+  - `emails` (array of emails, required, min 1)
+  - `subject`, `title`, `body` (string, required). `body` is an HTML fragment dropped into the shared template.
+  - `banner`, `footer` (optional) - Fall back to the configured defaults
+  - `pdfUrls` (array of URLs, optional)
+
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "message": "Email sent",
+      "data": { "recipients": 1, "messageId": "<abc@studzee.in>" }
+    }
+    ```
+  - `400 Bad Request` - Validation error
+  - `502 Bad Gateway` - The transport rejected the message, or an attachment failed its checks
+    ```json
+    {
+      "message": "Email delivery failed",
+      "error": "Attachment host is not allowed: evil.example.com"
+    }
+    ```
+
+> **Note:** attachments are fetched by the mail transport at send time, so each entry in `pdfUrls` must use https on a host listed in `EMAIL_ATTACHMENT_HOSTS`, with at most 10 per message. Anything else fails before the message is sent.
+
+> **Note:** recipients are sent as bcc, so a broadcast does not disclose the recipient list to everybody on it.
+
+#### List Email Logs
+
+- **Route:** `GET /admin/emails/logs`
+- **Rate Limit:** 30 requests per minute
+- **Query Parameters:** Same as [List Sent Notifications](#list-sent-notifications)
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "logs": [
+        {
+          "id": "clx1234567890",
+          "subject": "New notes are available",
+          "message": "<p>Chapter 4 of System Design is published.</p>",
+          "pdfUrls": [],
+          "sentBy": "user_2abcdef",
+          "sentTo": ["learner@example.com"],
+          "status": "sent",
+          "createdAt": "2026-08-10T10:30:00.000Z"
+        }
+      ],
+      "pagination": { "page": 1, "limit": 20, "total": 12, "totalPages": 1 }
+    }
+    ```
+
+### Users
+
+#### List Users
+
+- **Route:** `GET /admin/users`
+- **Rate Limit:** 30 requests per minute
+- **Query Parameters:** `page`, `limit`
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "users": [
+        {
+          "id": "clx1234567890",
+          "clerkId": "user_2abcdef",
+          "email": "learner@example.com",
+          "expoTokens": ["ExponentPushToken[xxx]"],
+          "createdAt": "2026-08-10T10:30:00.000Z",
+          "updatedAt": "2026-08-10T10:30:00.000Z"
+        }
+      ],
+      "pagination": { "page": 1, "limit": 20, "total": 320, "totalPages": 16 }
+    }
+    ```
+
+#### List User Emails
+
+- **Route:** `GET /admin/users/emails`
+- **Description:** Every registered email address, for populating a recipient picker
+- **Rate Limit:** 30 requests per minute
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "data": ["learner@example.com", "another@example.com"],
+      "meta": { "total": 2 }
+    }
+    ```
+
+---
+
+## Migrated Endpoints
+
+The notification service was merged into this backend. Its endpoints moved as follows and the old paths no longer exist.
+
+| Old path                                 | New path                         |
+| ---------------------------------------- | -------------------------------- |
+| `POST /noti/api/register`                | `POST /notifications/register`   |
+| `POST /noti/api/admin/notification/send` | `POST /admin/notifications/send` |
+| `GET /noti/api/admin/notifications`      | `GET /admin/notifications`       |
+| `POST /noti/api/admin/email/send`        | `POST /admin/emails/send`        |
+| `GET /noti/api/admin/email/logs`         | `GET /admin/emails/logs`         |
+| `GET /noti/api/admin/users`              | `GET /admin/users`               |
+| `GET /noti/api/admin/emails`             | `GET /admin/users/emails`        |
+| `POST /noti/api/webhooks/clerk`          | `POST /webhooks/clerk`           |
+
+Response shapes changed alongside the paths. The old service wrapped every response in `{ success, message, data }`. The merged endpoints follow the backend convention instead, returning the payload directly with a `message` only where one is useful.
+
+> **Deployment note:** any client already released against the old paths keeps calling them. Rewrite them at the ingress or ship a client build using the new paths before retiring the old service.
 
 ---
 
@@ -434,46 +761,73 @@ Authorization: Bearer <CLERK_JWT_TOKEN>
 
 ### Success Responses
 
-All successful responses follow a consistent structure:
-
-- **2xx Status Codes**: Success
-  - `200 OK`: Request succeeded
-  - `201 Created`: Resource created successfully
-  - `204 No Content`: Request succeeded with no response body
+- `200 OK` - Request succeeded
+- `201 Created` - Resource created
+- `204 No Content` - Succeeded with no response body
+- `207 Multi-Status` - Partially succeeded, currently only on a push broadcast
 
 ### Error Responses
 
-All error responses include a descriptive message:
+Errors carry a `message`, and validation failures add an `errors` object keyed by field:
 
 ```json
 {
-  "error": "Error message describing what went wrong"
+  "message": "Validation error",
+  "errors": {
+    "expoToken": ["Not a valid Expo push token"]
+  }
 }
 ```
 
-Common error status codes:
+A request to a path that matches no route returns 404 with the path echoed back:
 
-- `400 Bad Request`: Invalid request data or validation failure
-- `401 Unauthorized`: Missing or invalid authentication token
-- `403 Forbidden`: Authenticated but lacks required permissions
-- `404 Not Found`: Requested resource does not exist
-- `500 Internal Server Error`: Server-side error
-- `503 Service Unavailable`: Service dependencies are unhealthy
+```json
+{ "message": "Not Found - /unknown" }
+```
+
+Unhandled errors return a generic message, with a `stack` field added only when `NODE_ENV=development`:
+
+```json
+{ "message": "Internal Server Error" }
+```
+
+> **Note:** the message is only replaced with the generic text on a 500. Errors carrying an explicit status code, such as the 404 above, return their real message. The `stack` field is attached to every error response in development, so do not rely on its absence to detect a particular status.
+
+`GET /favicon.ico` is answered with `204 No Content` before the not found handler runs, so a browser hitting the API root does not fill the log with 404s.
+
+Common status codes:
+
+- `400 Bad Request` - Invalid request data or validation failure
+- `401 Unauthorized` - Missing or invalid authentication token
+- `403 Forbidden` - Authenticated but lacks the admin role
+- `404 Not Found` - Requested resource does not exist
+- `429 Too Many Requests` - Rate limit exceeded
+- `500 Internal Server Error` - Server-side error
+- `502 Bad Gateway` - An upstream dependency rejected the request, currently only the mail transport
+- `503 Service Unavailable` - Service dependencies are unhealthy
 
 ## Rate Limiting
 
-The API implements rate limiting to prevent abuse:
+A global limiter applies to every request, and the expensive admin endpoints carry tighter per route limits on top of it.
 
-- **Limit**: 100 requests per 15 minutes per IP address
-- **Response**: When limit exceeded, returns `429 Too Many Requests`
-- **Headers**: Rate limit information included in response headers
+| Scope                            | Limit              |
+| -------------------------------- | ------------------ |
+| Global, all routes               | 100 per 15 minutes |
+| `POST /notifications/register`   | 10 per minute      |
+| `POST /admin/notifications/send` | 20 per minute      |
+| `POST /admin/emails/send`        | 10 per minute      |
+| Admin listing endpoints          | 30 per minute      |
+
+Exceeding a limit returns `429 Too Many Requests`. Limits are reported in the standard `RateLimit-*` response headers. The service sets `trust proxy`, so limits are applied per client address rather than per proxy.
 
 ## Caching
 
-The API uses Redis for caching to improve performance:
+Redis caches read responses using the cache aside pattern.
 
-- **List Cache**: 5 minutes (300 seconds)
-- **Document Cache**: 24 hours (86400 seconds)
-- **Today's Content Cache**: 1 hour (3600 seconds)
+| Cache    | Key pattern                              | TTL variable      | Default   |
+| -------- | ---------------------------------------- | ----------------- | --------- |
+| List     | `content:list:page:<page>:limit:<limit>` | `LIST_CACHE_TTL`  | 5 minutes |
+| Document | `content:doc:<id>`                       | `DOC_CACHE_TTL`   | 24 hours  |
+| Today    | `content:today`                          | `TODAY_CACHE_TTL` | 1 hour    |
 
-Cached responses include `X-Cache-Hit` header when served from cache.
+Any admin write invalidates every content cache entry. Cache hits and misses are visible in the application log; no cache status is exposed in response headers.
