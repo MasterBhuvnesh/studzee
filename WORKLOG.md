@@ -56,6 +56,36 @@ Open items carried forward. Move each into a dated entry once it is done.
 - Style: no em dashes, no emoji, in code, comments, commits, and documentation.
 - Comments: specific and professional, explaining intent rather than restating the code.
 
+## 2026-08-18
+
+**Branch:** `feat/v2-architecture`
+
+### Put the data storage design on hold
+
+The owner decided that the data storage layer, step 2 of the v2 plan, waits
+until MOBILE and DESKTOP are done rather than being specified now.
+
+The reason is that the feature set that determines the schema does not exist
+yet. The owner is planning a user tracker that records a user's quiz results
+and per user responses, and surprise or scheduled quizzes built on that
+history, and is explicit that the shape of those is not settled. Designing the
+database now would fix a schema before the requirements that decide it are
+known, and would then have to be redesigned once they are. So the order in the
+plan changes: clients first, storage design after, with the feature set in
+hand.
+
+Nothing in the code changed. This entry, the `BLOCKED` status in
+[`.docs/RECORDS.md`](.docs/RECORDS.md), and the revised steps 2 and 2a in
+[`.docs/TCSK.md`](.docs/TCSK.md) exist so that the hold reads as a decision
+with a reason rather than as unfinished work, and so it is not proposed again.
+The planned features are recorded under open work in TCSK, because whoever
+eventually designs the storage layer needs to know it has to carry per user
+quiz attempts over time and not only the content documents it holds today.
+
+The backend is otherwise complete: 235 tests across 26 files at 91 percent
+statement coverage, all four CI gates green, and the Clerk auth path verified
+live against a running instance.
+
 ## 2026-08-14
 
 **Branch:** `feat/v2-architecture`

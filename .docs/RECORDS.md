@@ -54,7 +54,7 @@ Date is the date the status last changed.
 | Deployment environment checklist in `.docs/DEPLOYMENT.md` | BHUVNESH | DONE | 14-08-2026 |
 | Cache or tokenise the admin role instead of calling Clerk per request | BHUVNESH | PLANNED | 14-08-2026 |
 | Move Prisma migrations out of the container start command | BHUVNESH | PLANNED | 13-08-2026 |
-| Data storage layer, database design | BHUVNESH | PLANNED | 10-08-2026 |
+| Data storage layer, database design | BHUVNESH | BLOCKED | 18-08-2026 |
 
 ## DOCUMENTATION
 
