@@ -58,6 +58,50 @@ Open items carried forward. Move each into a dated entry once it is done.
 
 ## 2026-08-18
 
+**Branch:** `docs/dockerhub-overview`
+
+### Give the published image a Docker Hub page
+
+`backend-v4.0.0` was released and the image carried no description, no
+categories and no OCI metadata, so the Hub page was blank and `docker inspect`
+on a pulled image said nothing about what it was.
+
+`BACKEND/DOCKERHUB.md` is a new file rather than a reuse of the readme. The
+readme is 1696 lines and almost all of it is local development, compose
+profiles, Mailpit, MinIO and Prisma Studio, none of which applies to somebody
+who has the image and not the repository. The new file is written for that
+reader instead: the run command, the port, the required variables, the health
+endpoints, and the behaviour that costs people time.
+
+Every claim in it was checked against the Dockerfile, the config schema and
+`src/index.ts` rather than written from memory. That caught one error before it
+shipped: the route group list was missing `/pdfs`.
+
+Two things were added to the release workflow.
+
+- OCI labels on the image, so title, version, revision and source travel with
+  it. `github.repositoryUrl` is deliberately not used for the source label
+  because it yields a `git://` URL rather than a browsable one.
+- A step that pushes the description to Docker Hub. The page text is a
+  property of the repository and not of the image, so it cannot be set by a
+  label and needs the Hub REST API. It runs only on a version tag, because a
+  commit SHA build is not what the page should describe.
+
+Categories are deliberately not automated. They are chosen once from a fixed
+list of sixteen and then never change, so automating them would mean shipping
+an API call whose payload shape cannot be verified from here in exchange for
+saving one click. They are set in the Docker Hub repository settings.
+
+The category slug list was fetched from `https://hub.docker.com/v2/categories/`
+rather than assumed. `application-frameworks` is not among the sixteen valid
+slugs, so a call using it would have failed.
+
+**Note for whoever deploys next.** The `backend-v4.0.0` images were pushed
+under the previous Docker Hub credentials and are not in the current account.
+The workflow needs re-running on that tag to publish them where they belong.
+
+## 2026-08-18
+
 **Branch:** `feat/v2-architecture`
 
 ### Put the data storage design on hold

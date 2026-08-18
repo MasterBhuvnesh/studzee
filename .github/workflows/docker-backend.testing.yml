@@ -155,6 +155,20 @@ jobs:
           context: ./BACKEND
           push: true
           tags: ${{ steps.version.outputs.TAGS }}
+          # Standard OCI metadata, baked into the image itself rather than
+          # carried by the registry, so `docker inspect` on a pulled image can
+          # say what it is and which commit produced it.
+          #
+          # `github.repositoryUrl` is deliberately not used for the source
+          # label. It yields a git protocol URL, git://github.com/owner/repo.git,
+          # which is not a browsable address. server_url plus repository gives
+          # the https one that tooling expects.
+          labels: |
+            org.opencontainers.image.title=studzee-api
+            org.opencontainers.image.description=Express and TypeScript backend for the Studzee education platform
+            org.opencontainers.image.version=${{ steps.version.outputs.VERSION }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           # Reuses layers across runs, which matters because the image now
           # installs the dependency tree twice, once in full for the build and
           # once with --omit=dev for the layer that ships.
@@ -165,6 +179,63 @@ jobs:
         run: |
           echo "Docker image successfully built and pushed:"
           echo "${{ steps.version.outputs.TAGS }}" | tr ',' '\n' | sed 's/^/  - /'
+
+      # The Docker Hub page text is a property of the repository, not of the
+      # image, so it cannot be set by a label and needs the Hub REST API.
+      #
+      # Only on a release. A commit SHA build is not what the page should
+      # describe, and rewriting the description on every dispatch is noise.
+      #
+      # Categories are deliberately not set here. They are chosen once from a
+      # fixed list and then never change, so automating them would mean
+      # shipping an API call whose payload shape cannot be verified from here,
+      # in exchange for saving a single click. They are set in the repository
+      # settings on Docker Hub.
+      - name: Update the Docker Hub description
+        if: startsWith(github.ref, 'refs/tags/backend-v')
+        env:
+          # Passed as environment rather than interpolated into the command, so
+          # the values are never part of a process argument list.
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          # Docker Hub is moving off password login, but this endpoint still
+          # accepts a personal access token in the password field, which is
+          # what DOCKER_PASSWORD already holds for docker/login-action.
+          TOKEN=$(curl -sS -X POST https://hub.docker.com/v2/users/login/ \
+            -H "Content-Type: application/json" \
+            -d "$(jq -nc --arg u "$DOCKERHUB_USERNAME" --arg p "$DOCKERHUB_TOKEN" \
+                  '{username: $u, password: $p}')" \
+            | jq -r '.token // empty')
+
+          if [ -z "$TOKEN" ]; then
+            echo "Could not obtain a Docker Hub API token."
+            echo "The image is already pushed. Only the page text is affected."
+            exit 1
+          fi
+
+          # --arg reads the file as a literal string, so backticks, quotes and
+          # newlines in the markdown cannot break out into the JSON.
+          PAYLOAD=$(jq -nc \
+            --arg short "studzee-api: Express and TypeScript backend for the Studzee education platform." \
+            --rawfile full BACKEND/DOCKERHUB.md \
+            '{description: $short, full_description: $full}')
+
+          STATUS=$(curl -sS -o /tmp/hub-response.json -w '%{http_code}' \
+            -X PATCH "https://hub.docker.com/v2/repositories/${DOCKERHUB_USERNAME}/studzee-backend/" \
+            -H "Authorization: JWT ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          if [ "$STATUS" != "200" ]; then
+            echo "Docker Hub returned HTTP ${STATUS}:"
+            cat /tmp/hub-response.json
+            exit 1
+          fi
+
+          echo "Docker Hub description updated from BACKEND/DOCKERHUB.md."
 
       # The container runs prisma migrate deploy before the app, so the deploy
       # target needs DATABASE_URL reachable at boot or it exits 1 with P1001.
