@@ -13,7 +13,7 @@ services:
     build:
       context: .
       target: production
-    image: studzee-backend:local
+    image: studzee-api:local
     container_name: studzee_api
     profiles: [api]
     restart: unless-stopped

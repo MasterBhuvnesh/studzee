@@ -58,6 +58,32 @@ Open items carried forward. Move each into a dated entry once it is done.
 
 ## 2026-08-18
 
+**Branch:** `chore/rename-image-to-studzee-api`
+
+### Rename the published image to studzee-api
+
+The image was published as `studzee-backend` while the package, the container
+and the OCI title were all already `studzee-api`. The owner asked for the
+published name to match.
+
+Changed in the workflow, in `DOCKERHUB.md`, in the compose local build tag and
+in the readme. `.docs/WORKFLOW-SAMPLE.md` is deliberately left alone. It is a
+snapshot of the workflow as it stood before the rewrite, so editing it would
+falsify the record it exists to keep.
+
+`BACKEND/postman.collection.json` keeps its `_postman_id`. That value is
+Postman's import deduplication key rather than a display name, so changing it
+would create a duplicate collection for anyone who has already imported it.
+
+**Docker Hub has no rename.** Pushing under the new name creates a second
+repository rather than moving the first, so this needs a release to populate
+`studzee-api`, and `studzee-backend` remains until it is deleted by hand. Its
+tags, its pull count and the description pushed to it on 4.0.1 all stay with
+the old name. Delete it only after a release has populated the new repository,
+so that there is never a window with no published image.
+
+## 2026-08-18
+
 **Branch:** `docs/dockerhub-overview`
 
 ### Give the published image a Docker Hub page
