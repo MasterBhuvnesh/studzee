@@ -30,7 +30,7 @@ docker run -d --name studzee-api \
   -e SMTP_USER="..." \
   -e SMTP_PASSWORD="..." \
   -e EMAIL_FROM="Studzee <no-reply@example.com>" \
-  <namespace>/studzee-backend:latest
+  <namespace>/studzee-api:latest
 ```
 
 ## THE PORT IS 3000

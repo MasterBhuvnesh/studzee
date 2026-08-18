@@ -125,7 +125,7 @@ jobs:
       - name: Work out the version and which tags to publish
         id: version
         run: |
-          NS="${{ secrets.DOCKER_USERNAME }}/studzee-backend"
+          NS="${{ secrets.DOCKER_USERNAME }}/studzee-api"
           if [[ $GITHUB_REF == refs/tags/backend-v* ]]; then
             # A version tag is a release, so it moves `latest`.
             VERSION="${GITHUB_REF#refs/tags/backend-v}"
@@ -224,7 +224,7 @@ jobs:
             '{description: $short, full_description: $full}')
 
           STATUS=$(curl -sS -o /tmp/hub-response.json -w '%{http_code}' \
-            -X PATCH "https://hub.docker.com/v2/repositories/${DOCKERHUB_USERNAME}/studzee-backend/" \
+            -X PATCH "https://hub.docker.com/v2/repositories/${DOCKERHUB_USERNAME}/studzee-api/" \
             -H "Authorization: JWT ${TOKEN}" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")

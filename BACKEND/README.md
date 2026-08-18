@@ -547,7 +547,7 @@ The `docker-compose.yml` defines **7 infrastructure services** plus the **API it
 
 #### 8. **The API (`api`)**
 
-- **Build**: the `production` target of the local `Dockerfile`, tagged `studzee-backend:local`
+- **Build**: the `production` target of the local `Dockerfile`, tagged `studzee-api:local`
 - **Purpose**: the service itself, for checking the image that actually ships
 - **Container Name**: `studzee_api`
 - **Profile**: `api`, so it is skipped unless you pass `--profile api`
