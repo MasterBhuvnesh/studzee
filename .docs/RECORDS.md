@@ -85,6 +85,9 @@ Date is the date the status last changed.
 
 | FEATURE | DEVELOPER | STATUS | DATE |
 | ------- | --------- | ------ | ---- |
+| Terraform infrastructure as code for AWS | BHUVNESH | PLANNED | 18-08-2026 |
+| Deploy the backend on ECS with the image in ECR | BHUVNESH | PLANNED | 18-08-2026 |
+| Load balancing, autoscaling and Route 53 for the backend | BHUVNESH | PLANNED | 18-08-2026 |
 | Point the ingress `/noti` prefix at the merged backend | BHUVNESH | PLANNED | 10-08-2026 |
 | Set the renamed and new environment variables in the deployed environment | BHUVNESH | PLANNED | 11-08-2026 |
 | V2 architecture, overall | BHUVNESH | IN PROGRESS | 10-08-2026 |

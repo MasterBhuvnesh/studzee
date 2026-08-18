@@ -103,6 +103,116 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 - Buckets are public. The application stores a plain public URL on the document and the clients fetch it directly. Signed URLs were considered and rejected.
 - MinIO stays for local development. It is not replaced by pointing local work at Supabase.
 
+## PLANNED INFRASTRUCTURE, TERRAFORM ON AWS
+
+Stated by the owner on 18-08-2026. Direction only, nothing is designed or
+built yet, and no timeline is set. Recorded so the constraints that already
+exist are not rediscovered when the work starts.
+
+The intent is infrastructure as code with Terraform, deploying the backend to
+AWS on ECS with the image in ECR, behind a load balancer, with autoscaling and
+Route 53 in front.
+
+### WHAT THE BACKEND ALREADY IMPLIES FOR THIS
+
+These are facts about the service today, not decisions about the design.
+
+- **The container listens on 3000.** The image declares `EXPOSE 3000` and its
+  healthcheck probes 3000. The target group port is 3000 whatever the listener
+  does in front of it.
+- **`/health/liveness` is the health check to point a target group at.**
+  `/health/readiness` round trips MongoDB, Postgres and Redis on every call,
+  which is right for a deployment gate and wrong for something polled every
+  few seconds across every task.
+- **Migrations on container start block autoscaling.** The image runs
+  `prisma migrate deploy` before the application. With more than one task,
+  every task attempts the migration on every deploy and on every scale out.
+  This is already logged as deferred work, and it stops being deferrable the
+  moment a service runs more than one task. It wants to become a one off task
+  run before the service updates.
+- **Sixteen required variables, several of them secrets.** `CLERK_SECRET_KEY`,
+  `SMTP_PASSWORD` and `S3_SECRET_ACCESS_KEY` are credentials and belong in
+  Secrets Manager or SSM Parameter Store referenced by the task definition,
+  not in plain task definition environment entries where anyone with console
+  read can see them.
+- **`NODE_ENV` must be `production` and `DEV_TOKEN` must not exist in the task
+  definition at all.** The bypass grants admin whenever `NODE_ENV` is
+  `development` and `DEV_TOKEN` is set. See [`DEPLOYMENT.md`](DEPLOYMENT.md).
+- **The ingress repoint could be a listener rule.** The outstanding item, that
+  MOBILE 1.1.4 devices still call `POST /noti/api/register`, is a path rewrite.
+  A load balancer rule can carry it, which would close that item as part of
+  this work rather than separately.
+
+### DECIDED, 18-08-2026
+
+- **The managed stores are chosen per deployment target, not once.** Clarified
+  by the owner on 18-08-2026. **On the AWS path** Postgres is RDS, MongoDB is
+  DocumentDB and object storage is S3. **Anywhere else**, meaning any host that
+  simply pulls the Docker Hub image, the free tiers stay: MongoDB Atlas,
+  Supabase Postgres and Supabase Storage as they are used today. The AWS
+  choices are not a migration away from the free services, they are what that
+  one target uses.
+
+  **This makes portability a requirement rather than a nice property.** The
+  service has to keep running against both sets, so nothing may depend on an
+  AWS specific feature, and the code has to stay inside the intersection of
+  real MongoDB and DocumentDB rather than merely inside DocumentDB. Every store
+  is already reached through an environment variable and a standard driver, so
+  this holds today. It is a constraint on future work, not a change to make.
+
+  This is an engine and hosting decision either way. It does not unblock the
+  data storage design, which is a schema question and stays on hold.
+- **Fargate**, not EC2 backed capacity, on the AWS path.
+- **The image publishes to both ECR and Docker Hub**, from a separate workflow
+  file rather than by extending
+  `.github/workflows/docker-backend.testing.yml`.
+
+**No code for any of this yet.** The owner was explicit on 18-08-2026 that this
+is recorded as direction and is not to be started.
+
+### THINGS TO CHECK BEFORE BUILDING ANY OF IT
+
+Not objections. Each is cheap to check now and expensive to discover half way
+through a migration.
+
+- **DocumentDB is not MongoDB, and this now binds all deployments.** It
+  emulates a wire protocol version rather than being the same engine, and the
+  gaps are real: some aggregation stages, some `$lookup` forms, change streams
+  and transaction support all vary by version.
+
+  Because Atlas stays in use on the non AWS path, the code cannot simply be
+  ported to DocumentDB. It has to stay inside **the intersection** of the two
+  for as long as both are targets. The practical effect is that DocumentDB
+  becomes the limiting factor on what may be written against MongoDB anywhere,
+  including features added later that have nothing to do with AWS. The content
+  models should be checked against the target DocumentDB version before this is
+  committed to, because a query that looks compatible and then fails on one
+  aggregation stage in production is the bad outcome here.
+- **The S3 move is nearly free, and that is not an accident.** Storage already
+  speaks the S3 protocol through the AWS SDK, because Supabase was adopted over
+  that protocol on 11-08-2026. Moving to real S3 is mostly endpoint and
+  credential configuration. `forcePathStyle`, currently required for Supabase,
+  is not wanted against real S3, and `S3_PUBLIC_URL` stops needing to be a
+  separate host from `S3_ENDPOINT`.
+- **The buckets are public today** and the application stores a plain public
+  URL on the document which the clients fetch directly. On S3 that means either
+  deliberately relaxing block public access or putting CloudFront in front. It
+  has to be decided rather than inherited, because S3 blocks it by default and
+  Supabase did not.
+- **Two publish workflows means two copies of the tag logic.** The version and
+  tag derivation is the part worth sharing or keeping deliberately identical,
+  since drift between them would publish different tags to the two registries.
+  The Docker Hub description step has no ECR equivalent and should not be
+  duplicated.
+
+### STILL OPEN
+
+- **How the pipeline authenticates to AWS.** GitHub Actions supports OIDC role
+  assumption, which avoids storing long lived access keys as repository
+  secrets. Worth preferring over an access key pair.
+- **TLS.** Route 53 plus an ACM certificate terminating at the load balancer is
+  the usual shape, but nothing is chosen.
+
 ## NOTES
 
 - The current working branch is `feat/v2-architecture`. The entire codebase is being rewritten.
