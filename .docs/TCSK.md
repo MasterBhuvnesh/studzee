@@ -143,19 +143,55 @@ These are facts about the service today, not decisions about the design.
   A load balancer rule can carry it, which would close that item as part of
   this work rather than separately.
 
-### OPEN QUESTIONS, NOT YET DECIDED
+### DECIDED, 18-08-2026
 
-- **Where the data lives.** Content is on MongoDB and the notification data is
-  on Postgres, with object storage on Supabase. Whether those stay as managed
-  services outside AWS or move to RDS, DocumentDB and S3 is not decided, and
-  it interacts with the data storage design that is deliberately on hold.
-- **Whether ECR replaces Docker Hub or joins it.** The release workflow
-  publishes to Docker Hub today. ECS can pull from Docker Hub with credentials,
-  so ECR is a choice rather than a requirement.
+- **The data stores move into AWS.** Postgres becomes RDS, MongoDB becomes
+  DocumentDB, and object storage becomes S3. This is an engine and hosting
+  decision. It does not unblock the data storage design, which is a schema
+  question and stays on hold.
+- **Fargate**, not EC2 backed capacity.
+- **The image publishes to both ECR and Docker Hub**, from a separate workflow
+  file rather than by extending
+  `.github/workflows/docker-backend.testing.yml`.
+
+**No code for any of this yet.** The owner was explicit on 18-08-2026 that this
+is recorded as direction and is not to be started.
+
+### THINGS TO CHECK BEFORE BUILDING ANY OF IT
+
+Not objections. Each is cheap to check now and expensive to discover half way
+through a migration.
+
+- **DocumentDB is not MongoDB.** It emulates a wire protocol version rather
+  than being the same engine, and the gaps are real: some aggregation stages,
+  some `$lookup` forms, change streams and transaction support all vary by
+  version. The service uses Mongoose throughout, which mostly works, but the
+  aggregation and index usage in the content models should be checked against
+  the target DocumentDB version before committing to it. A migration that looks
+  compatible and then fails on one aggregation stage in production is the bad
+  outcome here.
+- **The S3 move is nearly free, and that is not an accident.** Storage already
+  speaks the S3 protocol through the AWS SDK, because Supabase was adopted over
+  that protocol on 11-08-2026. Moving to real S3 is mostly endpoint and
+  credential configuration. `forcePathStyle`, currently required for Supabase,
+  is not wanted against real S3, and `S3_PUBLIC_URL` stops needing to be a
+  separate host from `S3_ENDPOINT`.
+- **The buckets are public today** and the application stores a plain public
+  URL on the document which the clients fetch directly. On S3 that means either
+  deliberately relaxing block public access or putting CloudFront in front. It
+  has to be decided rather than inherited, because S3 blocks it by default and
+  Supabase did not.
+- **Two publish workflows means two copies of the tag logic.** The version and
+  tag derivation is the part worth sharing or keeping deliberately identical,
+  since drift between them would publish different tags to the two registries.
+  The Docker Hub description step has no ECR equivalent and should not be
+  duplicated.
+
+### STILL OPEN
+
 - **How the pipeline authenticates to AWS.** GitHub Actions supports OIDC role
   assumption, which avoids storing long lived access keys as repository
   secrets. Worth preferring over an access key pair.
-- **Fargate or EC2 backed capacity.**
 - **TLS.** Route 53 plus an ACM certificate terminating at the load balancer is
   the usual shape, but nothing is chosen.
 

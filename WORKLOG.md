@@ -88,12 +88,28 @@ One thing worth connecting: the outstanding ingress repoint, where MOBILE
 load balancer listener rule can carry. That item can close as part of this
 work rather than separately.
 
-Open questions are recorded rather than answered: whether the databases and
-object storage stay as managed services outside AWS or move to RDS,
-DocumentDB and S3, whether ECR replaces Docker Hub or joins it, how the
-pipeline authenticates to AWS, and Fargate against EC2 backed capacity. The
-first of those interacts with the data storage design that is on hold, so it
-cannot be settled before that is.
+The owner settled three of the open questions the same day. The data stores
+move into AWS, so Postgres becomes RDS, MongoDB becomes DocumentDB and object
+storage becomes S3. Capacity is Fargate. The image publishes to both ECR and
+Docker Hub, from a separate workflow file rather than by extending the
+existing one.
+
+Moving the engines does not unblock the data storage design. That is a schema
+question and it stays on hold.
+
+Three things are recorded to check before any of it is built. DocumentDB
+emulates a MongoDB wire protocol version rather than being the same engine, so
+the aggregation and index usage needs checking against the target version
+first. The S3 move is nearly free because storage already speaks the S3
+protocol, a side effect of adopting Supabase over that protocol on 11-08-2026,
+though `forcePathStyle` is not wanted against real S3. The buckets are public
+today, which on S3 has to be chosen deliberately rather than inherited.
+
+Still open: how the pipeline authenticates to AWS, where OIDC role assumption
+avoids long lived keys in repository secrets, and the TLS shape.
+
+**No code for any of this.** The owner was explicit that this is direction to
+record, not work to start.
 
 ## 2026-08-18
 
