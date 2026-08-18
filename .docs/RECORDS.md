@@ -52,6 +52,7 @@ Date is the date the status last changed.
 | Consolidate onto `@clerk/backend`, dropping the end of life `clerk-sdk-node` | BHUVNESH | DONE | 14-08-2026 |
 | Normalise line endings and gate CI on `fmt:check` | BHUVNESH | DONE | 14-08-2026 |
 | Deployment environment checklist in `.docs/DEPLOYMENT.md` | BHUVNESH | DONE | 14-08-2026 |
+| Docker Hub overview, OCI image labels and description sync | BHUVNESH | DONE | 18-08-2026 |
 | Cache or tokenise the admin role instead of calling Clerk per request | BHUVNESH | PLANNED | 14-08-2026 |
 | Move Prisma migrations out of the container start command | BHUVNESH | PLANNED | 13-08-2026 |
 | Data storage layer, database design | BHUVNESH | BLOCKED | 18-08-2026 |
