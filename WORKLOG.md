@@ -88,11 +88,25 @@ One thing worth connecting: the outstanding ingress repoint, where MOBILE
 load balancer listener rule can carry. That item can close as part of this
 work rather than separately.
 
-The owner settled three of the open questions the same day. The data stores
-move into AWS, so Postgres becomes RDS, MongoDB becomes DocumentDB and object
-storage becomes S3. Capacity is Fargate. The image publishes to both ECR and
-Docker Hub, from a separate workflow file rather than by extending the
-existing one.
+The owner settled three of the open questions the same day. Capacity is
+Fargate. The image publishes to both ECR and Docker Hub, from a separate
+workflow file rather than by extending the existing one. And the managed
+stores are chosen per deployment target rather than once: on the AWS path
+Postgres is RDS, MongoDB is DocumentDB and object storage is S3, while any
+host that simply pulls the Docker Hub image keeps the free tiers in use today,
+MongoDB Atlas and Supabase.
+
+That last point was first written here as a wholesale migration into AWS,
+which was wrong, and the owner corrected it the same day. The AWS services are
+what one target uses, not a replacement for the free ones.
+
+The correction matters more than a wording fix, because it makes portability a
+requirement rather than a property that happens to hold. The service has to
+keep running against both sets, so the code has to stay inside the
+intersection of real MongoDB and DocumentDB rather than merely inside
+DocumentDB, and DocumentDB becomes the limiting factor on what may be written
+against MongoDB anywhere. Every store is already reached through an
+environment variable and a standard driver, so nothing needs changing today.
 
 Moving the engines does not unblock the data storage design. That is a schema
 question and it stays on hold.
@@ -100,7 +114,9 @@ question and it stays on hold.
 Three things are recorded to check before any of it is built. DocumentDB
 emulates a MongoDB wire protocol version rather than being the same engine, so
 the aggregation and index usage needs checking against the target version
-first. The S3 move is nearly free because storage already speaks the S3
+first, and with Atlas staying in use elsewhere that check binds every
+deployment and not only the AWS one. The S3 move is nearly free because
+storage already speaks the S3
 protocol, a side effect of adopting Supabase over that protocol on 11-08-2026,
 though `forcePathStyle` is not wanted against real S3. The buckets are public
 today, which on S3 has to be chosen deliberately rather than inherited.

@@ -145,11 +145,24 @@ These are facts about the service today, not decisions about the design.
 
 ### DECIDED, 18-08-2026
 
-- **The data stores move into AWS.** Postgres becomes RDS, MongoDB becomes
-  DocumentDB, and object storage becomes S3. This is an engine and hosting
-  decision. It does not unblock the data storage design, which is a schema
-  question and stays on hold.
-- **Fargate**, not EC2 backed capacity.
+- **The managed stores are chosen per deployment target, not once.** Clarified
+  by the owner on 18-08-2026. **On the AWS path** Postgres is RDS, MongoDB is
+  DocumentDB and object storage is S3. **Anywhere else**, meaning any host that
+  simply pulls the Docker Hub image, the free tiers stay: MongoDB Atlas,
+  Supabase Postgres and Supabase Storage as they are used today. The AWS
+  choices are not a migration away from the free services, they are what that
+  one target uses.
+
+  **This makes portability a requirement rather than a nice property.** The
+  service has to keep running against both sets, so nothing may depend on an
+  AWS specific feature, and the code has to stay inside the intersection of
+  real MongoDB and DocumentDB rather than merely inside DocumentDB. Every store
+  is already reached through an environment variable and a standard driver, so
+  this holds today. It is a constraint on future work, not a change to make.
+
+  This is an engine and hosting decision either way. It does not unblock the
+  data storage design, which is a schema question and stays on hold.
+- **Fargate**, not EC2 backed capacity, on the AWS path.
 - **The image publishes to both ECR and Docker Hub**, from a separate workflow
   file rather than by extending
   `.github/workflows/docker-backend.testing.yml`.
@@ -162,14 +175,19 @@ is recorded as direction and is not to be started.
 Not objections. Each is cheap to check now and expensive to discover half way
 through a migration.
 
-- **DocumentDB is not MongoDB.** It emulates a wire protocol version rather
-  than being the same engine, and the gaps are real: some aggregation stages,
-  some `$lookup` forms, change streams and transaction support all vary by
-  version. The service uses Mongoose throughout, which mostly works, but the
-  aggregation and index usage in the content models should be checked against
-  the target DocumentDB version before committing to it. A migration that looks
-  compatible and then fails on one aggregation stage in production is the bad
-  outcome here.
+- **DocumentDB is not MongoDB, and this now binds all deployments.** It
+  emulates a wire protocol version rather than being the same engine, and the
+  gaps are real: some aggregation stages, some `$lookup` forms, change streams
+  and transaction support all vary by version.
+
+  Because Atlas stays in use on the non AWS path, the code cannot simply be
+  ported to DocumentDB. It has to stay inside **the intersection** of the two
+  for as long as both are targets. The practical effect is that DocumentDB
+  becomes the limiting factor on what may be written against MongoDB anywhere,
+  including features added later that have nothing to do with AWS. The content
+  models should be checked against the target DocumentDB version before this is
+  committed to, because a query that looks compatible and then fails on one
+  aggregation stage in production is the bad outcome here.
 - **The S3 move is nearly free, and that is not an accident.** Storage already
   speaks the S3 protocol through the AWS SDK, because Supabase was adopted over
   that protocol on 11-08-2026. Moving to real S3 is mostly endpoint and
