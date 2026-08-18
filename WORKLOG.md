@@ -58,6 +58,45 @@ Open items carried forward. Move each into a dated entry once it is done.
 
 ## 2026-08-18
 
+**Branch:** `docs/record-aws-terraform-plan`
+
+### Record the planned AWS and Terraform deployment
+
+The owner stated the intended deployment direction: infrastructure as code
+with Terraform, the backend on ECS with the image in ECR, behind a load
+balancer, with autoscaling and Route 53. Direction only. Nothing is designed
+or built, and no timeline is set.
+
+Recorded in [`.docs/TCSK.md`](.docs/TCSK.md) under planned infrastructure,
+with the constraints the service already imposes so they are not rediscovered
+later. The ones that will shape the design most:
+
+- The container listens on 3000, so that is the target group port.
+- `/health/liveness` is the health check to poll. `/health/readiness` round
+  trips three stores and is a deployment gate, not something to hit every few
+  seconds from every task.
+- Migrations run at container start, so every task attempts them on every
+  deploy and every scale out. Already logged as deferred work, this stops
+  being deferrable the moment the service runs more than one task.
+- Several of the sixteen required variables are credentials and belong in
+  Secrets Manager or Parameter Store rather than plain task definition
+  environment entries.
+- `DEV_TOKEN` must not exist in the task definition at all.
+
+One thing worth connecting: the outstanding ingress repoint, where MOBILE
+1.1.4 devices still call `POST /noti/api/register`, is a path rewrite that a
+load balancer listener rule can carry. That item can close as part of this
+work rather than separately.
+
+Open questions are recorded rather than answered: whether the databases and
+object storage stay as managed services outside AWS or move to RDS,
+DocumentDB and S3, whether ECR replaces Docker Hub or joins it, how the
+pipeline authenticates to AWS, and Fargate against EC2 backed capacity. The
+first of those interacts with the data storage design that is on hold, so it
+cannot be settled before that is.
+
+## 2026-08-18
+
 **Branch:** `chore/rename-image-to-studzee-api`
 
 ### Rename the published image to studzee-api

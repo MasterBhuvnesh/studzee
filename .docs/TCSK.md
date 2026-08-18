@@ -103,6 +103,62 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 - Buckets are public. The application stores a plain public URL on the document and the clients fetch it directly. Signed URLs were considered and rejected.
 - MinIO stays for local development. It is not replaced by pointing local work at Supabase.
 
+## PLANNED INFRASTRUCTURE, TERRAFORM ON AWS
+
+Stated by the owner on 18-08-2026. Direction only, nothing is designed or
+built yet, and no timeline is set. Recorded so the constraints that already
+exist are not rediscovered when the work starts.
+
+The intent is infrastructure as code with Terraform, deploying the backend to
+AWS on ECS with the image in ECR, behind a load balancer, with autoscaling and
+Route 53 in front.
+
+### WHAT THE BACKEND ALREADY IMPLIES FOR THIS
+
+These are facts about the service today, not decisions about the design.
+
+- **The container listens on 3000.** The image declares `EXPOSE 3000` and its
+  healthcheck probes 3000. The target group port is 3000 whatever the listener
+  does in front of it.
+- **`/health/liveness` is the health check to point a target group at.**
+  `/health/readiness` round trips MongoDB, Postgres and Redis on every call,
+  which is right for a deployment gate and wrong for something polled every
+  few seconds across every task.
+- **Migrations on container start block autoscaling.** The image runs
+  `prisma migrate deploy` before the application. With more than one task,
+  every task attempts the migration on every deploy and on every scale out.
+  This is already logged as deferred work, and it stops being deferrable the
+  moment a service runs more than one task. It wants to become a one off task
+  run before the service updates.
+- **Sixteen required variables, several of them secrets.** `CLERK_SECRET_KEY`,
+  `SMTP_PASSWORD` and `S3_SECRET_ACCESS_KEY` are credentials and belong in
+  Secrets Manager or SSM Parameter Store referenced by the task definition,
+  not in plain task definition environment entries where anyone with console
+  read can see them.
+- **`NODE_ENV` must be `production` and `DEV_TOKEN` must not exist in the task
+  definition at all.** The bypass grants admin whenever `NODE_ENV` is
+  `development` and `DEV_TOKEN` is set. See [`DEPLOYMENT.md`](DEPLOYMENT.md).
+- **The ingress repoint could be a listener rule.** The outstanding item, that
+  MOBILE 1.1.4 devices still call `POST /noti/api/register`, is a path rewrite.
+  A load balancer rule can carry it, which would close that item as part of
+  this work rather than separately.
+
+### OPEN QUESTIONS, NOT YET DECIDED
+
+- **Where the data lives.** Content is on MongoDB and the notification data is
+  on Postgres, with object storage on Supabase. Whether those stay as managed
+  services outside AWS or move to RDS, DocumentDB and S3 is not decided, and
+  it interacts with the data storage design that is deliberately on hold.
+- **Whether ECR replaces Docker Hub or joins it.** The release workflow
+  publishes to Docker Hub today. ECS can pull from Docker Hub with credentials,
+  so ECR is a choice rather than a requirement.
+- **How the pipeline authenticates to AWS.** GitHub Actions supports OIDC role
+  assumption, which avoids storing long lived access keys as repository
+  secrets. Worth preferring over an access key pair.
+- **Fargate or EC2 backed capacity.**
+- **TLS.** Route 53 plus an ACM certificate terminating at the load balancer is
+  the usual shape, but nothing is chosen.
+
 ## NOTES
 
 - The current working branch is `feat/v2-architecture`. The entire codebase is being rewritten.
