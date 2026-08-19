@@ -240,5 +240,5 @@ jobs:
       # The container runs prisma migrate deploy before the app, so the deploy
       # target needs DATABASE_URL reachable at boot or it exits 1 with P1001.
       # # # Trigger Render deploy hook ( uncomment when using Render.com )
-      # - name: Trigger Render deploy hook
-      #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
+      - name: Trigger Render deploy hook
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
