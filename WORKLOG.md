@@ -56,6 +56,45 @@ Open items carried forward. Move each into a dated entry once it is done.
 - Style: no em dashes, no emoji, in code, comments, commits, and documentation.
 - Comments: specific and professional, explaining intent rather than restating the code.
 
+## 2026-08-20
+
+**Branch:** `fix/mobile-notification-token-registration`
+
+### Fix the mobile notification registration bug and loop
+
+- `NotificationContext` never exposed `registerToken`, even though
+  `types/notification.ts` documented that shape. That type was dead code,
+  never imported anywhere. `useNotificationPermissions.ts` had been patched
+  around it with an optional cast, `registerToken?.()`, which silenced the
+  type error but made manual re-registration after a permission grant a
+  permanent no-op.
+- Extracted the provider's registration flow into a `registerToken` callback
+  and exposed it on the context for real, then removed the cast in the hook.
+- That surfaced a second, live bug. The auto-register effect depended on
+  `[user, getToken]`. Clerk's `getToken` is not referentially stable across
+  renders, and `setIsLoading`/`setExpoPushToken` inside `registerToken`
+  itself trigger a re-render, so the effect kept recreating `registerToken`
+  and refiring itself. Confirmed in device logs: dozens of duplicate
+  `POST /notifications/register` calls in a single session, ending in the
+  backend responding 429. Fixed by keying the effect on the signed-in email,
+  a stable string, and reading `getToken` through a ref instead of the
+  dependency array.
+- Removed the unused `NotificationContextType` interface from
+  `types/notification.ts`. It described a larger shape, permission state
+  merged into the context, that was never built and had drifted from the
+  real implementation.
+- `MOBILE/utils/config.ts` now points at the deployed backend,
+  `https://studzee-api-latest.onrender.com`, replacing the placeholder
+  `api.studzee.in` host.
+- Wrote `MOBILE/studzee.design.mobile.expo.md`, covering navigation and the
+  provider tree, the notification pipeline, the custom alert, the bottom
+  sheet, how a downloaded PDF is tracked in `expo-secure-store`, the two
+  separate code paths for viewing a PDF on device versus streaming one from
+  its remote URL, share, the skeleton loading pattern, and a package
+  reference table. Also records gaps found while writing it: alert and
+  skeleton logic duplicated per screen rather than shared, and
+  `screens/[id].tsx` never checks download state for its own PDF list.
+
 ## 2026-08-18
 
 **Branch:** `docs/record-aws-terraform-plan`

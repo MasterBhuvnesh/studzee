@@ -77,7 +77,9 @@ Date is the date the status last changed.
 | FEATURE | DEVELOPER | STATUS | DATE |
 | ------- | --------- | ------ | ---- |
 | Point MOBILE at `/notifications/register` on the merged backend | BHUVNESH | DONE | 10-08-2026 |
-| Fix `registerToken` missing from the mobile notification context | BHUVNESH | PLANNED | 10-08-2026 |
+| Fix `registerToken` missing from the mobile notification context | BHUVNESH | DONE | 20-08-2026 |
+| Fix the notification auto-register effect refiring on every render | BHUVNESH | DONE | 20-08-2026 |
+| Document the mobile app design, `MOBILE/studzee.design.mobile.expo.md` | BHUVNESH | DONE | 20-08-2026 |
 | MOBILE rewrite, after the backend is settled | BHUVNESH | PLANNED | 10-08-2026 |
 | DESKTOP rewrite, after the backend is settled | BHUVNESH | PLANNED | 10-08-2026 |
 
