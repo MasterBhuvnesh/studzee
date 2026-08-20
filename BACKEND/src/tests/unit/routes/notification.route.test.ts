@@ -135,4 +135,22 @@ describe('POST /notifications/register', () => {
     expect(res.status).toBe(404)
     expect(clerkAuthMiddleware).not.toHaveBeenCalled()
   })
+
+  // MOBILE 1.1.4 was built before the notification service merged into this
+  // backend and still calls the old /noti/api prefix. index.ts mounts this
+  // same router a second time at /noti/api so those devices keep working.
+  // This pins that mount, not the router itself, so a future refactor of
+  // index.ts's route list that drops it fails here instead of in production.
+  it('should also work mounted at /noti/api for old MOBILE clients', async () => {
+    const { default: notificationRoute } =
+      await import('@/api/routes/notification.route')
+    const compatApp = express()
+      .use(express.json())
+      .use('/noti/api', notificationRoute)
+
+    const res = await request(compatApp).post('/noti/api/register').send(valid)
+
+    expect(res.status).toBe(200)
+    expect(registerDevice).toHaveBeenCalledTimes(1)
+  })
 })
