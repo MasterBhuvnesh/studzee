@@ -82,15 +82,6 @@ const main = async () => {
     app.use('/content', contentRoutes)
     app.use('/pdfs', pdfRoutes)
     app.use('/notifications', notificationRoutes)
-
-    // Compatibility mount for devices still running MOBILE 1.1.4, which was
-    // built before the notification service merged into this backend and
-    // still calls the old /noti/api prefix. Same router, so it gets the exact
-    // same auth, rate limit and validation as /notifications/register. Remove
-    // once those devices are confirmed off the old build, or once an ALB
-    // listener rule takes over this rewrite in the AWS deployment.
-    app.use('/noti/api', notificationRoutes)
-
     app.use('/admin', adminRoutes)
     app.use('/health', healthRoutes)
     app.use('/', healthcheckRoute)

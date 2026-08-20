@@ -60,6 +60,18 @@ Open items carried forward. Move each into a dated entry once it is done.
 
 **Branch:** `fix/mobile-notification-token-registration`
 
+### Remove the /noti/api compat mount, same day it was added
+
+- The owner has updated the MOBILE builds that were still calling
+  `/noti/api/register` to call `/notifications/register` directly, so the
+  compat mount added earlier today has nothing left to serve. Removed the
+  `app.use('/noti/api', notificationRoutes)` line in `BACKEND/src/index.ts`
+  and the test that pinned it in `notification.route.test.ts`, back to 6
+  tests in that file. `tsc --noEmit` and `fmt:check` clean.
+- Updated `.docs/TCSK.md` and `.docs/RECORDS.md` to record that this was
+  resolved by updating the clients, not by a backend repoint, since the two
+  entries added earlier today described a fix that no longer exists.
+
 ### Compatibility mount for old MOBILE builds calling /noti/api
 
 - Confirmed the "repoint the ingress" OPEN WORK item was not actually fixed
