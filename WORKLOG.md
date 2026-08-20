@@ -60,6 +60,26 @@ Open items carried forward. Move each into a dated entry once it is done.
 
 **Branch:** `fix/mobile-notification-token-registration`
 
+### Compatibility mount for old MOBILE builds calling /noti/api
+
+- Confirmed the "repoint the ingress" OPEN WORK item was not actually fixed
+  when asked. `POST /noti/api/register` was only ever documented as a
+  migration mapping in `README.md`, `API.md` and the Postman collection,
+  nothing in `index.ts` served that path, so devices still running the
+  released MOBILE 1.1.4 build have been getting a 404 on every registration
+  attempt since the merge.
+- Fixed by mounting `notificationRoutes` a second time at `/noti/api` in
+  `BACKEND/src/index.ts`. Same router as `/notifications`, so the old path
+  gets identical auth, rate limiting and validation, no duplicated logic.
+  Stopgap by design, an ALB listener rule is the cleaner long term home for
+  this rewrite once the AWS deployment exists.
+- Added one test in `notification.route.test.ts` pinning the compat mount
+  itself, so a future refactor of `index.ts`'s route list that drops it
+  fails in CI rather than in production. `tsc --noEmit`, `fmt:check`, and
+  `lint` all clean, the notification route test file passes 7 of 7.
+- Updated `.docs/TCSK.md` (both the AWS section's mention of this item and
+  the OPEN WORK bullet) and `.docs/RECORDS.md` to reflect the fix.
+
 ### Redesign the Resources PDF card, record the content and gamification plan
 
 - Restyled the PDF list in `MOBILE/app/screens/[id].tsx` to match the pill

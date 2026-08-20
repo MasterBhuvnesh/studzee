@@ -138,10 +138,12 @@ These are facts about the service today, not decisions about the design.
 - **`NODE_ENV` must be `production` and `DEV_TOKEN` must not exist in the task
   definition at all.** The bypass grants admin whenever `NODE_ENV` is
   `development` and `DEV_TOKEN` is set. See [`DEPLOYMENT.md`](DEPLOYMENT.md).
-- **The ingress repoint could be a listener rule.** The outstanding item, that
-  MOBILE 1.1.4 devices still call `POST /noti/api/register`, is a path rewrite.
-  A load balancer rule can carry it, which would close that item as part of
-  this work rather than separately.
+- **The ingress repoint could be a listener rule, but a stopgap already
+  exists.** Fixed 21-08-2026: `index.ts` mounts `notificationRoutes` a second
+  time at `/noti/api`, so `POST /noti/api/register` gets the same handler as
+  `/notifications/register` today. An ALB listener rule doing the same
+  rewrite would still be the cleaner long term home for it once this work
+  happens, at which point the in-process mount can come out.
 
 ### DECIDED, 18-08-2026
 
@@ -303,7 +305,7 @@ expect this to change based on user feedback.
 
 - **Features the owner is planning, stated 18-08-2026, elaborated 21-08-2026.** A user tracker that saves a user's quiz results, and surprise or scheduled quizzes derived from that response history. See [PLANNED CONTENT AND GAMIFICATION FEATURES](#planned-content-and-gamification-features) above for the full breakdown: the gamified tracker, a generic topic tag content model plus a blog section, JSON toward Markdown content authoring, and profile section gamification. Do not build or design them yet, the data storage layer this depends on is still on hold.
 
-- Repoint the ingress so devices running the released MOBILE 1.1.4 keep registering. They still call `POST /noti/api/register`, which no longer exists.
+- **Fixed 21-08-2026.** Devices running the released MOBILE 1.1.4 kept calling `POST /noti/api/register`, which nothing served, only documented as a migration mapping. `index.ts` now mounts `notificationRoutes` a second time at `/noti/api` as a stopgap, so the old path works identically to `/notifications/register`. An ALB listener rule remains the cleaner long term fix once the AWS deployment exists.
 - **`.github` was brought up to date on 14-08-2026.** The website and notification workflows were deleted, both having built directories removed on 10-08-2026. `SECURITY.md` and `CONTRIBUTING.md` no longer list them as supported services or valid commit scopes. `.github/README.md` keeps its roadmap content but now carries a status header separating intent from what exists, and the sections describing NOTIFICATION as a separate service, a web client, and Terraform and Kubernetes as present tense are corrected. Two workflows remain: `docker-backend.testing.yml` and `bug-reproduction-instructions.yml`.
 - **`.github/README.md` is deliberately not a full rewrite.** The v2 architecture is not settled, so rewriting the architecture sections would mean inventing decisions that have not been taken. It is marked as roadmap instead. Revisit once the data storage layer is specified.
 - **Backend workflow items left open on 14-08-2026, deliberately not changed:**
