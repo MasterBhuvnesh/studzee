@@ -13,7 +13,13 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { ArrowLeft, Calendar, Download, Eye } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Calendar,
+  Download,
+  Eye,
+  Loader2,
+} from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   NativeScrollEvent,
@@ -387,79 +393,81 @@ export default function ContentDetailPage() {
                   <Text className="mb-3 font-product text-xl text-zinc-800">
                     Resources
                   </Text>
-                  {content.pdfUrl.map((pdf, index) => (
-                    <View
-                      key={index}
-                      className="mb-3 flex-row items-center overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4"
-                    >
-                      {/* PDF Icon and Info */}
-                      <View className="flex-1 flex-row items-center gap-3">
-                        <Image
-                          source={require('@/assets/images/pdf.svg')}
-                          style={{ width: 28, height: 28 }}
-                          contentFit="contain"
-                        />
-                        <View className="flex-1">
-                          <Text className="font-sans text-sm font-medium text-zinc-800">
-                            {pdf.name}
-                          </Text>
-                          <Text className="mt-0.5 font-sans text-xs text-zinc-500">
-                            {(pdf.size / 1024).toFixed(2)} KB
-                          </Text>
-                        </View>
-                      </View>
+                  {content.pdfUrl.map((pdf, index) => {
+                    const isDownloading = downloadingPdfIndex === index;
 
-                      {/* Action Buttons */}
-                      <View className="ml-2 flex-row gap-2">
-                        {/* View Button */}
-                        <TouchableOpacity
-                          onPress={() => handleViewPdf(pdf.url, pdf.name)}
-                          className="rounded-lg border border-zinc-200 bg-zinc-50 p-2 active:bg-zinc-100"
-                          activeOpacity={0.7}
-                        >
-                          <AppIcon
-                            Icon={Eye}
-                            color={colors.zinc[600]}
-                            size={18}
-                            strokeWidth={1.5}
-                          />
-                        </TouchableOpacity>
-
-                        {/* Download Button */}
-                        <TouchableOpacity
-                          onPress={() =>
-                            handleDownloadPdf(
-                              pdf.url,
-                              pdf.name,
-                              pdf.size,
-                              index
-                            )
-                          }
-                          disabled={downloadingPdfIndex === index}
-                          className="rounded-lg border border-zinc-200 bg-zinc-50 p-2 active:bg-zinc-100"
-                          activeOpacity={0.7}
-                        >
-                          {downloadingPdfIndex === index ? (
-                            <View
-                              style={{ width: 18, height: 18 }}
-                              className="items-center justify-center"
+                    return (
+                      <View
+                        key={index}
+                        className="mb-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5"
+                      >
+                        {/* PDF Icon and Info */}
+                        <View className="flex-row items-center gap-3">
+                          <View className="h-12 w-12 items-center justify-center rounded-xl bg-zinc-50">
+                            <Image
+                              source={require('@/assets/images/pdf.svg')}
+                              style={{ width: 24, height: 24 }}
+                              contentFit="contain"
+                            />
+                          </View>
+                          <View className="flex-1">
+                            <Text
+                              className="font-sans text-sm font-medium text-zinc-800"
+                              numberOfLines={2}
                             >
-                              <Text className="font-sans text-xs text-zinc-500">
-                                ...
-                              </Text>
-                            </View>
-                          ) : (
+                              {pdf.name}
+                            </Text>
+                            <Text className="mt-1 self-start rounded-full bg-zinc-100 px-2 py-0.5 font-sans text-xs text-zinc-500">
+                              {(pdf.size / 1024).toFixed(2)} KB
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Action Buttons */}
+                        <View className="mt-4 flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={() => handleViewPdf(pdf.url, pdf.name)}
+                            className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 active:bg-blue-100"
+                            activeOpacity={0.7}
+                          >
                             <AppIcon
-                              Icon={Download}
+                              Icon={Eye}
+                              color={colors.blue[600]}
+                              size={18}
+                              strokeWidth={1.5}
+                            />
+                            <Text className="font-sans text-sm font-medium text-blue-500">
+                              View
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() =>
+                              handleDownloadPdf(
+                                pdf.url,
+                                pdf.name,
+                                pdf.size,
+                                index
+                              )
+                            }
+                            disabled={isDownloading}
+                            className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 active:bg-zinc-100"
+                            activeOpacity={0.7}
+                          >
+                            <AppIcon
+                              Icon={isDownloading ? Loader2 : Download}
                               color={colors.zinc[600]}
                               size={18}
                               strokeWidth={1.5}
                             />
-                          )}
-                        </TouchableOpacity>
+                            <Text className="font-sans text-sm font-medium text-zinc-500">
+                              {isDownloading ? 'Downloading...' : 'Download'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </View>
               )}
 
