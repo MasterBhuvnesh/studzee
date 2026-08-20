@@ -56,6 +56,32 @@ Open items carried forward. Move each into a dated entry once it is done.
 - Style: no em dashes, no emoji, in code, comments, commits, and documentation.
 - Comments: specific and professional, explaining intent rather than restating the code.
 
+## 2026-08-21
+
+**Branch:** `fix/mobile-notification-token-registration`
+
+### Redesign the Resources PDF card, record the content and gamification plan
+
+- Restyled the PDF list in `MOBILE/app/screens/[id].tsx` to match the pill
+  button language already used in `DownloadedPdfInfo.tsx`: icon tile, size as
+  a badge, view/download as full-width labeled pills. Visual only, no change
+  to `handleViewPdf`, `handleDownloadPdf`, or `downloadingPdfIndex`. This
+  screen still does not check `isPdfDownloaded`, that gap stays tracked in
+  `studzee.design.mobile.expo.md`, out of scope for this change by the
+  owner's choice.
+- Recorded a four part content and gamification plan in `.docs/TCSK.md`
+  under a new "PLANNED CONTENT AND GAMIFICATION FEATURES" section: the
+  gamified user tracker (points, streaks, badges, unlockable content,
+  confirmed 21-08-2026, no leaderboard), a generic topic tag content model
+  replacing the hardcoded "Machine Learning" home screen title and the
+  hardcoded "System Design" locked card, a blog or journal section riding on
+  the same topic tagging, JSON toward Markdown content authoring for future
+  diagram support (explicitly provisional, the owner is not settled on it),
+  and a gamified replacement for the static "Upcoming" section in
+  `profile.tsx`. All four are direction only, nothing designed or built. The
+  gamified tracker specifically still waits on the data storage layer, which
+  stays on hold per V2 PLAN step 2.
+
 ## 2026-08-20
 
 **Branch:** `fix/mobile-notification-token-registration`

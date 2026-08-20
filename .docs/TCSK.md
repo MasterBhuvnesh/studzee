@@ -213,6 +213,78 @@ through a migration.
 - **TLS.** Route 53 plus an ACM certificate terminating at the load balancer is
   the usual shape, but nothing is chosen.
 
+## PLANNED CONTENT AND GAMIFICATION FEATURES
+
+Stated by the owner on 21-08-2026, elaborating the user tracker item already
+recorded under OPEN WORK. Direction only, nothing is designed or built, no
+timeline. Four workstreams, recorded so the shape is not lost before the data
+storage design reopens.
+
+### 1. GAMIFIED USER TRACKER
+
+Elaborates the existing on-hold item: a user tracker that saves quiz results
+and derives a gamified result from them.
+
+- Store a per-user, per-content quiz attempt, score and timestamp.
+- Track play-day history, so a streak can be derived from it.
+- Points: a scoring rule mapping a quiz result to points.
+- Streak counter, derived from play-day history.
+- Badges or levels at point thresholds.
+- Unlockable content, gated by points.
+- Confirmed 21-08-2026: rewards take the form of streaks, badges/levels, and
+  unlockable content. A leaderboard was considered and not chosen.
+
+**Still blocked on the standing decision in V2 PLAN step 2:** the schema and
+storage design wait until MOBILE and DESKTOP are done. This list adds detail
+to what that schema needs to carry, it does not unblock designing it. Do not
+raise a schema for this until the owner reopens step 2.
+
+### 2. GENERIC TOPIC TAG CONTENT MODEL, PLUS A BLOG SECTION
+
+Today nothing tags what subject a piece of content belongs to. Confirmed
+21-08-2026 against `MOBILE/app/(tabs)/index.tsx`: the home screen hardcodes
+the section title `"Machine Learning"` for all fetched content, and renders a
+separate hardcoded `LockedContentSection title="System Design"` card. The app
+is effectively single subject today despite looking topic based.
+
+- Add a `topic` field to the content model.
+- Home screen renders sections from the distinct topics actually present in
+  the data, replacing both hardcoded strings above.
+- Taxonomy not decided: a fixed list, for example Machine Learning, System
+  Design, DevOps, AWS, Data, Deep Learning, versus freeform tags.
+- Admin or content creation flow needs a topic selector. Not built, this is
+  DESKTOP work.
+- A blog or journal section, daily posts or news, becomes possible once
+  content carries a topic or content type, either as a new content type or as
+  another topic value.
+
+### 3. CONTENT AUTHORING, JSON BLOCKS TOWARD MARKDOWN
+
+Explicitly provisional. The owner said outright they are not sure yet and
+expect this to change based on user feedback.
+
+- Motivation is diagram support in content, which the current block structure
+  does not carry.
+- Today's shape, confirmed 21-08-2026 in `MOBILE/components/content/contentmd.tsx`:
+  content is a typed JSON structure, `ContentSection[]`, sections holding
+  typed blocks (`type: 'text'`, and others). Individual text blocks already
+  render through `react-native-enriched-markdown`'s `EnrichedMarkdownText`,
+  so markdown syntax inside a text block already works. Moving to markdown
+  authoring is a structural change away from typed JSON blocks, not merely
+  turning on markdown rendering, most of which already exists.
+- A sibling file, `contentmd.backup.tsx`, sits next to the live component.
+  Someone already iterated on this once. Worth reading before redesigning it.
+- Open questions once this is picked up: markdown stored as a string field
+  versus actual files, migrating existing JSON content, and how a markdown
+  document maps onto the section structure the renderer expects today.
+
+### 4. PROFILE SECTION GAMIFICATION
+
+- Replace the static "Upcoming" section in `MOBILE/app/(tabs)/profile.tsx`
+  with a points, streak and badges display.
+- Depends on workstream 1 existing on the backend first. This is a client for
+  that data, not an independent piece of work.
+
 ## NOTES
 
 - The current working branch is `feat/v2-architecture`. The entire codebase is being rewritten.
@@ -229,7 +301,7 @@ through a migration.
 
 ### OPEN WORK
 
-- **Features the owner is planning, stated 18-08-2026, not yet specified.** A user tracker that saves a user's quiz results, and surprise or scheduled quizzes derived from that response history. The owner is explicit that the shape is not decided yet. These are recorded so that whoever designs the data storage layer knows the schema has to carry per user quiz attempts and responses over time, not just the content documents it holds today. Do not build or design them yet.
+- **Features the owner is planning, stated 18-08-2026, elaborated 21-08-2026.** A user tracker that saves a user's quiz results, and surprise or scheduled quizzes derived from that response history. See [PLANNED CONTENT AND GAMIFICATION FEATURES](#planned-content-and-gamification-features) above for the full breakdown: the gamified tracker, a generic topic tag content model plus a blog section, JSON toward Markdown content authoring, and profile section gamification. Do not build or design them yet, the data storage layer this depends on is still on hold.
 
 - Repoint the ingress so devices running the released MOBILE 1.1.4 keep registering. They still call `POST /noti/api/register`, which no longer exists.
 - **`.github` was brought up to date on 14-08-2026.** The website and notification workflows were deleted, both having built directories removed on 10-08-2026. `SECURITY.md` and `CONTRIBUTING.md` no longer list them as supported services or valid commit scopes. `.github/README.md` keeps its roadmap content but now carries a status header separating intent from what exists, and the sections describing NOTIFICATION as a separate service, a web client, and Terraform and Kubernetes as present tense are corrected. Two workflows remain: `docker-backend.testing.yml` and `bug-reproduction-instructions.yml`.
@@ -240,7 +312,7 @@ through a migration.
   - `npm run fmt:check` became a gate on 14-08-2026, once `.gitattributes` forced LF in the working tree. `make check` now runs four gates, not three.
   - Action versions are floating major tags rather than commit SHAs.
   - Docker Hub login uses `DOCKER_PASSWORD` rather than a scoped access token.
-- `hooks/useNotificationPermissions.ts` in MOBILE reads `registerToken` from a context that does not declare it, so `tsc` fails there. Predates the merge.
+- **Fixed 20-08-2026.** `hooks/useNotificationPermissions.ts` in MOBILE used to read `registerToken` from a context that did not declare it. `NotificationContext` now exposes it for real. That fix also caught a live bug: the auto-register effect depended on `[user, getToken]`, and Clerk's `getToken` is not referentially stable, so the effect refired on every render the registration flow caused itself, sending dozens of duplicate `POST /notifications/register` calls in one session until the backend answered 429. Fixed by keying the effect on the signed-in email and reading `getToken` through a ref. See `MOBILE/studzee.design.mobile.expo.md` for the full notification flow.
 - **Extend the backend test coverage.** Done on 14-08-2026, 49 to 91 percent, no file at 0. What remains is 43 statements across `email.service.ts`, `content.service.ts`, `expo.service.ts` and `health.route.ts`, which are transport, retry and timeout branches needing a fake SMTP or Expo endpoint to reach. Treat this as finished unless a specific bug points at one of them. See the `coverage.exclude` list in `vitest.config.ts` for what is exempt.
 
 ### CLERK
