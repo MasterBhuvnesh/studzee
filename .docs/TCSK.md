@@ -300,6 +300,94 @@ expect this to change based on user feedback.
 - Depends on workstream 1 existing on the backend first. This is a client for
   that data, not an independent piece of work.
 
+## MOBILE GAME FEEL AND GROWTH BACKLOG, RECORDED 25-08-2026
+
+Stated by the owner in one pass. Direction only, nothing designed or built.
+The owner intends to start working through this list; each item notes what
+already exists and what it needs so tomorrow's work can start anywhere.
+
+### 1. ACHIEVEMENTS SCREEN
+
+- New pushed screen (`app/screens/achievements.tsx`), deliberately not a tab.
+- Levels: highlight the current level and show the point cost of the next.
+- Badges: unlocked versus locked state for every badge in the catalog.
+- Data already sufficient for v1: `GET /progress/me` returns `level`,
+  `nextLevel`, `badges` and `allBadges` with awarded flags.
+
+### 2. BADGE AND LEVEL ARTWORK
+
+- The owner will supply images or SVGs per badge and level.
+- Render through `react-native-svg` or `expo-image`; keep the current lucide
+  chips as the fallback until assets land.
+
+### 3. POINTS AS GEMS
+
+- Give the points currency a gem style logo used across profile,
+  achievements, quiz results and the locked content message, for game feel.
+
+### 4. ACHIEVEMENT CELEBRATION ANIMATION
+
+- Modal component in the spirit of `CustomAlert` that fires when any badge or
+  level is hit, plus a full score celebration on quizzes.
+- Lottie based (`lottie-react-native`, a new dependency) with animation files
+  to be sourced by the owner.
+- Trigger data already flows today: `submitQuizAttempt` returns `newBadges`
+  and the updated totals.
+
+### 5. QUESTS
+
+- Quest types named by the owner: weekly test, monthly test, prove your
+  knowledge of a specific topic, and other tasks, awarding points on
+  completion.
+- Needs backend design first: quest definitions, scheduling (node-cron is
+  already a dependency), assignment and completion tracking, and award
+  integration with the existing points service.
+- Extends the tracker schema, so picking this up reopens a slice of the
+  storage design with the owner.
+
+### 6. STREAK HEATMAP
+
+- GitHub contribution graph style yearly grid of active days.
+- Data exists (`DailyActivity` rows); missing piece is an endpoint exposing
+  the day map, for example `GET /progress/me/activity?year=`.
+
+### 7. CONTENT READING POLISH
+
+- A transparent gradient scrim above the tab bar area while reading content.
+
+### 8. IN APP NOTIFICATIONS
+
+- Surface quizzes and events inside the app itself, separate from Expo push.
+
+### 9. BLOG TAGS
+
+- Tags on blog content beyond the topic field; extends the topic model once
+  the blog exists.
+
+### 10. SUPPORT AGENT
+
+- A small model powered get support assistant inside the app.
+
+### 11. NEWSLETTER AGENT
+
+- Automated newsletter sending. Standing house rule applies in full: no email
+  leaves without explicit owner approval, so the design must include a draft
+  and approval gate rather than an unattended sender.
+
+### 12. AI AGENT WITH MONETIZATION
+
+- An AI agent paid for by subscription, or driven by a user's own API key
+  from a listed provider set.
+- Open questions before design: which providers make the list, where keys
+  live (device SecureStore versus server side), usage limits, and how
+  subscription payment is processed.
+
+### SUGGESTED ORDER FOR TOMORROW
+
+Quick client wins first (1 to 4 use endpoints that exist), then the two
+small backend slices (5 and 6), then the larger product pieces (8 to 12).
+Items 2 and 3 are blocked only on artwork arriving.
+
 ### DESKTOP WORK NOTED FOR LATER, 25-08-2026
 
 Owner deferred all DESKTOP work for now. When the console rewrite starts it

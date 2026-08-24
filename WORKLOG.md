@@ -29,6 +29,13 @@ One entry per unit of work, with the branch, what changed, and why.
 
 Open items carried forward. Move each into a dated entry once it is done.
 
+- **Work through the mobile game feel and growth backlog.** Recorded in
+  TCSK on 25-08-2026 as twelve numbered items: achievements screen, badge and
+  level artwork, points as gems, celebration animations, quests, streak
+  heatmap, reading polish, in app notifications, blog tags, support agent,
+  newsletter agent with its mandatory approval gate, and the subscription or
+  bring your own key AI agent. Suggested order is in the section.
+
 - **Repoint the ingress so already installed apps keep working.** MOBILE source
   now calls `/notifications/register`, but every device running the released
   1.1.4 build still calls `POST /noti/api/register`, which no longer exists.

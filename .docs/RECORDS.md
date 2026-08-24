@@ -60,6 +60,18 @@ Date is the date the status last changed.
 | Fixed topic registry and topic filtering on the content API, with sample content for four topics | BHUVNESH | DONE | 25-08-2026 |
 | Gamified user tracker on Postgres: quiz attempts, points, streaks, badges, levels, unlock gate | BHUVNESH | DONE | 25-08-2026 |
 | MOBILE profile gamification card and server graded quiz submission | BHUVNESH | DONE | 25-08-2026 |
+| Achievements screen (levels, badge states) | BHUVNESH | PLANNED | 25-08-2026 |
+| Badge and level artwork assets | BHUVNESH | PLANNED | 25-08-2026 |
+| Points presented as gems | BHUVNESH | PLANNED | 25-08-2026 |
+| Achievement and full score celebration animation (Lottie) | BHUVNESH | PLANNED | 25-08-2026 |
+| Quests: weekly, monthly, topic tests awarding points | BHUVNESH | PLANNED | 25-08-2026 |
+| Yearly streak heatmap from daily activity | BHUVNESH | PLANNED | 25-08-2026 |
+| Content reading gradient polish | BHUVNESH | PLANNED | 25-08-2026 |
+| In app notifications for quizzes and events | BHUVNESH | PLANNED | 25-08-2026 |
+| Blog content tags | BHUVNESH | PLANNED | 25-08-2026 |
+| In app support agent (small model) | BHUVNESH | PLANNED | 25-08-2026 |
+| Newsletter agent with approval gate | BHUVNESH | PLANNED | 25-08-2026 |
+| AI agent with subscription or bring your own key | BHUVNESH | PLANNED | 25-08-2026 |
 
 ## DOCUMENTATION
 
