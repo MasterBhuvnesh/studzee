@@ -255,11 +255,36 @@ stuck pointing at a missing file.
 
 ## KNOWN GAPS, NOT FIXED, JUST RECORDED
 
-- Alert state (`alertConfig` + `showAlert`/`hideAlert`) and skeleton markup
-  are duplicated per screen rather than pulled into a shared hook or
-  component. `pdfs.tsx` and `resources.tsx` in particular implement close to
-  the same download/view/share/remove logic independently.
-- `screens/[id].tsx` never checks `isPdfDownloaded`, so its PDF list cannot
-  show a downloaded state, unlike `pdfs.tsx` and `resources.tsx`.
+Updated 25-08-2026. The first two entries below were closed on that date; they
+are kept so the record shows what changed.
+
+- CLOSED 25-08-2026. Alert state and the download/view/share/remove logic
+  lived in `hooks/useCustomAlert.ts` and `hooks/usePdfDownloads.ts` now, and
+  `pdfs.tsx`, `resources.tsx` and `[id].tsx` all consume them. The three
+  screens no longer carry their own copies. Skeleton markup is still
+  hand rolled per screen: resources.tsx has a local `SectionCardSkeleton`,
+  home and content detail keep their own, and they are similar but not
+  identical enough to merge without inventing a configuration layer.
+- CLOSED 25-08-2026. `screens/[id].tsx` reads downloaded state through
+  `usePdfDownloads` and marks each Resources row with a green check and a
+  Downloaded label when that file's URL is in the local library. Matching is
+  per source URL because storage is keyed by document ID while one document
+  can hold several PDFs; pressing Download on any file of an already
+  downloaded document still asks the re-download confirmation.
 - `DownloadProgress` is defined in `lib/download.ts` but nothing produces it,
   the new `expo-file-system` `File` API does not expose a progress callback.
+
+### NOTIFICATION PERMISSIONS, WIRED UP 25-08-2026
+
+`hooks/useNotificationPermissions.ts` sat unimported since Settings moved to
+opening system settings directly. It is wired into `settings.tsx` now:
+
+- The App Notifications switch reflects the OS permission (`granted`), not
+  token presence. The Bell icon keeps showing registration state.
+- Toggling on an undetermined permission fires the native prompt through
+  `requestNotificationPermission`; once decided, it opens system settings.
+- The hook listens to `AppState`: returning to the foreground re-reads
+  permission and, if it became granted while no push token exists, completes
+  the backend registration the automatic flow skipped while denied. This is
+  the path that used to leave a user unregistered until the next login.
+
