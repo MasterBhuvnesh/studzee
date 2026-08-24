@@ -9,6 +9,22 @@ One entry per unit of work, with the branch, what changed, and why.
 - **Changed:** Added `ignoreDeprecations: "6.0"` to the backend TypeScript configuration and upgraded the backend TypeScript dev dependency to 6.0.3.
 - **Why:** The editor reported that `baseUrl` will stop functioning in TypeScript 7. The project typecheck now accepts the suppression value and passes.
 
+## 25-08-2026
+
+**Branch:** `main` (release)
+
+### Release backend v4.1.0
+
+- Minor bump shipping phase 1 of the content and gamification plan: the fixed
+  topic registry with filtering and sample content, the Postgres gamified
+  tracker (attempts, points, streaks, badges, levels, unlock gate) with
+  migration applied to Neon, the CONTENT_LOCKED error code on gated reads,
+  and the TypeScript 6 upgrade. The mobile client half ships to users through
+  the app stores, not this image.
+- Cut from `main` at b2193e6d per the release script flow; pushing
+  `backend-v4.1.0` triggers docker-backend.testing.yml, which gates the
+  publish on lint, typecheck and the suite against service containers.
+
 ## PENDING
 
 Open items carried forward. Move each into a dated entry once it is done.

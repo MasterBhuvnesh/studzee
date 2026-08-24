@@ -1,6 +1,6 @@
 {
   "name": "studzee-api",
-  "version": "4.0.2",
+  "version": "4.1.0",
   "description": "Backend service for content delivery and notifications, with MongoDB, Postgres, Redis, S3 and Clerk auth.",
   "main": "dist/index.js",
   "scripts": {
