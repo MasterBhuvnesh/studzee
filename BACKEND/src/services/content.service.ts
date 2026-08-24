@@ -1,29 +1,44 @@
 import { config, redisClient } from '@/config'
 import { DocumentModel } from '@/models/document.model'
+import { TopicKey, TOPIC_REGISTRY } from '@/models/topics'
 import { TDocument } from '@/types/document'
 import logger from '@/utils/logger'
 
 /**
  * Query MongoDB for paginated documents (parallel fetch + count)
+ * When a topic is given, both the page and the total are scoped to it.
  */
-const getPaginatedContentFromDB = async (page: number, limit: number) => {
+const getPaginatedContentFromDB = async (
+  page: number,
+  limit: number,
+  topic?: TopicKey
+) => {
   const skip = (page - 1) * limit
+  const filter = topic ? { topic } : {}
   const [documents, total] = await Promise.all([
-    DocumentModel.find({}, 'title summary createdAt')
+    DocumentModel.find(filter, 'title summary createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
-    DocumentModel.countDocuments(),
+    DocumentModel.countDocuments(filter),
   ])
   return { documents, total }
 }
 
 /**
  * Fetch paginated documents with Redis caching (cache-aside pattern)
+ * The topic suffix is added only when filtering, so unfiltered pages keep
+ * their original cache key and existing entries stay warm.
  */
-export const listContent = async (page: number, limit: number) => {
-  const cacheKey = `content:list:page:${page}:limit:${limit}`
+export const listContent = async (
+  page: number,
+  limit: number,
+  topic?: TopicKey
+) => {
+  const cacheKey = topic
+    ? `content:list:page:${page}:limit:${limit}:topic:${topic}`
+    : `content:list:page:${page}:limit:${limit}`
 
   try {
     const cachedData = await redisClient.get(cacheKey)
@@ -36,8 +51,11 @@ export const listContent = async (page: number, limit: number) => {
   }
 
   logger.info(`CACHE MISS for ${cacheKey}`)
-  const { documents, total } = await getPaginatedContentFromDB(page, limit)
-
+  const { documents, total } = await getPaginatedContentFromDB(
+    page,
+    limit,
+    topic
+  )
   const response = {
     data: documents.map((doc) => ({ ...doc, id: doc._id })),
     meta: { page, limit, total },
@@ -150,3 +168,9 @@ export const getTodayContent = async () => {
 
   return response
 }
+
+/**
+ * Return the fixed topic registry. There is no storage behind this: the
+ * registry is a code-level constant, so the response is assembled in memory.
+ */
+export const getTopics = () => TOPIC_REGISTRY

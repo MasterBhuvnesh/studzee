@@ -35,6 +35,8 @@ export class AdminService {
         key_notes: keyNotesMap,
         imageUrl: parsed.imageUrl ?? null,
         pdfUrl: parsed.pdfUrl ?? [],
+        topic: parsed.topic,
+        unlockPoints: parsed.unlockPoints,
       })
 
       // Invalidate cache after creating document

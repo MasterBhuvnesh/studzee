@@ -222,6 +222,19 @@ recorded under OPEN WORK. Direction only, nothing is designed or built, no
 timeline. Four workstreams, recorded so the shape is not lost before the data
 storage design reopens.
 
+> ## STATUS UPDATE, 25-08-2026
+>
+> The owner ordered phase 1 of workstreams 1 and 2 built on this date, which
+> partially reopens V2 PLAN step 2 for the tracker schema specifically.
+> Shipped: the fixed topic registry with filtering and sample content, and
+> the Postgres tracker (quiz attempts, points via best-score delta, streaks
+> from daily activity, config driven badges and levels, unlock gate) with
+> migration `20260824202549_user_tracker` applied to Neon. MOBILE got the
+> profile gamification card and server graded quiz submission. Still open
+> below: home screen sections still hardcode "Machine Learning" and "System
+ Design" instead of rendering real topics, the blog is unbuilt, markdown
+ authoring stays provisional, DESKTOP admin screens are noted for later.
+
 ### 1. GAMIFIED USER TRACKER
 
 Elaborates the existing on-hold item: a user tracker that saves quiz results
@@ -286,6 +299,19 @@ expect this to change based on user feedback.
   with a points, streak and badges display.
 - Depends on workstream 1 existing on the backend first. This is a client for
   that data, not an independent piece of work.
+
+### DESKTOP WORK NOTED FOR LATER, 25-08-2026
+
+Owner deferred all DESKTOP work for now. When the console rewrite starts it
+needs, at minimum:
+
+- A topic selector on the admin document create and update forms, driven by
+  `GET /content/topics` so the registry stays the single source of truth.
+- An unlockPoints field on the same forms, since documents can now be gated.
+- A badge and level catalog screen reading `src/models/gamification.ts`
+  thresholds, read only until thresholds become editable config.
+- A progress browser over `GET /progress/me` shaped data per user, once an
+  admin scoped variant of that endpoint exists.
 
 ## NOTES
 

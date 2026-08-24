@@ -55,3 +55,52 @@ model EmailLog {
   @@index([sentBy])
   @@index([createdAt])
 }
+
+/// One graded quiz submission. userId holds the Clerk user id, matching the
+/// rest of the tracker tables; contentId is the Mongo document id.
+model QuizAttempt {
+  id            String   @id @default(cuid())
+  userId        String
+  contentId     String
+  score         Int
+  total         Int
+  pointsAwarded Int
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([contentId])
+  @@index([userId, createdAt])
+}
+
+/// One row per UTC day on which a user recorded activity, so streaks derive
+/// from history instead of being trusted from the client.
+model DailyActivity {
+  id     String   @id @default(cuid())
+  userId String
+  date   DateTime @db.Date
+
+  @@unique([userId, date])
+}
+
+/// Badges already granted to a user. Badge definitions live in code, this
+/// table only records that a threshold was reached and when it first happened.
+model AwardedBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeKey  String
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, badgeKey])
+}
+
+/// Aggregate per user counters for the tracker read side. Points are the sum
+/// of pointsAwarded across attempts and are maintained in the same transaction
+/// that records an attempt.
+model UserProgress {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  points        Int      @default(0)
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  updatedAt     DateTime @updatedAt
+}

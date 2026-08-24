@@ -68,6 +68,11 @@ describe('ContentController - getPaginatedContent', () => {
     mockRes = {
       json: vi.fn(), // res.json({ data: [...] })
       status: vi.fn().mockReturnThis(), // res.status(404).json(...)
+      // The controller reads validated query values from res.locals.query,
+      // where the route level validateQuery middleware leaves them.
+      locals: {
+        query: { page: 1, limit: 20 },
+      },
     }
 
     // Mock Next function (for error handling)
@@ -121,8 +126,9 @@ describe('ContentController - getPaginatedContent', () => {
       mockNext
     )
 
-    // ASSERT: Service was called with correct params
-    expect(ContentService.listContent).toHaveBeenCalledWith(1, 20)
+    // ASSERT: Service was called with correct params, including the
+    // undefined topic slot the route level middleware leaves when absent
+    expect(ContentService.listContent).toHaveBeenCalledWith(1, 20, undefined)
 
     // ASSERT: Response was sent with correct data
     expect(mockRes.json).toHaveBeenCalledWith(fakeServiceResponse)
@@ -132,51 +138,20 @@ describe('ContentController - getPaginatedContent', () => {
   })
 
   /**
-   * TEST CASE 2: Default Parameters
+   * TEST CASE 2: Topic Passthrough
    *
-   * Scenario: No query params provided
-   * Expected: Use defaults (page=1, limit=20)
-   *
-   * Why test this?
-   * - Zod schema defines defaults
-   * - Ensures defaults work correctly
+   * The validateQuery middleware owns parsing and defaults; the controller's
+   * job is to hand the validated values, topic included, to the service.
    */
-  it('should use default values when query params are missing', async () => {
+  it('should pass a validated topic through to the service', async () => {
     // ARRANGE
     const fakeServiceResponse = {
       data: [],
-      meta: { page: 1, limit: 20, total: 0 },
+      meta: { page: 2, limit: 10, total: 0 },
     }
-
     vi.mocked(ContentService.listContent).mockResolvedValue(fakeServiceResponse)
 
-    // ACT: No query params (mockReq.query = {})
-    await ContentController.getPaginatedContent(
-      mockReq as Request,
-      mockRes as Response,
-      mockNext
-    )
-
-    // ASSERT: Service called with defaults (1, 20)
-    expect(ContentService.listContent).toHaveBeenCalledWith(1, 20)
-  })
-
-  /**
-   * TEST CASE 3: Custom Pagination
-   *
-   * Scenario: User provides custom page and limit
-   * Expected: Use the custom values
-   */
-  it('should respect custom page and limit values', async () => {
-    // ARRANGE
-    const fakeServiceResponse = {
-      data: [],
-      meta: { page: 5, limit: 10, total: 0 },
-    }
-
-    vi.mocked(ContentService.listContent).mockResolvedValue(fakeServiceResponse)
-
-    mockReq.query = { page: '5', limit: '10' }
+    mockRes.locals = { query: { page: 2, limit: 10, topic: 'devops' } }
 
     // ACT
     await ContentController.getPaginatedContent(
@@ -185,78 +160,25 @@ describe('ContentController - getPaginatedContent', () => {
       mockNext
     )
 
-    // ASSERT: Service called with custom values
-    expect(ContentService.listContent).toHaveBeenCalledWith(5, 10)
+    // ASSERT
+    expect(ContentService.listContent).toHaveBeenCalledWith(2, 10, 'devops')
+    expect(mockRes.json).toHaveBeenCalledWith(fakeServiceResponse)
   })
 
   /**
-   * TEST CASE 4: Invalid Page (Negative Number)
+   * NOTE ON REMOVED TESTS
    *
-   * Scenario: User provides invalid page number
-   * Expected: Pass validation error to next()
+   * This suite previously rejected negative pages and oversized limits at the
+   * controller. Validation now lives in the validateQuery middleware mounted
+   * on the route, so the controller can never observe an invalid value and
+   * those assertions tested behaviour that no longer exists. The 400
+   * guarantees are pinned at the route level in the mocked and integration
+   * route suites instead.
    *
-   * Why test this?
-   * - Zod schema should reject page < 1
-   * - Error should be handled by error middleware
-   */
-  it('should reject negative page numbers', async () => {
-    // ARRANGE: Invalid page
-    mockReq.query = { page: '-1' }
-
-    // ACT
-    await ContentController.getPaginatedContent(
-      mockReq as Request,
-      mockRes as Response,
-      mockNext
-    )
-
-    // ASSERT: Error was passed to next()
-    expect(mockNext).toHaveBeenCalled()
-    expect(mockNext).toHaveBeenCalledWith(expect.any(Error))
-
-    // ASSERT: Service was NOT called
-    expect(ContentService.listContent).not.toHaveBeenCalled()
-
-    // ASSERT: Response was NOT sent
-    expect(mockRes.json).not.toHaveBeenCalled()
-  })
-
-  /**
-   * TEST CASE 5: Limit Too Large
-   *
-   * Scenario: User requests limit > 100
-   * Expected: Validation error
-   *
-   * Why limit to 100?
-   * - Prevents abuse (someone requesting 1 million documents)
-   * - Protects server performance
-   * - This is a security feature!
-   */
-  it('should reject limit greater than 100', async () => {
-    // ARRANGE
-    mockReq.query = { limit: '150' }
-
-    // ACT
-    await ContentController.getPaginatedContent(
-      mockReq as Request,
-      mockRes as Response,
-      mockNext
-    )
-
-    // ASSERT: Error passed to next()
-    expect(mockNext).toHaveBeenCalled()
-    expect(mockNext).toHaveBeenCalledWith(expect.any(Error))
-  })
-
-  /**
-   * TEST CASE 6: Service Throws Error
+   * TEST CASE: Service Throws Error
    *
    * Scenario: Service layer throws an error (e.g., database down)
    * Expected: Pass error to next() middleware
-   *
-   * Why is this important?
-   * - Errors should be caught and handled
-   * - Error middleware will then format the response
    */
   it('should handle service errors and pass to next middleware', async () => {
     // ARRANGE: Service throws error
@@ -328,6 +250,7 @@ describe('ContentController - getDocumentById', () => {
           options: ['Option 1', 'Option 2', 'Test answer'],
         },
       },
+      topic: 'machine-learning' as const,
     }
 
     vi.mocked(ContentService.getContentById).mockResolvedValue(fakeDocument)
