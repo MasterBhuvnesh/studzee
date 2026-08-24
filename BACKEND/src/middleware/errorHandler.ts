@@ -39,6 +39,9 @@ export const errorHandler = (
 
   res.status(statusCode).json({
     message: statusCode === 500 ? 'Internal Server Error' : err.message,
+    // Machine readable codes such as CONTENT_LOCKED let clients branch on
+    // failure mode without parsing messages.
+    ...(err.code && { code: err.code }),
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   })
 }

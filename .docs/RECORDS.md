@@ -57,6 +57,9 @@ Date is the date the status last changed.
 | Cache or tokenise the admin role instead of calling Clerk per request | BHUVNESH | PLANNED | 14-08-2026 |
 | Move Prisma migrations out of the container start command | BHUVNESH | PLANNED | 13-08-2026 |
 | Data storage layer, database design | BHUVNESH | BLOCKED | 18-08-2026 |
+| Fixed topic registry and topic filtering on the content API, with sample content for four topics | BHUVNESH | DONE | 25-08-2026 |
+| Gamified user tracker on Postgres: quiz attempts, points, streaks, badges, levels, unlock gate | BHUVNESH | DONE | 25-08-2026 |
+| MOBILE profile gamification card and server graded quiz submission | BHUVNESH | DONE | 25-08-2026 |
 
 ## DOCUMENTATION
 

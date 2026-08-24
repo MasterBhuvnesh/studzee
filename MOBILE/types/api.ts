@@ -56,6 +56,23 @@ export interface ContentSummary {
   title: string;
   summary: string;
   createdAt: string;
+  /** Registry key of the subject area, present since the backend projects it */
+  topic: string;
+}
+
+/**
+ * Entry of the fixed topic registry served by /content/topics
+ */
+export interface Topic {
+  key: string;
+  label: string;
+}
+
+/**
+ * Response type for /content/topics endpoint
+ */
+export interface TopicsResponse {
+  data: Topic[];
 }
 
 /**
@@ -146,6 +163,109 @@ export interface ApiError {
   statusCode?: number;
   error?: string;
 }
+
+/**
+ * Success envelope used by the gamification endpoints
+ */
+export interface ApiSuccess<T> {
+  success: true;
+  data: T;
+}
+
+/**
+ * Level descriptor in progress responses
+ */
+export interface ProgressLevel {
+  key: string;
+  label: string;
+  minPoints: number;
+}
+
+/**
+ * Streak counters returned by the progress endpoints
+ */
+export interface ProgressStreak {
+  current: number;
+  longest: number;
+}
+
+/**
+ * Awarded badge entry from /progress/me
+ */
+export interface EarnedBadge {
+  key: string;
+  label: string;
+  description: string;
+  awardedAt: string;
+}
+
+/**
+ * Badge entry with its award state from /progress/me allBadges
+ */
+export interface BadgeStatus {
+  key: string;
+  label: string;
+  description: string;
+  threshold: number;
+  awarded: boolean;
+}
+
+/**
+ * Recent quiz attempt row from /progress/me
+ */
+export interface RecentAttempt {
+  contentId: string;
+  title: string;
+  score: number;
+  total: number;
+  createdAt: string;
+}
+
+/**
+ * Payload inside GET /progress/me responses
+ */
+export interface MyProgress {
+  points: number;
+  level: ProgressLevel | null;
+  nextLevel: ProgressLevel | null;
+  streak: ProgressStreak;
+  activeDays: number;
+  badges: EarnedBadge[];
+  allBadges: BadgeStatus[];
+  recentAttempts: RecentAttempt[];
+}
+
+/**
+ * Full GET /progress/me response
+ */
+export type MyProgressResponse = ApiSuccess<MyProgress>;
+
+/**
+ * Newly unlocked badge in a quiz attempt response
+ */
+export interface NewBadge {
+  key: string;
+  label: string;
+  description: string;
+}
+
+/**
+ * Payload inside POST /progress/attempts responses
+ */
+export interface QuizAttemptResult {
+  contentId: string;
+  score: number;
+  total: number;
+  pointsAwarded: number;
+  totalPoints: number;
+  streak: ProgressStreak;
+  newBadges: NewBadge[];
+}
+
+/**
+ * Full POST /progress/attempts response
+ */
+export type QuizAttemptResponse = ApiSuccess<QuizAttemptResult>;
 
 /**
  * Pagination parameters for API requests

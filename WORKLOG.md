@@ -3,6 +3,12 @@
 Running record of work done on this repository. Newest entry first.
 One entry per unit of work, with the branch, what changed, and why.
 
+## 25-08-2026
+
+- **Branch:** current working branch
+- **Changed:** Added `ignoreDeprecations: "6.0"` to the backend TypeScript configuration and upgraded the backend TypeScript dev dependency to 6.0.3.
+- **Why:** The editor reported that `baseUrl` will stop functioning in TypeScript 7. The project typecheck now accepts the suppression value and passes.
+
 ## PENDING
 
 Open items carried forward. Move each into a dated entry once it is done.
@@ -58,7 +64,63 @@ Open items carried forward. Move each into a dated entry once it is done.
 
 ## 2026-08-25
 
-**Branch:** `fix/mobile-notification-token-registration`
+**Branch:** `fix/mobile-notification-token-registration`, stacked on the open mobile PR
+
+### Phase 1 of the content and gamification plan, topics and user tracker
+
+The owner ordered workstreams 1 and 2 built now, which partially reopened the
+storage design hold for the tracker schema specifically. Phase 0 decisions
+taken by the owner: progress lives in Postgres, topics are a fixed registry,
+content stays Mongo JSON blocks, markdown stays deferred, DESKTOP deferred
+with a noted backlog in TCSK.
+
+Three agents worked in parallel, one per track: topic tagging backend,
+tracker backend, mobile client. Integration findings below are mine.
+
+**Topics (backend).** New `src/models/topics.ts` registry of six keys,
+validated by zod at every entry point so documents cannot carry arbitrary
+topic strings. `GET /content/topics` serves the registry; `GET /content`
+accepts `?topic=` with its own cache key suffix. Four sample documents seeded
+across system design, DevOps and deep learning, one carrying `unlockPoints:
+50`. `sample-topics.seed.ts` is additive by title and never deletes, because
+the full seed script truncates and `.env` currently points MONGO_URI at the
+Atlas database holding real content. Ran it once: 4 inserted, existing docs
+untouched.
+
+**Tracker (backend).** Postgres owns it per the owner's call: `QuizAttempt`,
+`DailyActivity`, `AwardedBadge`, `UserProgress` under Prisma, migration
+applied to the Neon dev database. Grading is server side against the stored
+quiz (`ans` is answer text, compared via the chosen option's text). Points
+pay ten per correct answer as a delta over prior best for that content, so
+replays farm nothing. Streaks derive from distinct UTC activity days. Badges
+and levels are pure config predicates in `src/models/gamification.ts`.
+`POST /progress/attempts` and `GET /progress/me` sit behind Clerk auth.
+Documents with `unlockPoints` now gate on `GET /content/:id` with a 403
+whose body carries a machine readable `code`; that required teaching
+`errorHandler` to serialize `AppError.code`.
+
+**Live verification caught what mocked tests could not.** The tracker
+transaction failed against real Neon with `Transaction API error: Transaction
+not found`: seven sequential queries inside an interactive transaction spent
+its default five second budget on pooler latency alone. Restructured to reads
+first and four writes inside, with an explicit timeout. Recorded in FIXES.
+Also proved the gate end to end: locked at 0 points, still locked at 40,
+opens at 90. The full check list runs from
+`src/cli/tools/verify-phase1.ts` against the live stores, 11 of 11 passing.
+
+**Mobile.** Profile swaps the static planning list for a gamification card
+(level, points, progress to next level, streak, badge chips), pull to refresh
+now really refetches, quiz completion submits responses and surfaces earned
+points and new badges without blocking navigation, and the API base URL
+finally reads `EXPO_PUBLIC_BACKEND_API_URL` with the Render URL as fallback.
+
+**Verification state.** Backend: fmt, lint, tsc clean; 285 unit and mocked
+tests pass; the integration tier could not run because local Docker refuses
+to start containers on this machine today, the supertest based live pass
+against Atlas, Neon and Upstash stands in for it. Mobile: tsc clean, prettier
+clean on touched files. One pre-existing controller test block was rewritten
+because query validation moved to route middleware where the guarantee is
+already pinned.
 
 ### Flip the content detail screen back to real content
 

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TopicSchema, DEFAULT_TOPIC_KEY } from '@/models/topics'
 
 /**
  * Zod schema for a single quiz item.
@@ -34,6 +35,10 @@ export const DocumentSchema = z.object({
   key_notes: z.record(z.string(), z.string()).optional(),
   imageUrl: z.string().url().nullable().optional(),
   pdfUrl: z.array(PdfFileSchema).optional(),
+  // Topic is optional on input so existing payloads keep validating, but the
+  // parsed output always carries a topic: the default fills in when absent.
+  topic: TopicSchema.default(DEFAULT_TOPIC_KEY),
+  unlockPoints: z.number().int().min(0).optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 })

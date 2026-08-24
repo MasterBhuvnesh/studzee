@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose'
 import { IDocument } from '@/types/document'
+import { TOPIC_KEYS } from '@/models/topics'
 
 /**
  * @description Quiz item schema for documents
@@ -40,6 +41,14 @@ const DocumentMongooseSchema = new Schema<IDocument>(
     },
     facts: { type: String },
     summary: { type: String },
+    // Constrained to the fixed code-level registry; indexed because every
+    // topic-filtered list query hits this path.
+    topic: {
+      type: String,
+      enum: [...TOPIC_KEYS],
+      index: true,
+    },
+    unlockPoints: { type: Number, default: 0 },
     key_notes: {
       type: Map,
       of: String,

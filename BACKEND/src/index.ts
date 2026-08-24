@@ -11,6 +11,7 @@ import healthRoutes from '@/api/routes/health.route'
 import healthcheckRoute from '@/api/routes/healthcheck.route'
 import notificationRoutes from '@/api/routes/notification.route'
 import pdfRoutes from '@/api/routes/pdf.route'
+import progressRoutes from '@/api/routes/progress.route'
 import webhookRoutes from '@/api/routes/webhook.route'
 import { config, connectDB, connectPostgres, connectRedis } from '@/config'
 import { scheduleJobs } from '@/jobs/cache-refresh'
@@ -72,6 +73,7 @@ const main = async () => {
           content: '/content',
           pdfs: '/pdfs',
           notifications: '/notifications/register',
+          progress: '/progress/me',
           admin: '/admin',
           webhooks: '/webhooks/clerk',
         },
@@ -82,6 +84,7 @@ const main = async () => {
     app.use('/content', contentRoutes)
     app.use('/pdfs', pdfRoutes)
     app.use('/notifications', notificationRoutes)
+    app.use('/progress', progressRoutes)
     app.use('/admin', adminRoutes)
     app.use('/health', healthRoutes)
     app.use('/', healthcheckRoute)

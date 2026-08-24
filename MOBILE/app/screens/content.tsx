@@ -4,7 +4,7 @@ import { getContent } from '@/lib/api';
 import { ContentSummary } from '@/types';
 import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
@@ -87,6 +87,17 @@ const ContentListSkeleton = () => {
 
 export default function ContentPage() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    topic?: string;
+    topicLabel?: string;
+  }>();
+  const topic = typeof params.topic === 'string' ? params.topic : undefined;
+  // The label rides along from the pushing screen so the header never needs
+  // a registry lookup of its own.
+  const headerTitle =
+    typeof params.topicLabel === 'string' && params.topicLabel
+      ? params.topicLabel
+      : 'All Content';
   const [content, setContent] = useState<ContentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -97,7 +108,9 @@ export default function ContentPage() {
   // Fetch initial content
   useEffect(() => {
     fetchContent(1);
-  }, []);
+    // Refetch when the topic changes so the list always matches the header.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topic]);
 
   const fetchContent = async (pageNum: number) => {
     try {
@@ -108,7 +121,11 @@ export default function ContentPage() {
       }
       setError(null);
 
-      const contentResponse = await getContent({ page: pageNum, limit: 20 });
+      const contentResponse = await getContent({
+        page: pageNum,
+        limit: 20,
+        topic,
+      });
 
       if (pageNum === 1) {
         setContent(contentResponse.data);
@@ -173,8 +190,11 @@ export default function ContentPage() {
               strokeWidth={2}
             />
           </TouchableOpacity>
-          <Text className="font-product text-2xl text-zinc-800">
-            Machine Learning
+          <Text
+            className="font-product text-2xl text-zinc-800"
+            numberOfLines={1}
+          >
+            {headerTitle}
           </Text>
         </View>
 
