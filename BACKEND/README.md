@@ -155,6 +155,7 @@ Any `"error"` in that response names the store that is not answering. It round t
 - **Expo Push**: Batched push delivery with automatic pruning of retired device tokens
 - **Email**: Transactional email through `nodemailer` with an attachment host allowlist
 - **Zod**: Runtime type validation and schema enforcement
+- **Gamification**: Server graded quizzes, points, streaks, badges, levels and point gated content on Postgres
 - **Scheduled Jobs**: Cache warming, token cleanup, and heartbeat monitoring with `node-cron`
 - **Structured Logging**: Production-ready logging with `pino`
 - **File Uploads**: Multipart file upload support with `multer`
@@ -955,8 +956,9 @@ For detailed API documentation, see [API.md](./API.md).
 #### Content Endpoints
 
 - **GET** `/content/today` - Get documents created today in IST timezone (Public, Cached 1h)
-- **GET** `/content` - Get paginated list of documents (Public, Cached 5min)
-- **GET** `/content/:id` - Get document by ID (Authenticated, Cached 24h)
+- **GET** `/content` - Get paginated list of documents, optionally filtered by `topic` (Public, Cached 5min)
+- **GET** `/content/topics` - The fixed topic registry every document topic is validated against (Public)
+- **GET** `/content/:id` - Get document by ID; documents carrying `unlockPoints` answer 403 with code `CONTENT_LOCKED` until the caller has enough points (Authenticated, Cached 24h)
 
 #### PDF Endpoints
 
@@ -965,6 +967,11 @@ For detailed API documentation, see [API.md](./API.md).
 #### Notification Endpoints
 
 - **POST** `/notifications/register` - Register the caller's device for push, or attach another device token to an existing registration (Authenticated, 10 req/min)
+
+#### Progress Endpoints
+
+- **POST** `/progress/attempts` - Submit quiz answers for server side grading; updates points, streak and badges (Authenticated, 30 req/min)
+- **GET** `/progress/me` - Points, level, streak, badges and recent attempts for the caller (Authenticated)
 
 #### Webhook Endpoints
 
@@ -1025,9 +1032,9 @@ The service implements a two-tier Redis caching strategy for optimal performance
 ### 1. List Cache
 
 - **Endpoint**: `GET /content`
-- **Cache Key Pattern**: `content:list:page:<page>:limit:<limit>`
+- **Cache Key Pattern**: `content:list:page:<page>:limit:<limit>[:topic:<key>]`
 - **TTL**: 5 minutes (300 seconds)
-- **Strategy**: Cache the paginated list response
+- **Strategy**: Cache the paginated list response. A topic filter adds the `:topic:<key>` suffix, so each filtered page caches independently of the unfiltered one
 - **Invalidation**: Automatic expiry after TTL + manual invalidation on admin operations
 
 ### 2. Document Cache
@@ -1087,6 +1094,8 @@ interface Document {
   facts?: string // Optional facts
   quiz: Record<string, QuizItem> // Quiz questions (required)
   key_notes?: Record<string, string> // Optional key notes
+  topic?: string // Registry key from src/models/topics.ts, defaults to machine-learning
+  unlockPoints?: number // Optional points cost; gated reads answer 403 below it
   imageUrl?: string // Optional S3 image URL
   pdfUrl?: PdfObject[] // Optional array of PDF objects
   createdAt: Date // Auto-generated timestamp
@@ -1148,6 +1157,45 @@ model EmailLog {
 ```
 
 > **Note**: a `SystemLog` model existed in the original schema but was never read or written, so it is dropped by the `20260810000000_drop_system_log` migration.
+
+### PostgreSQL: Gamified Tracker Models
+
+Added by the `20260824202549_user_tracker` migration and served by the `/progress` routes.
+
+```prisma
+model QuizAttempt {
+  id            String   @id @default(cuid())
+  userId        String   // Clerk ID of the caller
+  contentId     String   // Mongo document the quiz belongs to
+  score         Int
+  total         Int
+  pointsAwarded Int      // Delta over prior best for this content, never negative
+  createdAt     DateTime @default(now())
+}
+
+model DailyActivity {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date // One row per UTC day with activity; streaks derive from these
+  createdAt DateTime @default(now())
+}
+
+model AwardedBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeKey  String   // Key into the catalog in src/models/gamification.ts
+  awardedAt DateTime @default(now())
+}
+
+model UserProgress {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  points        Int      @default(0)
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  updatedAt     DateTime @updatedAt
+}
+```
 
 ## Development
 
@@ -1314,6 +1362,7 @@ retired `docker-compose` v1 binary, which is not installed; they all use the
 ```bash
 # Seeding
 npm run seed              # Seed with data.json (uses src/cli/seeds/seed.ts)
+npm run seed:topics       # Additive insert of the topic sample documents; skips titles that already exist
 npm run seed:today        # Seed today's content (uses src/cli/seeds/today.seed.ts)
 
 # Cache management
