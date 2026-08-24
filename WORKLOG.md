@@ -56,6 +56,170 @@ Open items carried forward. Move each into a dated entry once it is done.
 - Style: no em dashes, no emoji, in code, comments, commits, and documentation.
 - Comments: specific and professional, explaining intent rather than restating the code.
 
+## 2026-08-25
+
+**Branch:** `fix/mobile-notification-token-registration`
+
+### Flip the content detail screen back to real content
+
+- `SAMPLE_MODE` in `MOBILE/app/screens/[id].tsx` went back to `false`, so the
+  screen fetches the real document by ID and renders the typed JSON blocks
+  again instead of the hardcoded Gradient Descent markdown sample. The sample
+  block stays in place uncommitted-to-git until now: deleting it outright
+  would have destroyed the only copy of the markdown preview that workstream
+  3 still needs, so the flag flip keeps it available while making it dead code.
+
+### Close the three recorded mobile gaps
+
+The gaps are the ones listed in `MOBILE/.docs/studzee.design.mobile.expo.md`
+under known gaps: no downloaded state on content detail, alert/skeleton/
+download logic duplicated per screen, and a dormant notification permissions
+hook.
+
+- New `hooks/useCustomAlert.ts` owns the alert config object and its show and
+  hide helpers that `pdfs.tsx` and `resources.tsx` each declared by hand.
+- New `hooks/usePdfDownloads.ts` owns the whole local PDF library: the
+  downloaded list with document ID and source URL views, in-flight downloads,
+  the re-download confirmation, remote viewing in the browser, and the bottom
+  sheet actions for a downloaded file. This is the near-200 lines that
+  `pdfs.tsx` and `resources.tsx` previously maintained as two diverging
+  copies, and it is what `[id].tsx` was missing when it rendered Resources
+  rows with no knowledge of download state.
+- `screens/[id].tsx` consumes both hooks. Each PDF row now shows a green
+  check and a Downloaded label when that file's URL is in the local library,
+  and pressing Download on an already downloaded document asks the same
+  re-download confirmation the other screens use. Matching is per source URL,
+  because storage is keyed by document ID while one document can hold several
+  files. Its remote view path moved to the hook as well, gaining a failure
+  alert it never had.
+- `screens/pdfs.tsx` and `app/(tabs)/resources.tsx` shrank onto the hooks with
+  behaviour preserved. resources.tsx also folds its two near-identical inline
+  skeleton cards into one local `SectionCardSkeleton`, and drops a dead
+  `selectedPdf` state that nothing read. Skeletons elsewhere stay hand rolled:
+  home and content detail skeletons differ enough that merging them would
+  mean inventing a configuration layer for no gain.
+- `hooks/useNotificationPermissions.ts` is rewritten and wired into
+  `settings.tsx` after sitting unimported. It now exposes the tri-state
+  permission status, asks the native prompt when the permission is
+  undetermined, opens system settings once decided, and watches `AppState`:
+  returning to the foreground re-reads permission and completes backend
+  registration when the permission became granted while no push token exists.
+  That closes the real hole the dormant hook was written for, where a user who
+  denied at first prompt and granted later in settings stayed unregistered
+  until the next login. The Settings switch now reflects OS permission while
+  the Bell icon keeps showing token registration.
+
+### Verification and a pre-existing lint breakage
+
+- `npx tsc --noEmit` passes in MOBILE, and every touched file passes
+  `prettier --check`.
+- `npm run lint` fails with `TypeError: Plugin "" not found` raised while
+  evaluating `eslint.config.js` itself, before any file is scanned, so it
+  fails identically on untouched files. This predates the change and looks
+  like an ESLint 9.39 flat-config resolution problem in that config's
+  `extends` block. Not fixed here; it needs its own investigation.
+- A prettier sweep reformatted four unrelated files carrying older 4-space
+  formatting drift (`onboarding.tsx`, both layout files, `types/index.ts`).
+  They were restored so this diff stays scoped; those four still fail a
+  module-wide `format:check` exactly as they did before this work.
+
+## 2026-08-21
+
+**Branch:** `fix/mobile-notification-token-registration`
+
+### Remove the /noti/api compat mount, same day it was added
+
+- The owner has updated the MOBILE builds that were still calling
+  `/noti/api/register` to call `/notifications/register` directly, so the
+  compat mount added earlier today has nothing left to serve. Removed the
+  `app.use('/noti/api', notificationRoutes)` line in `BACKEND/src/index.ts`
+  and the test that pinned it in `notification.route.test.ts`, back to 6
+  tests in that file. `tsc --noEmit` and `fmt:check` clean.
+- Updated `.docs/TCSK.md` and `.docs/RECORDS.md` to record that this was
+  resolved by updating the clients, not by a backend repoint, since the two
+  entries added earlier today described a fix that no longer exists.
+
+### Compatibility mount for old MOBILE builds calling /noti/api
+
+- Confirmed the "repoint the ingress" OPEN WORK item was not actually fixed
+  when asked. `POST /noti/api/register` was only ever documented as a
+  migration mapping in `README.md`, `API.md` and the Postman collection,
+  nothing in `index.ts` served that path, so devices still running the
+  released MOBILE 1.1.4 build have been getting a 404 on every registration
+  attempt since the merge.
+- Fixed by mounting `notificationRoutes` a second time at `/noti/api` in
+  `BACKEND/src/index.ts`. Same router as `/notifications`, so the old path
+  gets identical auth, rate limiting and validation, no duplicated logic.
+  Stopgap by design, an ALB listener rule is the cleaner long term home for
+  this rewrite once the AWS deployment exists.
+- Added one test in `notification.route.test.ts` pinning the compat mount
+  itself, so a future refactor of `index.ts`'s route list that drops it
+  fails in CI rather than in production. `tsc --noEmit`, `fmt:check`, and
+  `lint` all clean, the notification route test file passes 7 of 7.
+- Updated `.docs/TCSK.md` (both the AWS section's mention of this item and
+  the OPEN WORK bullet) and `.docs/RECORDS.md` to reflect the fix.
+
+### Redesign the Resources PDF card, record the content and gamification plan
+
+- Restyled the PDF list in `MOBILE/app/screens/[id].tsx` to match the pill
+  button language already used in `DownloadedPdfInfo.tsx`: icon tile, size as
+  a badge, view/download as full-width labeled pills. Visual only, no change
+  to `handleViewPdf`, `handleDownloadPdf`, or `downloadingPdfIndex`. This
+  screen still does not check `isPdfDownloaded`, that gap stays tracked in
+  `studzee.design.mobile.expo.md`, out of scope for this change by the
+  owner's choice.
+- Recorded a four part content and gamification plan in `.docs/TCSK.md`
+  under a new "PLANNED CONTENT AND GAMIFICATION FEATURES" section: the
+  gamified user tracker (points, streaks, badges, unlockable content,
+  confirmed 21-08-2026, no leaderboard), a generic topic tag content model
+  replacing the hardcoded "Machine Learning" home screen title and the
+  hardcoded "System Design" locked card, a blog or journal section riding on
+  the same topic tagging, JSON toward Markdown content authoring for future
+  diagram support (explicitly provisional, the owner is not settled on it),
+  and a gamified replacement for the static "Upcoming" section in
+  `profile.tsx`. All four are direction only, nothing designed or built. The
+  gamified tracker specifically still waits on the data storage layer, which
+  stays on hold per V2 PLAN step 2.
+
+## 2026-08-20
+
+**Branch:** `fix/mobile-notification-token-registration`
+
+### Fix the mobile notification registration bug and loop
+
+- `NotificationContext` never exposed `registerToken`, even though
+  `types/notification.ts` documented that shape. That type was dead code,
+  never imported anywhere. `useNotificationPermissions.ts` had been patched
+  around it with an optional cast, `registerToken?.()`, which silenced the
+  type error but made manual re-registration after a permission grant a
+  permanent no-op.
+- Extracted the provider's registration flow into a `registerToken` callback
+  and exposed it on the context for real, then removed the cast in the hook.
+- That surfaced a second, live bug. The auto-register effect depended on
+  `[user, getToken]`. Clerk's `getToken` is not referentially stable across
+  renders, and `setIsLoading`/`setExpoPushToken` inside `registerToken`
+  itself trigger a re-render, so the effect kept recreating `registerToken`
+  and refiring itself. Confirmed in device logs: dozens of duplicate
+  `POST /notifications/register` calls in a single session, ending in the
+  backend responding 429. Fixed by keying the effect on the signed-in email,
+  a stable string, and reading `getToken` through a ref instead of the
+  dependency array.
+- Removed the unused `NotificationContextType` interface from
+  `types/notification.ts`. It described a larger shape, permission state
+  merged into the context, that was never built and had drifted from the
+  real implementation.
+- `MOBILE/utils/config.ts` now points at the deployed backend,
+  `https://studzee-api-latest.onrender.com`, replacing the placeholder
+  `api.studzee.in` host.
+- Wrote `MOBILE/studzee.design.mobile.expo.md`, covering navigation and the
+  provider tree, the notification pipeline, the custom alert, the bottom
+  sheet, how a downloaded PDF is tracked in `expo-secure-store`, the two
+  separate code paths for viewing a PDF on device versus streaming one from
+  its remote URL, share, the skeleton loading pattern, and a package
+  reference table. Also records gaps found while writing it: alert and
+  skeleton logic duplicated per screen rather than shared, and
+  `screens/[id].tsx` never checks download state for its own PDF list.
+
 ## 2026-08-18
 
 **Branch:** `docs/record-aws-terraform-plan`

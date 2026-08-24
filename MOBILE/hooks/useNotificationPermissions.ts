@@ -1,119 +1,144 @@
 import * as Notifications from 'expo-notifications';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { useNotification } from '@/contexts/NotificationContext';
 import logger from '@/utils/logger';
 
-interface NotificationPermissionState {
-  granted: boolean;
-  loading: boolean;
-}
+export type NotificationPermissionStatus =
+  | 'undetermined'
+  | 'granted'
+  | 'denied';
 
-interface NotificationPermissionHandlers {
+interface UseNotificationPermissionsResult {
+  granted: boolean;
+  /**
+   * The raw tri-state. 'denied' must route the user to system settings rather
+   * than a native prompt that can never be shown again, and 'undetermined'
+   * means the prompt has simply never been answered.
+   */
+  status: NotificationPermissionStatus;
+  loading: boolean;
   requestNotificationPermission: () => Promise<void>;
   refreshPermissions: () => Promise<void>;
 }
 
-export const useNotificationPermissions = (): NotificationPermissionState &
-  NotificationPermissionHandlers => {
-  const { registerToken } = useNotification();
-  const [permissions, setPermissions] = useState<NotificationPermissionState>({
-    granted: false,
-    loading: true,
-  });
+const toStatus = (
+  osStatus: Notifications.PermissionStatus
+): NotificationPermissionStatus =>
+  osStatus === Notifications.PermissionStatus.GRANTED
+    ? 'granted'
+    : osStatus === Notifications.PermissionStatus.DENIED
+      ? 'denied'
+      : 'undetermined';
 
-  const checkPermissions = useCallback(async () => {
-    try {
-      setPermissions(prev => ({ ...prev, loading: true }));
-      const { status } = await Notifications.getPermissionsAsync();
-      setPermissions({
-        granted: status === 'granted',
-        loading: false,
+/**
+ * Tracks OS notification permission for screens that need to act on it,
+ * currently the Settings toggle. Permission can change outside the app, most
+ * often right after the user flips it in system settings, so returning to the
+ * foreground re-checks and completes the registration the automatic flow
+ * skipped while permission was denied.
+ */
+export const useNotificationPermissions =
+  (): UseNotificationPermissionsResult => {
+    const {
+      registerToken,
+      expoPushToken,
+      isLoading: registering,
+    } = useNotification();
+    const [status, setStatus] =
+      useState<NotificationPermissionStatus>('undetermined');
+    const [loading, setLoading] = useState(true);
+
+    // Refs mirror everything the AppState listener reads, so a foreground
+    // event never acts on values captured when the listener was attached.
+    const statusRef = useRef(status);
+    const tokenRef = useRef(expoPushToken);
+    const registeringRef = useRef(registering);
+    useEffect(() => {
+      statusRef.current = status;
+      tokenRef.current = expoPushToken;
+      registeringRef.current = registering;
+    }, [status, expoPushToken, registering]);
+
+    const syncPermissions = useCallback(async () => {
+      try {
+        const { status: osStatus } = await Notifications.getPermissionsAsync();
+        const next = toStatus(osStatus);
+        setStatus(next);
+        return next;
+      } catch (error) {
+        logger.error(`Failed to check notification permissions: ${error}`);
+        return statusRef.current;
+      }
+    }, []);
+
+    // Complete registration once permission exists but no token does. The
+    // provider already logs its own failures; nothing to add here.
+    const registerIfGranted = useCallback(async () => {
+      if (!tokenRef.current && !registeringRef.current) {
+        try {
+          await registerToken();
+          logger.success('Token registered after permission change');
+        } catch (error) {
+          logger.warn(
+            `Permission granted but token registration failed: ${error}`
+          );
+        }
+      }
+    }, [registerToken]);
+
+    useEffect(() => {
+      void syncPermissions().finally(() => setLoading(false));
+    }, [syncPermissions]);
+
+    useEffect(() => {
+      const subscription = AppState.addEventListener('change', next => {
+        if (next !== 'active') return;
+        void (async () => {
+          const current = await syncPermissions();
+          if (current === 'granted') await registerIfGranted();
+        })();
       });
-      logger.info(`Notification permission status: ${status}`);
-    } catch (error) {
-      logger.error(`Failed to check notification permissions: ${error}`);
-      setPermissions({ granted: false, loading: false });
-    }
-  }, []);
+      return () => subscription.remove();
+    }, [syncPermissions, registerIfGranted]);
 
-  // Automatically check permissions on mount
-  useEffect(() => {
-    checkPermissions();
-  }, [checkPermissions]);
-
-  const requestNotificationPermission = async () => {
-    try {
-      setPermissions(prev => ({ ...prev, loading: true }));
-
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-
-      logger.info(`Existing permission status: ${existingStatus}`);
-
-      // If permission is already granted, just ensure token is registered
-      if (existingStatus === 'granted') {
-        logger.info(
-          'Notification permission already granted, ensuring token is registered'
-        );
-        setPermissions({ granted: true, loading: false });
-
-        // Try to register token even if already granted
-        try {
-          await registerToken();
-          logger.success('Token registered successfully');
-        } catch (error) {
-          logger.warn(
-            `Permission granted but token registration failed: ${error}`
-          );
+    // Safe on an already decided permission: the OS resolves with the current
+    // state instead of prompting again.
+    const requestNotificationPermission = useCallback(async () => {
+      setLoading(true);
+      try {
+        const { status: osStatus } =
+          await Notifications.requestPermissionsAsync();
+        const next = toStatus(osStatus);
+        setStatus(next);
+        if (next === 'granted') {
+          logger.success('Notification permission granted');
+          await registerIfGranted();
+        } else {
+          logger.warn(`Notification permission ${next}`);
         }
-        return;
+      } catch (error) {
+        logger.error(`Failed to request notification permission: ${error}`);
+      } finally {
+        setLoading(false);
       }
+    }, [registerIfGranted]);
 
-      // If permission was previously denied, can't request again - must go to settings
-      if (existingStatus === 'denied') {
-        logger.warn(
-          'Notification permission was previously denied, user must enable in settings'
-        );
-        setPermissions({ granted: false, loading: false });
-
-        // This will be caught by the component and shown as a settings prompt
-        throw new Error('PERMISSION_DENIED');
+    const refreshPermissions = useCallback(async () => {
+      setLoading(true);
+      try {
+        await syncPermissions();
+      } finally {
+        setLoading(false);
       }
+    }, [syncPermissions]);
 
-      // Request permissions if not granted (status is 'undetermined')
-      logger.info('Requesting notification permissions...');
-      const { status } = await Notifications.requestPermissionsAsync();
-      const granted = status === 'granted';
-
-      setPermissions({ granted, loading: false });
-
-      if (granted) {
-        logger.success('Notification permission granted!');
-        // Register token with backend after permission is granted
-        try {
-          await registerToken();
-        } catch (error) {
-          logger.warn(
-            `Permission granted but token registration failed: ${error}`
-          );
-        }
-      } else {
-        logger.warn('Notification permission denied');
-      }
-    } catch (error) {
-      logger.error(`Failed to request notification permission: ${error}`);
-      setPermissions({ granted: false, loading: false });
-    }
+    return {
+      granted: status === 'granted',
+      status,
+      loading,
+      requestNotificationPermission,
+      refreshPermissions,
+    };
   };
-
-  const refreshPermissions = async () => {
-    await checkPermissions();
-  };
-
-  return {
-    ...permissions,
-    requestNotificationPermission,
-    refreshPermissions,
-  };
-};

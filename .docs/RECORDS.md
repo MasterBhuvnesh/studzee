@@ -77,7 +77,12 @@ Date is the date the status last changed.
 | FEATURE | DEVELOPER | STATUS | DATE |
 | ------- | --------- | ------ | ---- |
 | Point MOBILE at `/notifications/register` on the merged backend | BHUVNESH | DONE | 10-08-2026 |
-| Fix `registerToken` missing from the mobile notification context | BHUVNESH | PLANNED | 10-08-2026 |
+| Fix `registerToken` missing from the mobile notification context | BHUVNESH | DONE | 20-08-2026 |
+| Fix the notification auto-register effect refiring on every render | BHUVNESH | DONE | 20-08-2026 |
+| Document the mobile app design, `MOBILE/.docs/studzee.design.mobile.expo.md` | BHUVNESH | DONE | 20-08-2026 |
+| Show downloaded state on the content detail Resources list | BHUVNESH | DONE | 25-08-2026 |
+| Extract the shared alert and PDF download logic into `useCustomAlert` and `usePdfDownloads` | BHUVNESH | DONE | 25-08-2026 |
+| Wire `useNotificationPermissions` into Settings with foreground re-registration | BHUVNESH | DONE | 25-08-2026 |
 | MOBILE rewrite, after the backend is settled | BHUVNESH | PLANNED | 10-08-2026 |
 | DESKTOP rewrite, after the backend is settled | BHUVNESH | PLANNED | 10-08-2026 |
 
@@ -88,6 +93,6 @@ Date is the date the status last changed.
 | Terraform infrastructure as code for AWS | BHUVNESH | PLANNED | 18-08-2026 |
 | Deploy the backend on ECS with the image in ECR | BHUVNESH | PLANNED | 18-08-2026 |
 | Load balancing, autoscaling and Route 53 for the backend | BHUVNESH | PLANNED | 18-08-2026 |
-| Point the ingress `/noti` prefix at the merged backend | BHUVNESH | PLANNED | 10-08-2026 |
+| Old MOBILE builds calling `/noti/api/register`, resolved by updating the clients rather than a backend repoint | BHUVNESH | DONE | 21-08-2026 |
 | Set the renamed and new environment variables in the deployed environment | BHUVNESH | PLANNED | 11-08-2026 |
 | V2 architecture, overall | BHUVNESH | IN PROGRESS | 10-08-2026 |

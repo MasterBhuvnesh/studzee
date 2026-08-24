@@ -1,15 +1,3 @@
-export interface NotificationContextType {
-  expoPushToken: string | null;
-  error: Error | null;
-  isLoading: boolean;
-  registerToken: () => Promise<void>;
-  // Permission management
-  permissionGranted: boolean;
-  permissionLoading: boolean;
-  requestPermission: () => Promise<boolean>;
-  checkPermissionStatus: () => Promise<void>;
-}
-
 /**
  * Response from POST /notifications/register.
  *

@@ -3,6 +3,7 @@ import { AppIcon } from '@/components/global/AppIcon';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { useNotification } from '@/contexts/NotificationContext';
+import { useNotificationPermissions } from '@/hooks/useNotificationPermissions';
 import { SettingCardProps } from '@/types';
 import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -86,6 +87,12 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
 export default function SettingsPage() {
   const router = useRouter();
   const { expoPushToken, isLoading } = useNotification();
+  const {
+    granted,
+    status,
+    loading: checkingPermissions,
+    requestNotificationPermission,
+  } = useNotificationPermissions();
 
   const handleOpenSettings = () => {
     if (Platform.OS === 'ios') {
@@ -95,10 +102,14 @@ export default function SettingsPage() {
     }
   };
 
-  const handleNotificationToggle = async () => {
-    // Since permissions are handled automatically on app start,
-    // we can only direct users to system settings to change them
-    handleOpenSettings();
+  const handleNotificationToggle = () => {
+    // Undetermined means the native prompt was never answered, so it can be
+    // asked directly. Once decided, only the OS owns the change.
+    if (status === 'undetermined') {
+      void requestNotificationPermission();
+    } else {
+      handleOpenSettings();
+    }
   };
 
   return (
@@ -118,12 +129,15 @@ export default function SettingsPage() {
               items={[
                 {
                   label: 'App Notifications',
-                  onPress: handleOpenSettings,
+                  onPress: handleNotificationToggle,
                   icon: expoPushToken ? Bell : BellOff,
+                  // The switch mirrors the OS permission, the thing the
+                  // toggle actually controls. The Bell icon carries whether
+                  // a push token is registered with the backend.
                   hasToggle: true,
-                  toggleValue: !!expoPushToken,
+                  toggleValue: granted,
                   onToggleChange: handleNotificationToggle,
-                  toggleLoading: isLoading,
+                  toggleLoading: isLoading || checkingPermissions,
                 },
 
                 {

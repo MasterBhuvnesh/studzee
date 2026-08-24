@@ -1,10 +1,13 @@
-import type { ContentSection } from "@/types/api";
-import React from "react";
-import { Platform, ScrollView, Text, View } from "react-native";
+import type { ContentSection } from '@/types/api';
+import React from 'react';
+import { Platform, ScrollView, Text, View } from 'react-native';
 
-const EnrichedMarkdownText =
-  Platform.OS !== "web"
-    ? require("react-native-enriched-markdown").EnrichedMarkdownText
+// Exported so screens that need to render a raw markdown string directly
+// (rather than through the typed ContentSection blocks below) can reuse the
+// same web fallback instead of duplicating the platform check.
+export const EnrichedMarkdownText =
+  Platform.OS !== 'web'
+    ? require('react-native-enriched-markdown').EnrichedMarkdownText
     : ({ markdown }: { markdown: string; flavor?: string }) => (
         <Text>{markdown}</Text>
       );
@@ -19,38 +22,35 @@ export const Content = ({ content }: Props) => {
   return (
     <ScrollView className="px-1 py-3">
       {content.map((section, sectionIndex) => (
-        <View
-          key={`${section.title}-${sectionIndex}`}
-          className="mb-6"
-        >
+        <View key={`${section.title}-${sectionIndex}`} className="mb-6">
           {/* Title */}
-          <Text className="text-xl font-product-bold mb-2 text-zinc-800">
+          <Text className="mb-2 font-product-bold text-xl text-zinc-800">
             {section.title}
           </Text>
 
           {/* Blocks */}
           {section.content.map((block, blockIndex) => {
             switch (block.type) {
-              case "text":
+              case 'text':
                 return (
                   <Text
                     key={`text-${blockIndex}`}
-                    className="text-base leading-7 text-zinc-700 mb-2 font-sans"
+                    className="mb-2 font-sans text-base leading-7 text-zinc-700"
                   >
                     {block.value}
                   </Text>
                 );
 
-              case "list":
+              case 'list':
                 return (
                   <View key={`list-${blockIndex}`} className="mb-2">
                     {block.items.map((item, idx) => (
                       <View
                         key={`list-${blockIndex}-${idx}`}
-                        className="flex-row mb-1"
+                        className="mb-1 flex-row"
                       >
                         <Text className="mr-2">•</Text>
-                        <Text className="flex-1 text-zinc-700 font-sans">
+                        <Text className="flex-1 font-sans text-zinc-700">
                           {item}
                         </Text>
                       </View>
@@ -58,18 +58,18 @@ export const Content = ({ content }: Props) => {
                   </View>
                 );
 
-              case "table":
+              case 'table':
                 return (
                   <View
                     key={`table-${blockIndex}`}
-                    className="border border-zinc-300 mb-3 mt-2"
+                    className="mb-3 mt-2 border border-zinc-300"
                   >
                     {/* Header */}
                     <View className="flex-row bg-zinc-200">
                       {block.headers.map((header, idx) => (
                         <Text
                           key={`header-${blockIndex}-${idx}`}
-                          className="flex-1 p-2 font-semibold text-zinc-800 border-r border-zinc-300 font-sans"
+                          className="flex-1 border-r border-zinc-300 p-2 font-sans font-semibold text-zinc-800"
                         >
                           {header}
                         </Text>
@@ -85,7 +85,7 @@ export const Content = ({ content }: Props) => {
                         {row.map((cell, cIdx) => (
                           <Text
                             key={`cell-${blockIndex}-${rIdx}-${cIdx}`}
-                            className="flex-1 p-2 text-zinc-700 border-t border-r border-zinc-300 font-sans"
+                            className="flex-1 border-r border-t border-zinc-300 p-2 font-sans text-zinc-700"
                           >
                             {cell}
                           </Text>
@@ -95,7 +95,7 @@ export const Content = ({ content }: Props) => {
                   </View>
                 );
 
-              case "formula":
+              case 'formula':
                 return (
                   <View key={`formula-${blockIndex}`} className="my-3">
                     <EnrichedMarkdownText
@@ -105,8 +105,8 @@ export const Content = ({ content }: Props) => {
                   </View>
                 );
 
-              case "code": {
-                const lines = block.value.split("\n");
+              case 'code': {
+                const lines = block.value.split('\n');
 
                 return (
                   <View
@@ -114,16 +114,16 @@ export const Content = ({ content }: Props) => {
                     className="my-4 rounded-xl border border-zinc-300 bg-zinc-50"
                   >
                     {/* Header */}
-                    <View className="flex-row justify-between items-center px-3 py-2 border-b border-zinc-200">
-                      <Text className="text-xs text-zinc-500 font-sans">
+                    <View className="flex-row items-center justify-between border-b border-zinc-200 px-3 py-2">
+                      <Text className="font-sans text-xs text-zinc-500">
                         code
                       </Text>
 
                       <Text
                         onPress={() => setWrap(!wrap)}
-                        className="text-xs text-blue-500 font-sans"
+                        className="font-sans text-xs text-blue-500"
                       >
-                        {wrap ? "Unwrap" : "Wrap"}
+                        {wrap ? 'Unwrap' : 'Wrap'}
                       </Text>
                     </View>
 
@@ -136,38 +136,36 @@ export const Content = ({ content }: Props) => {
                           const trimmed = line.trim();
 
                           const isComment =
-                            trimmed.startsWith("#") ||
-                            trimmed.startsWith("//") ||
-                            trimmed.startsWith("/*") ||
-                            trimmed.startsWith("*") ||
-                            trimmed.endsWith("*/");
+                            trimmed.startsWith('#') ||
+                            trimmed.startsWith('//') ||
+                            trimmed.startsWith('/*') ||
+                            trimmed.startsWith('*') ||
+                            trimmed.endsWith('*/');
 
                           return (
                             <Text
                               key={`line-${blockIndex}-${idx}`}
                               style={{
-                                fontFamily: "monospace",
-                                flexWrap: wrap ? "wrap" : "nowrap",
-                                width: wrap ? "100%" : "auto",
+                                fontFamily: 'monospace',
+                                flexWrap: wrap ? 'wrap' : 'nowrap',
+                                width: wrap ? '100%' : 'auto',
                                 lineHeight: 18,
                               }}
-                              className="text-xs font-sans"
+                              className="font-sans text-xs"
                             >
                               {/* Line number */}
-                              <Text className="text-zinc-400 font-sans mr-2">
+                              <Text className="mr-2 font-sans text-zinc-400">
                                 {/* {String(idx + 1).padStart(3, " ")}{" "} */}
-                                - {" "}
+                                -{' '}
                               </Text>
 
                               {/* Code */}
                               <Text
                                 className={
-                                  isComment
-                                    ? "text-zinc-400"
-                                    : "text-zinc-800"
+                                  isComment ? 'text-zinc-400' : 'text-zinc-800'
                                 }
                               >
-                                {line || " "}
+                                {line || ' '}
                               </Text>
                             </Text>
                           );
