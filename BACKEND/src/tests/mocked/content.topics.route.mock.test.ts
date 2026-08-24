@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * MOCKED ROUTE TESTS FOR CONTENT TOPIC SUPPORT
  *
@@ -164,7 +164,7 @@ describe('GET /content topic filtering', () => {
     expect(response.body.meta.total).toBe(1)
     expect(mockFind).toHaveBeenCalledWith(
       { topic: 'devops' },
-      'title summary createdAt'
+      'title summary createdAt topic'
     )
 
     // ASSERT: filtered requests read their own cache namespace.

@@ -16,7 +16,9 @@ const getPaginatedContentFromDB = async (
   const skip = (page - 1) * limit
   const filter = topic ? { topic } : {}
   const [documents, total] = await Promise.all([
-    DocumentModel.find(filter, 'title summary createdAt')
+    // topic rides along in the projection so a client can group one page
+    // locally instead of issuing one request per topic.
+    DocumentModel.find(filter, 'title summary createdAt topic')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

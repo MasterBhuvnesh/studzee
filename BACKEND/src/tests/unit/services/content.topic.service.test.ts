@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * UNIT TESTS FOR CONTENT SERVICE TOPIC SUPPORT
  *
@@ -65,7 +65,7 @@ describe('listContent with a topic filter', () => {
     // ASSERT: both the page and the total are scoped to the topic.
     expect(DocumentModel.find).toHaveBeenCalledWith(
       { topic: 'system-design' },
-      'title summary createdAt'
+      'title summary createdAt topic'
     )
     expect(DocumentModel.countDocuments).toHaveBeenCalledWith({
       topic: 'system-design',
@@ -120,7 +120,7 @@ describe('listContent with a topic filter', () => {
     expect(redisClient.get).toHaveBeenCalledWith('content:list:page:1:limit:20')
     expect(DocumentModel.find).toHaveBeenCalledWith(
       {},
-      'title summary createdAt'
+      'title summary createdAt topic'
     )
     expect(DocumentModel.countDocuments).toHaveBeenCalledWith({})
   })
