@@ -56,6 +56,23 @@ export interface ContentSummary {
   title: string;
   summary: string;
   createdAt: string;
+  /** Registry key of the subject area, present since the backend projects it */
+  topic: string;
+}
+
+/**
+ * Entry of the fixed topic registry served by /content/topics
+ */
+export interface Topic {
+  key: string;
+  label: string;
+}
+
+/**
+ * Response type for /content/topics endpoint
+ */
+export interface TopicsResponse {
+  data: Topic[];
 }
 
 /**

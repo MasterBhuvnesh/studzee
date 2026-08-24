@@ -55,6 +55,8 @@ export type {
   QuizAttemptResult,
   QuizQuestion,
   RecentAttempt,
+  Topic,
+  TopicsResponse,
 } from './api';
 
 // Storage types

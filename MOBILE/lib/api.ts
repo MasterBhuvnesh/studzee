@@ -10,6 +10,8 @@ import type {
   QuizAttemptResponse,
   QuizAttemptResult,
   TodayContentResponse,
+  Topic,
+  TopicsResponse,
 } from '@/types/api';
 import { EXPO_PUBLIC_BACKEND_API_URL } from '@/utils/config';
 import logger from '@/utils/logger';
@@ -63,20 +65,24 @@ export async function getPdfs(
 
 /**
  * Fetches the list of content summaries with pagination support
- * @param params - Optional pagination parameters (page, limit)
+ * @param params - Optional pagination parameters (page, limit) and a topic key
  * @returns Promise with paginated content list response
  */
 export async function getContent(
-  params: PaginationParams = {}
+  params: PaginationParams & { topic?: string } = {}
 ): Promise<ContentListResponse> {
   try {
-    const { page = 1, limit = 20 } = params;
-    logger.info(`Fetching content list - page: ${page}, limit: ${limit}`);
+    const { page = 1, limit = 20, topic } = params;
+    logger.info(
+      `Fetching content list - page: ${page}, limit: ${limit}${topic ? `, topic: ${topic}` : ''}`
+    );
 
     const response = await axios.get<ContentListResponse>(
       `${API_BASE_URL}/content`,
       {
-        params: { page, limit },
+        // The backend rejects unknown topic keys with a 400, so only send
+        // the parameter when the caller actually has one.
+        params: topic ? { page, limit, topic } : { page, limit },
         timeout: 10000, // 10 second timeout
       }
     );
@@ -149,6 +155,40 @@ export async function getContentById(
     }
 
     logger.error(`Unexpected error fetching content detail: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Fetches the fixed topic registry (public endpoint)
+ * @returns Promise with every registry entry in display order
+ */
+export async function getTopics(): Promise<Topic[]> {
+  try {
+    logger.info('Fetching topic registry');
+
+    const response = await axios.get<TopicsResponse>(
+      `${API_BASE_URL}/content/topics`,
+      {
+        timeout: 10000, // 10 second timeout
+      }
+    );
+
+    logger.success(
+      `Topic registry fetched successfully - ${response.data.data.length} topics`
+    );
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.message;
+
+      logger.error(`Failed to fetch topics - Message: ${errorMessage}`);
+      throw new Error(errorMessage || 'Failed to fetch topics');
+    }
+
+    logger.error(`Unexpected error fetching topics: ${error}`);
     throw error;
   }
 }

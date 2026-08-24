@@ -1,7 +1,7 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
-import { getContent, getTodayContent } from '@/lib/api';
-import { ContentSummary } from '@/types';
+import { getContent, getTodayContent, getTopics } from '@/lib/api';
+import { ContentSummary, Topic } from '@/types';
 import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -276,6 +276,7 @@ const TodayContentSection = ({
 export default function HomePage() {
   const router = useRouter();
   const [content, setContent] = useState<ContentSummary[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -290,7 +291,9 @@ export default function HomePage() {
         setLoading(true);
         setError(null);
 
-        const contentResponse = await getContent({ page: 1, limit: 20 });
+        // One page covers grouping for the home sections; each section shows
+        // two entries and View All loads a per topic list of its own.
+        const contentResponse = await getContent({ page: 1, limit: 50 });
         setContent(contentResponse.data);
         logger.success('Content fetched successfully for home page');
       } catch (err) {
@@ -304,6 +307,20 @@ export default function HomePage() {
     }
 
     fetchContent();
+  }, []);
+
+  // Fetch the topic registry so sections render in canonical order with
+  // display labels instead of hardcoded strings.
+  useEffect(() => {
+    async function fetchTopics() {
+      try {
+        setTopics(await getTopics());
+      } catch (err) {
+        logger.warn(`Topic registry unavailable, falling back to keys: ${err}`);
+      }
+    }
+
+    fetchTopics();
   }, []);
 
   // Fetch today's content from backend API
@@ -340,10 +357,17 @@ export default function HomePage() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // Fetch both content and today's content in parallel
+      // Fetch content, today's content and the registry in parallel
       const [contentResponse, todayResponse] = await Promise.all([
-        getContent({ page: 1, limit: 20 }),
+        getContent({ page: 1, limit: 50 }),
         getTodayContent(),
+        getTopics()
+          .then(topics => {
+            setTopics(topics);
+          })
+          .catch(() => {
+            // Registry is optional on refresh; sections fall back to keys.
+          }),
       ]);
 
       setContent(contentResponse.data);
@@ -361,6 +385,28 @@ export default function HomePage() {
       setRefreshing(false);
     }
   }, []);
+
+  // Group the fetched page by topic, ordered by the registry so sections
+  // never jump around as content is added. Topics with nothing yet render
+  // as locked placeholders below the real sections.
+  const registry: Topic[] =
+    topics.length > 0
+      ? topics
+      : [{ key: 'machine-learning', label: 'Machine Learning' }];
+  const groups = new Map<string, ContentSummary[]>();
+  for (const item of content) {
+    const key = item.topic || 'machine-learning';
+    const bucket = groups.get(key);
+    if (bucket) {
+      bucket.push(item);
+    } else {
+      groups.set(key, [item]);
+    }
+  }
+  const activeTopics = registry.filter(
+    topic => (groups.get(topic.key)?.length ?? 0) > 0
+  );
+  const emptyTopics = registry.filter(topic => !groups.has(topic.key));
 
   const handleViewAll = () => {
     logger.debug('View All pressed - navigating to content page');
@@ -397,18 +443,30 @@ export default function HomePage() {
           {/* Error State */}
           {error && !loading && <ErrorState error={error} />}
 
-          {/* Content Section */}
-          {!loading && !error && content.length > 0 && (
-            <ContentSection
-              title="Machine Learning"
-              content={content}
-              onViewAll={handleViewAll}
-              router={router}
-            />
-          )}
+          {/* One section per topic that actually has content */}
+          {!loading &&
+            !error &&
+            activeTopics.map(topic => (
+              <ContentSection
+                key={topic.key}
+                title={topic.label}
+                content={groups.get(topic.key) ?? []}
+                onViewAll={() =>
+                  router.push({
+                    pathname: '/screens/content',
+                    params: { topic: topic.key, topicLabel: topic.label },
+                  })
+                }
+                router={router}
+              />
+            ))}
 
-          {/* Locked/Upcoming Content Section */}
-          {!loading && <LockedContentSection title="System Design" />}
+          {/* Locked placeholders for registry topics with no content yet */}
+          {!loading &&
+            !error &&
+            emptyTopics.map(topic => (
+              <LockedContentSection key={topic.key} title={topic.label} />
+            ))}
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
