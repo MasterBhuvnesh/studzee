@@ -3,6 +3,12 @@
 Running record of work done on this repository. Newest entry first.
 One entry per unit of work, with the branch, what changed, and why.
 
+## 25-08-2026
+
+- **Branch:** current working branch
+- **Changed:** Added `ignoreDeprecations: "6.0"` to the backend TypeScript configuration and upgraded the backend TypeScript dev dependency to 6.0.3.
+- **Why:** The editor reported that `baseUrl` will stop functioning in TypeScript 7. The project typecheck now accepts the suppression value and passes.
+
 ## PENDING
 
 Open items carried forward. Move each into a dated entry once it is done.

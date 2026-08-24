@@ -4,6 +4,7 @@
     "module": "commonjs",
     "rootDir": "./src",
     "baseUrl": "./src",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["*"]
     },
