@@ -20,6 +20,23 @@ import logger from '@/utils/logger';
 const API_BASE_URL = EXPO_PUBLIC_BACKEND_API_URL;
 
 /**
+ * Error carrying the backend's machine readable failure code, such as
+ * CONTENT_LOCKED on a points gated document, so screens can branch on
+ * failure mode instead of parsing messages.
+ */
+export class ApiError extends Error {
+  code?: string;
+  status?: number;
+
+  constructor(message: string, status?: number, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+/**
  * Fetches the list of PDF documents with pagination support
  * @param params - Optional pagination parameters (page, limit)
  * @returns Promise with paginated PDF list response
@@ -136,9 +153,13 @@ export async function getContentById(
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<{ message?: string }>;
+      const axiosError = error as AxiosError<{
+        message?: string;
+        code?: string;
+      }>;
       const errorMessage =
         axiosError.response?.data?.message || axiosError.message;
+      const errorCode = axiosError.response?.data?.code;
 
       logger.error(
         `Failed to fetch content detail - Status: ${axiosError.response?.status}, Message: ${errorMessage}`
@@ -146,12 +167,16 @@ export async function getContentById(
 
       // Handle specific error codes
       if (axiosError.response?.status === 401) {
-        throw new Error('Authentication required. Please sign in.');
+        throw new ApiError('Authentication required. Please sign in.', 401);
       } else if (axiosError.response?.status === 404) {
-        throw new Error('Content not found');
+        throw new ApiError('Content not found', 404);
       }
 
-      throw new Error(errorMessage || 'Failed to fetch content detail');
+      throw new ApiError(
+        errorMessage || 'Failed to fetch content detail',
+        axiosError.response?.status,
+        errorCode
+      );
     }
 
     logger.error(`Unexpected error fetching content detail: ${error}`);
