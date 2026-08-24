@@ -3,8 +3,12 @@ import axios, { type AxiosError } from 'axios';
 import type {
   ContentDetail,
   ContentListResponse,
+  MyProgress,
+  MyProgressResponse,
   PaginationParams,
   PdfsResponse,
+  QuizAttemptResponse,
+  QuizAttemptResult,
   TodayContentResponse,
 } from '@/types/api';
 import { EXPO_PUBLIC_BACKEND_API_URL } from '@/utils/config';
@@ -182,6 +186,109 @@ export async function getTodayContent(): Promise<TodayContentResponse> {
     }
 
     logger.error(`Unexpected error fetching today's content: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Fetches the signed-in user's gamification progress (requires authentication)
+ * @param authToken - Bearer authentication token from Clerk
+ * @returns Promise with points, level, streak, badges and recent attempts
+ */
+export async function getMyProgress(authToken: string): Promise<MyProgress> {
+  try {
+    logger.info('Fetching user progress');
+
+    const response = await axios.get<MyProgressResponse>(
+      `${API_BASE_URL}/progress/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        timeout: 10000, // 10 second timeout
+      }
+    );
+
+    logger.success(
+      `User progress fetched successfully - ${response.data.data.points} points`
+    );
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.message;
+
+      logger.error(
+        `Failed to fetch user progress - Status: ${axiosError.response?.status}, Message: ${errorMessage}`
+      );
+
+      if (axiosError.response?.status === 401) {
+        throw new Error('Authentication required. Please sign in.');
+      }
+
+      throw new Error(errorMessage || 'Failed to fetch progress');
+    }
+
+    logger.error(`Unexpected error fetching user progress: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Submits a completed quiz attempt so points, streak and badges update
+ * (requires authentication)
+ * @param authToken - Bearer authentication token from Clerk
+ * @param contentId - Content document the quiz belongs to
+ * @param responses - Quiz question key mapped to the chosen option index
+ * @returns Promise with score, points awarded, updated streak and new badges
+ */
+export async function submitQuizAttempt(
+  authToken: string,
+  contentId: string,
+  responses: Record<string, number>
+): Promise<QuizAttemptResult> {
+  try {
+    logger.info(`Submitting quiz attempt for content ID: ${contentId}`);
+
+    const response = await axios.post<QuizAttemptResponse>(
+      `${API_BASE_URL}/progress/attempts`,
+      { contentId, responses },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        timeout: 10000, // 10 second timeout
+      }
+    );
+
+    logger.success(
+      `Quiz attempt submitted successfully - awarded ${response.data.data.pointsAwarded} points`
+    );
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.message;
+
+      logger.error(
+        `Failed to submit quiz attempt - Status: ${axiosError.response?.status}, Message: ${errorMessage}`
+      );
+
+      if (axiosError.response?.status === 401) {
+        throw new Error('Authentication required. Please sign in.');
+      } else if (axiosError.response?.status === 400) {
+        throw new Error(errorMessage || 'Invalid quiz attempt');
+      } else if (axiosError.response?.status === 404) {
+        throw new Error('Content not found');
+      }
+
+      throw new Error(errorMessage || 'Failed to submit quiz attempt');
+    }
+
+    logger.error(`Unexpected error submitting quiz attempt: ${error}`);
     throw error;
   }
 }

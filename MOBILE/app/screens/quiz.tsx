@@ -1,10 +1,13 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
+import { submitQuizAttempt } from '@/lib/api';
+import type { QuizAttemptResult } from '@/types';
 import { Quiz, QuizQuestion } from '@/types';
 import logger from '@/utils/logger';
+import { useAuth } from '@clerk/clerk-expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Check, X as XIcon } from 'lucide-react-native';
+import { Award, Check, Flame, X as XIcon } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -110,6 +113,7 @@ const RadioOption = ({
 
 export default function QuizScreen() {
   const router = useRouter();
+  const { getToken } = useAuth();
   const params = useLocalSearchParams<{
     quiz: string;
     contentTitle: string;
@@ -123,6 +127,10 @@ export default function QuizScreen() {
   );
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<UserAnswer[]>([]);
+  const [attemptResult, setAttemptResult] = useState<QuizAttemptResult | null>(
+    null
+  );
+  const [submittingAttempt, setSubmittingAttempt] = useState(false);
 
   // Initialize quiz questions
   useEffect(() => {
@@ -162,8 +170,63 @@ export default function QuizScreen() {
       setResults(finalResults);
       setShowResults(true);
       logger.info('Quiz completed');
+
+      // Submission runs alongside the result screen and never blocks it
+      void submitAttempt(finalResults);
     } else {
       setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
+
+  /**
+   * Maps stored answers to the request shape and submits them for scoring.
+   * userAnswers holds the chosen option text keyed by question id, so each
+   * entry is converted back to its index in the question's unshuffled
+   * options array, which is what the backend grades against.
+   */
+  const buildResponses = (
+    finalResults: UserAnswer[]
+  ): Record<string, number> => {
+    const responses: Record<string, number> = {};
+    finalResults.forEach(result => {
+      const question = questions.find(q => q.id === result.questionId);
+      if (!question || !result.selectedOption) return;
+
+      const optionIndex = question.options.indexOf(result.selectedOption);
+      if (optionIndex >= 0) {
+        responses[result.questionId] = optionIndex;
+      }
+    });
+    return responses;
+  };
+
+  const submitAttempt = async (finalResults: UserAnswer[]) => {
+    if (!params.contentId) {
+      logger.warn('No contentId param provided, skipping attempt submission');
+      return;
+    }
+
+    try {
+      setSubmittingAttempt(true);
+
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Missing authentication token');
+      }
+
+      const result = await submitQuizAttempt(
+        token,
+        params.contentId,
+        buildResponses(finalResults)
+      );
+      setAttemptResult(result);
+      logger.success(
+        `Quiz attempt recorded - ${result.pointsAwarded} points awarded`
+      );
+    } catch (err) {
+      logger.warn(`Quiz attempt submission failed: ${err}`);
+    } finally {
+      setSubmittingAttempt(false);
     }
   };
 
@@ -229,6 +292,61 @@ export default function QuizScreen() {
                 {Math.round((correctCount / totalCount) * 100)}% Correct
               </Text>
             </View>
+
+            {/* Earned points and badges from the backend attempt */}
+            {submittingAttempt && !attemptResult && (
+              <Text className="mb-6 text-center font-sans text-xs text-zinc-400">
+                Saving your progress...
+              </Text>
+            )}
+            {attemptResult && (
+              <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <View className="flex-row items-center justify-center gap-2">
+                  <AppIcon Icon={Award} size={18} color={colors.amber[500]} />
+                  <Text className="font-product text-lg text-zinc-800">
+                    +{attemptResult.pointsAwarded} points earned
+                  </Text>
+                </View>
+                <Text className="mt-1 text-center font-sans text-sm text-zinc-500">
+                  {attemptResult.totalPoints} total points
+                </Text>
+                <View className="mt-3 flex-row items-center justify-center gap-1.5">
+                  <AppIcon Icon={Flame} size={14} color={colors.orange[500]} />
+                  <Text className="font-sans text-xs text-zinc-500">
+                    {attemptResult.streak.current} day streak (longest{' '}
+                    {attemptResult.streak.longest})
+                  </Text>
+                </View>
+                {attemptResult.newBadges.length > 0 && (
+                  <>
+                    <View className="my-4 h-px w-full bg-zinc-200" />
+                    <Text className="mb-3 text-center font-product text-sm text-zinc-800">
+                      New Badges
+                    </Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                    >
+                      {attemptResult.newBadges.map(badge => (
+                        <View
+                          key={badge.key}
+                          className="mr-2 flex-row items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5"
+                        >
+                          <AppIcon
+                            Icon={Award}
+                            size={13}
+                            color={colors.amber[500]}
+                          />
+                          <Text className="font-sans text-xs font-medium text-amber-700">
+                            {badge.label}
+                          </Text>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+              </View>
+            )}
 
             {/* Answer Review */}
             <Text className="mb-3 font-product text-lg text-zinc-800">

@@ -1,15 +1,18 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { Header } from '@/components/global/Header';
-import { PlanningList } from '@/components/profile/PlanningList';
+import { GamificationCard } from '@/components/profile/GamificationCard';
 import { colors } from '@/constants/colors';
+import { getMyProgress } from '@/lib/api';
 import { ProfileCardProps } from '@/types';
+import type { MyProgress } from '@/types';
 import { useLogTokenDev } from '@/utils/jwt.dev';
-import { useUser } from '@clerk/clerk-expo';
+import logger from '@/utils/logger';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Link, TriangleAlertIcon, Key } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -76,19 +79,52 @@ const ProfileCard = ({
 
 export default function ProfilePage() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
   const logToken = useLogTokenDev();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [progress, setProgress] = useState<MyProgress | null>(null);
+  const [progressLoading, setProgressLoading] = useState(true);
+  const [progressError, setProgressError] = useState<string | null>(null);
+
+  const fetchProgress = useCallback(async () => {
+    try {
+      setProgressLoading(true);
+      setProgressError(null);
+
+      // Get auth token from Clerk
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Authentication required. Please sign in.');
+      }
+
+      logger.info('Fetching user progress');
+      const data = await getMyProgress(token);
+      setProgress(data);
+      logger.success('User progress loaded successfully');
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to load progress';
+      setProgressError(errorMessage);
+      logger.error(`Error loading progress: ${errorMessage}`);
+    } finally {
+      setProgressLoading(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => {
+    void fetchProgress();
+  }, [fetchProgress]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await fetchProgress();
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [fetchProgress]);
 
   return (
     <LinearGradient
@@ -153,7 +189,12 @@ export default function ProfilePage() {
             onEditBio={() => router.push('/screens/edit-bio')}
           />
 
-          <PlanningList />
+          <GamificationCard
+            progress={progress}
+            loading={progressLoading}
+            error={progressError}
+            onRetry={() => void fetchProgress()}
+          />
 
           {process.env.NODE_ENV !== 'production' && (
             <View className="flex-row items-center justify-center">
