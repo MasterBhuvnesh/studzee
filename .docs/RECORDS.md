@@ -79,7 +79,10 @@ Date is the date the status last changed.
 | Point MOBILE at `/notifications/register` on the merged backend | BHUVNESH | DONE | 10-08-2026 |
 | Fix `registerToken` missing from the mobile notification context | BHUVNESH | DONE | 20-08-2026 |
 | Fix the notification auto-register effect refiring on every render | BHUVNESH | DONE | 20-08-2026 |
-| Document the mobile app design, `MOBILE/studzee.design.mobile.expo.md` | BHUVNESH | DONE | 20-08-2026 |
+| Document the mobile app design, `MOBILE/.docs/studzee.design.mobile.expo.md` | BHUVNESH | DONE | 20-08-2026 |
+| Show downloaded state on the content detail Resources list | BHUVNESH | DONE | 25-08-2026 |
+| Extract the shared alert and PDF download logic into `useCustomAlert` and `usePdfDownloads` | BHUVNESH | DONE | 25-08-2026 |
+| Wire `useNotificationPermissions` into Settings with foreground re-registration | BHUVNESH | DONE | 25-08-2026 |
 | MOBILE rewrite, after the backend is settled | BHUVNESH | PLANNED | 10-08-2026 |
 | DESKTOP rewrite, after the backend is settled | BHUVNESH | PLANNED | 10-08-2026 |
 

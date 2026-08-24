@@ -56,6 +56,73 @@ Open items carried forward. Move each into a dated entry once it is done.
 - Style: no em dashes, no emoji, in code, comments, commits, and documentation.
 - Comments: specific and professional, explaining intent rather than restating the code.
 
+## 2026-08-25
+
+**Branch:** `fix/mobile-notification-token-registration`
+
+### Flip the content detail screen back to real content
+
+- `SAMPLE_MODE` in `MOBILE/app/screens/[id].tsx` went back to `false`, so the
+  screen fetches the real document by ID and renders the typed JSON blocks
+  again instead of the hardcoded Gradient Descent markdown sample. The sample
+  block stays in place uncommitted-to-git until now: deleting it outright
+  would have destroyed the only copy of the markdown preview that workstream
+  3 still needs, so the flag flip keeps it available while making it dead code.
+
+### Close the three recorded mobile gaps
+
+The gaps are the ones listed in `MOBILE/.docs/studzee.design.mobile.expo.md`
+under known gaps: no downloaded state on content detail, alert/skeleton/
+download logic duplicated per screen, and a dormant notification permissions
+hook.
+
+- New `hooks/useCustomAlert.ts` owns the alert config object and its show and
+  hide helpers that `pdfs.tsx` and `resources.tsx` each declared by hand.
+- New `hooks/usePdfDownloads.ts` owns the whole local PDF library: the
+  downloaded list with document ID and source URL views, in-flight downloads,
+  the re-download confirmation, remote viewing in the browser, and the bottom
+  sheet actions for a downloaded file. This is the near-200 lines that
+  `pdfs.tsx` and `resources.tsx` previously maintained as two diverging
+  copies, and it is what `[id].tsx` was missing when it rendered Resources
+  rows with no knowledge of download state.
+- `screens/[id].tsx` consumes both hooks. Each PDF row now shows a green
+  check and a Downloaded label when that file's URL is in the local library,
+  and pressing Download on an already downloaded document asks the same
+  re-download confirmation the other screens use. Matching is per source URL,
+  because storage is keyed by document ID while one document can hold several
+  files. Its remote view path moved to the hook as well, gaining a failure
+  alert it never had.
+- `screens/pdfs.tsx` and `app/(tabs)/resources.tsx` shrank onto the hooks with
+  behaviour preserved. resources.tsx also folds its two near-identical inline
+  skeleton cards into one local `SectionCardSkeleton`, and drops a dead
+  `selectedPdf` state that nothing read. Skeletons elsewhere stay hand rolled:
+  home and content detail skeletons differ enough that merging them would
+  mean inventing a configuration layer for no gain.
+- `hooks/useNotificationPermissions.ts` is rewritten and wired into
+  `settings.tsx` after sitting unimported. It now exposes the tri-state
+  permission status, asks the native prompt when the permission is
+  undetermined, opens system settings once decided, and watches `AppState`:
+  returning to the foreground re-reads permission and completes backend
+  registration when the permission became granted while no push token exists.
+  That closes the real hole the dormant hook was written for, where a user who
+  denied at first prompt and granted later in settings stayed unregistered
+  until the next login. The Settings switch now reflects OS permission while
+  the Bell icon keeps showing token registration.
+
+### Verification and a pre-existing lint breakage
+
+- `npx tsc --noEmit` passes in MOBILE, and every touched file passes
+  `prettier --check`.
+- `npm run lint` fails with `TypeError: Plugin "" not found` raised while
+  evaluating `eslint.config.js` itself, before any file is scanned, so it
+  fails identically on untouched files. This predates the change and looks
+  like an ESLint 9.39 flat-config resolution problem in that config's
+  `extends` block. Not fixed here; it needs its own investigation.
+- A prettier sweep reformatted four unrelated files carrying older 4-space
+  formatting drift (`onboarding.tsx`, both layout files, `types/index.ts`).
+  They were restored so this diff stays scoped; those four still fail a
+  module-wide `format:check` exactly as they did before this work.
+
 ## 2026-08-21
 
 **Branch:** `fix/mobile-notification-token-registration`

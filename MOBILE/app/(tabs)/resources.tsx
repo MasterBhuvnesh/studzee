@@ -5,22 +5,18 @@ import { DownloadedPdfInfo } from '@/components/global/DownloadedPdfInfo';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { getPdfs } from '@/lib/api';
-import { deletePdf, downloadPdf, openPdf, sharePdf } from '@/lib/download';
-import { getDownloadedPdfs, isPdfDownloaded } from '@/lib/storage';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { usePdfDownloads } from '@/hooks/usePdfDownloads';
 import {
   DownloadedCardProps,
-  DownloadedPdfMetadata,
   PdfDocument,
   PdfItem,
   ResourceCardProps,
 } from '@/types';
 import logger from '@/utils/logger';
-import { useAuth } from '@clerk/clerk-expo';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import {
   CheckCircle2,
   ChevronRight,
@@ -28,7 +24,7 @@ import {
   Info,
   Loader2,
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -44,6 +40,51 @@ interface ResourceCardWithDownloadProps extends ResourceCardProps {
   downloadedIds?: string[];
   onViewAll?: () => void;
 }
+
+/**
+ * Loading placeholder shaped like the section cards below it. Widths are
+ * passed as complete class strings because NativeWind only extracts static
+ * class names.
+ */
+const SectionCardSkeleton = ({
+  headerClass,
+  lineClass,
+  rows,
+}: {
+  headerClass: string;
+  lineClass: string;
+  rows: number;
+}) => (
+  <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
+    <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
+      <View
+        className={['h-5', headerClass, 'rounded', 'bg-zinc-200'].join(' ')}
+      />
+      <View className="h-4 w-24 rounded bg-zinc-200" />
+    </View>
+    <View className="p-2">
+      {Array.from({ length: rows }, (_, index) => (
+        <View key={index}>
+          <View className="flex-row items-center rounded-xl px-4 py-2">
+            <View className="h-7 w-7 rounded-lg bg-zinc-100" />
+            <View className="ml-3 flex-1">
+              <View
+                className={[
+                  'mb-2 h-4',
+                  lineClass,
+                  'rounded',
+                  'bg-zinc-100',
+                ].join(' ')}
+              />
+              <View className="h-3 w-16 rounded bg-zinc-100" />
+            </View>
+          </View>
+          {index < rows - 1 && <View className="mx-4 h-px bg-zinc-50" />}
+        </View>
+      ))}
+    </View>
+  </View>
+);
 
 const ResourceCard = ({
   title,
@@ -180,7 +221,7 @@ const DownloadedCard = ({
                 style={{ width: 26, height: 26 }}
                 className="rounded-lg"
               />
-              <View className="ml-3 flex-1">
+              <View className="ml-3 mr-2 flex-1">
                 <Text
                   className="font-sans text-base text-zinc-500"
                   numberOfLines={2}
@@ -212,67 +253,38 @@ const DownloadedCard = ({
 
 export default function ResourcesPage() {
   const router = useRouter();
-  const { getToken } = useAuth();
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const [selectedPdf, setSelectedPdf] = useState<PdfItem | null>(null);
-  const [selectedDownloadedPdf, setSelectedDownloadedPdf] =
-    useState<DownloadedPdfMetadata | null>(null);
 
   // API data state
   const [pdfs, setPdfs] = useState<PdfDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Downloaded PDFs state
-  const [downloadedPdfs, setDownloadedPdfs] = useState<DownloadedPdfMetadata[]>(
-    []
-  );
-  const [downloadingIds, setDownloadingIds] = useState<string[]>([]);
-  const [downloadedIds, setDownloadedIds] = useState<string[]>([]);
+  // Shared alert dialog and PDF download/library logic
+  const { alertConfig, showAlert, hideAlert } = useCustomAlert();
+  const {
+    downloadedPdfs,
+    downloadingIds,
+    downloadedIds,
+    refresh: refreshDownloaded,
+    download,
+    viewRemote,
+    selectedDownloadedPdf,
+    sheetRef,
+    openSheet,
+    viewSelected,
+    shareSelected,
+    removeSelected,
+  } = usePdfDownloads({ showAlert });
 
-  // Alert state
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    title: string;
-    message: string;
-    buttons: {
-      text: string;
-      style?: 'default' | 'cancel' | 'destructive';
-      onPress?: () => void;
-    }[];
-  }>({ visible: false, title: '', message: '', buttons: [] });
-
-  const showAlert = (
-    title: string,
-    message: string,
-    buttons: {
-      text: string;
-      style?: 'default' | 'cancel' | 'destructive';
-      onPress?: () => void;
-    }[]
-  ) => {
-    setAlertConfig({ visible: true, title, message, buttons });
-  };
-
-  const hideAlert = () => {
-    setAlertConfig({ visible: false, title: '', message: '', buttons: [] });
-  };
-
-  // Fetch data from backend API and load downloaded PDFs
+  // Fetch data from backend API
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch PDFs from API
         const pdfsResponse = await getPdfs({ page: 1, limit: 20 });
         setPdfs(pdfsResponse.data);
-
-        // Load downloaded PDFs from storage
-        const downloaded = await getDownloadedPdfs();
-        setDownloadedPdfs(downloaded);
-        setDownloadedIds(downloaded.map(pdf => pdf.documentId));
 
         logger.success('PDFs data fetched successfully');
       } catch (err) {
@@ -288,17 +300,6 @@ export default function ResourcesPage() {
     fetchData();
   }, []);
 
-  // Refresh downloaded PDFs list
-  const refreshDownloadedPdfs = useCallback(async () => {
-    try {
-      const downloaded = await getDownloadedPdfs();
-      setDownloadedPdfs(downloaded);
-      setDownloadedIds(downloaded.map(pdf => pdf.documentId));
-    } catch (err) {
-      logger.error(`Failed to refresh downloaded PDFs: ${err}`);
-    }
-  }, []);
-
   // Refresh state and function
   const [refreshing, setRefreshing] = useState(false);
 
@@ -309,8 +310,8 @@ export default function ResourcesPage() {
       const pdfsResponse = await getPdfs({ page: 1, limit: 20 });
       setPdfs(pdfsResponse.data);
 
-      // Load downloaded PDFs from storage
-      await refreshDownloadedPdfs();
+      // Re-read the local download library so state matches disk
+      await refreshDownloaded();
 
       logger.success('Resources refreshed successfully');
       setError(null);
@@ -321,157 +322,7 @@ export default function ResourcesPage() {
     } finally {
       setRefreshing(false);
     }
-  }, [refreshDownloadedPdfs]);
-
-  // View PDF in browser
-  const viewResourcePdf = useCallback(async (pdfUrl: string, title: string) => {
-    try {
-      logger.info(`Opening PDF in browser: ${title}`);
-      await WebBrowser.openBrowserAsync(pdfUrl, {
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        controlsColor: colors.zinc[800],
-        toolbarColor: colors.zinc[50],
-      });
-    } catch (err) {
-      logger.error(`Failed to open PDF: ${err}`);
-      showAlert('Error', 'Failed to open PDF', [
-        { text: 'OK', style: 'cancel' },
-      ]);
-    }
-  }, []);
-
-  // Handle PDF download
-  const handleDownload = useCallback(async (item: any) => {
-    if (!item.documentId || !item.pdfUrl) {
-      showAlert('Error', 'Invalid PDF data', [{ text: 'OK', style: 'cancel' }]);
-      return;
-    }
-
-    // Check if already downloaded
-    const isAlreadyDownloaded = await isPdfDownloaded(item.documentId);
-    if (isAlreadyDownloaded) {
-      // Show confirmation dialog
-      showAlert(
-        'PDF Already Downloaded',
-        'This PDF has already been downloaded. Do you want to download it again?',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Re-download',
-            onPress: async () => {
-              // Delete existing and re-download
-              await deletePdf(item.documentId);
-              await performDownload(item);
-            },
-          },
-        ]
-      );
-      return;
-    }
-
-    await performDownload(item);
-  }, []);
-
-  // Perform the actual download
-  const performDownload = async (item: any) => {
-    try {
-      setDownloadingIds(prev => [...prev, item.documentId]);
-
-      const result = await downloadPdf(
-        item.documentId,
-        item.label,
-        item.label, // Using label as pdfName
-        item.pdfUrl,
-        parseInt(item.size?.replace(/[^0-9]/g, '') || '0') * 1024 // Convert KB to bytes
-      );
-
-      if (result.success) {
-        showAlert('Success', 'PDF downloaded successfully', [
-          { text: 'OK', style: 'default' },
-        ]);
-        await refreshDownloadedPdfs();
-      } else {
-        showAlert('Download Failed', result.error || 'Unknown error', [
-          { text: 'OK', style: 'cancel' },
-        ]);
-      }
-    } catch (err) {
-      showAlert(
-        'Download Failed',
-        err instanceof Error ? err.message : 'Unknown error',
-        [{ text: 'OK', style: 'cancel' }]
-      );
-    } finally {
-      setDownloadingIds(prev => prev.filter(id => id !== item.documentId));
-    }
-  };
-
-  const openDownloadedPdf = useCallback((item: DownloadedPdfMetadata) => {
-    setSelectedDownloadedPdf(item);
-    bottomSheetRef.current?.present?.();
-  }, []);
-
-  const closeBottomSheet = useCallback(() => {
-    bottomSheetRef.current?.dismiss?.();
-    setSelectedDownloadedPdf(null);
-  }, []);
-
-  // Handle view PDF
-  const handleViewPdf = useCallback(async () => {
-    if (!selectedDownloadedPdf) return;
-
-    const success = await openPdf(selectedDownloadedPdf.localUri);
-    if (!success) {
-      showAlert('Error', 'Failed to open PDF', [
-        { text: 'OK', style: 'cancel' },
-      ]);
-    }
-  }, [selectedDownloadedPdf]);
-
-  // Handle share PDF
-  const handleSharePdf = useCallback(async () => {
-    if (!selectedDownloadedPdf) return;
-
-    const success = await sharePdf(selectedDownloadedPdf.localUri);
-    if (!success) {
-      showAlert('Error', 'Failed to share PDF', [
-        { text: 'OK', style: 'cancel' },
-      ]);
-    }
-  }, [selectedDownloadedPdf]);
-
-  // Handle remove PDF
-  const handleRemovePdf = useCallback(async () => {
-    if (!selectedDownloadedPdf) return;
-
-    showAlert('Remove PDF', 'Are you sure you want to remove this PDF?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          const success = await deletePdf(selectedDownloadedPdf.documentId);
-          if (success) {
-            showAlert('Success', 'PDF removed successfully', [
-              { text: 'OK', style: 'default' },
-            ]);
-            await refreshDownloadedPdfs();
-            closeBottomSheet();
-          } else {
-            showAlert('Error', 'Failed to remove PDF', [
-              { text: 'OK', style: 'cancel' },
-            ]);
-          }
-        },
-      },
-    ]);
-  }, [selectedDownloadedPdf, refreshDownloadedPdfs, closeBottomSheet]);
+  }, [refreshDownloaded]);
 
   return (
     <>
@@ -499,53 +350,16 @@ export default function ResourcesPage() {
               {/* Loading State - Skeleton Placeholders */}
               {loading && (
                 <>
-                  {/* Skeleton for PDFs Card */}
-                  <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
-                    <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
-                      <View className="h-5 w-32 rounded bg-zinc-200" />
-                      <View className="h-4 w-24 rounded bg-zinc-200" />
-                    </View>
-                    <View className="p-2">
-                      {[1, 2, 3].map(index => (
-                        <View key={index}>
-                          <View className="flex-row items-center rounded-xl px-4 py-2">
-                            <View className="h-7 w-7 rounded-lg bg-zinc-100" />
-                            <View className="ml-3 flex-1">
-                              <View className="mb-2 h-4 w-3/4 rounded bg-zinc-100" />
-                              <View className="h-3 w-16 rounded bg-zinc-100" />
-                            </View>
-                          </View>
-                          {index < 3 && (
-                            <View className="mx-4 h-px bg-zinc-50" />
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Skeleton for Downloaded PDFs Card */}
-                  <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
-                    <View className="relative flex-row items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
-                      <View className="h-5 w-40 rounded bg-zinc-200" />
-                      <View className="h-4 w-24 rounded bg-zinc-200" />
-                    </View>
-                    <View className="p-2">
-                      {[1, 2].map(index => (
-                        <View key={index}>
-                          <View className="flex-row items-center rounded-xl px-4 py-2">
-                            <View className="h-7 w-7 rounded-lg bg-zinc-100" />
-                            <View className="ml-3 flex-1">
-                              <View className="mb-2 h-4 w-4/5 rounded bg-zinc-100" />
-                              <View className="h-3 w-16 rounded bg-zinc-100" />
-                            </View>
-                          </View>
-                          {index < 2 && (
-                            <View className="mx-4 h-px bg-zinc-50" />
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                  </View>
+                  <SectionCardSkeleton
+                    headerClass="w-32"
+                    lineClass="w-3/4"
+                    rows={3}
+                  />
+                  <SectionCardSkeleton
+                    headerClass="w-40"
+                    lineClass="w-4/5"
+                    rows={2}
+                  />
                 </>
               )}
 
@@ -569,10 +383,22 @@ export default function ResourcesPage() {
                     label: pdf.title,
                     documentId: pdf.documentId,
                     pdfUrl: pdf.pdfUrl,
-                    onPress: () => viewResourcePdf(pdf.pdfUrl, pdf.title),
+                    onPress: () => void viewRemote(pdf.pdfUrl, pdf.title),
                     size: `${(pdf.size / 1024).toFixed(0)} KB`,
                   }))}
-                  onDownload={handleDownload}
+                  onDownload={item =>
+                    void download({
+                      documentId: item.documentId,
+                      title: item.label,
+                      // The card only carries a display label, so it doubles
+                      // as the stored file name and the size arrives as KB.
+                      pdfName: item.label,
+                      pdfUrl: item.pdfUrl,
+                      size:
+                        parseInt(item.size?.replace(/[^0-9]/g, '') || '0', 10) *
+                        1024,
+                    })
+                  }
                   downloadingIds={downloadingIds}
                   downloadedIds={downloadedIds}
                   onViewAll={() =>
@@ -587,7 +413,7 @@ export default function ResourcesPage() {
                   title="Downloaded PDFs"
                   items={downloadedPdfs.slice(0, 2).map(pdf => ({
                     label: pdf.title,
-                    onPress: () => openDownloadedPdf(pdf),
+                    onPress: () => openSheet(pdf),
                     size: `${(pdf.size / 1024).toFixed(0)} KB`,
                     icon: Info,
                   }))}
@@ -601,7 +427,7 @@ export default function ResourcesPage() {
         </SafeAreaView>
       </LinearGradient>
 
-      <CustomBottomSheetModal ref={bottomSheetRef}>
+      <CustomBottomSheetModal ref={sheetRef}>
         <View className="flex-1 p-4">
           {selectedDownloadedPdf ? (
             <DownloadedPdfInfo
@@ -611,9 +437,9 @@ export default function ResourcesPage() {
               date={new Date(
                 selectedDownloadedPdf.downloadedAt
               ).toLocaleDateString()}
-              onView={handleViewPdf}
-              onShare={handleSharePdf}
-              onRemove={handleRemovePdf}
+              onView={viewSelected}
+              onShare={shareSelected}
+              onRemove={removeSelected}
             />
           ) : (
             <View className="items-center justify-center py-8">
