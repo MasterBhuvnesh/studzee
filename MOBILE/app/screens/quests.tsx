@@ -49,6 +49,81 @@ const GemsPill = ({ gems }: { gems: number }) => (
 );
 
 /**
+ * Hero card at the top of the quests screen: gems earned in this window,
+ * how much of the window is done, and what is still on the table.
+ */
+const GemsSummaryCard = ({
+  earned,
+  done,
+  total,
+  remaining,
+}: {
+  earned: number;
+  done: number;
+  total: number;
+  remaining: number;
+}) => {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  return (
+    <LinearGradient
+      colors={[colors.amber[50], '#ffffff']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      className="mb-6 rounded-2xl border border-amber-200 p-5 shadow-lg"
+    >
+      <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center gap-3">
+          <View className="rounded-2xl bg-white p-2.5">
+            <Image
+              source={GEM}
+              style={{ width: 26, height: 26 }}
+              contentFit="contain"
+            />
+          </View>
+          <View>
+            <Text className="font-sans text-xs text-amber-600">
+              Gems Earned
+            </Text>
+            <Text className="font-product text-3xl text-zinc-900">
+              {earned}
+            </Text>
+          </View>
+        </View>
+
+        <View className="items-end gap-1.5">
+          <View className="flex-row items-center gap-1 rounded-full border border-amber-200 bg-white px-2.5 py-1">
+            <Check size={12} color={colors.green[500]} strokeWidth={2.5} />
+            <Text className="font-sans text-[11px] text-amber-800">
+              {done} of {total}
+            </Text>
+          </View>
+          {remaining > 0 && (
+            <View className="flex-row items-center gap-1">
+              <Image
+                source={GEM}
+                style={{ width: 12, height: 12 }}
+                contentFit="contain"
+              />
+              <Text className="font-product text-[11px] text-amber-700">
+                +{remaining} up for grabs
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View className="mt-4 h-1.5 rounded-full bg-amber-100">
+        <View
+          className="h-full rounded-full bg-amber-400"
+          style={{ width: `${pct}%` }}
+        />
+      </View>
+    </LinearGradient>
+  );
+};
+
+/**
  * One row in a quest section: icon tile, title, description and either the
  * gem reward (available) or a completion check (done).
  */
@@ -323,6 +398,11 @@ export default function QuestsScreen() {
 
   const available = quests.filter(quest => !quest.completed);
   const completed = quests.filter(quest => quest.completed);
+  const earnedGems = completed.reduce((total, quest) => total + quest.gems, 0);
+  const remainingGems = available.reduce(
+    (total, quest) => total + quest.gems,
+    0
+  );
 
   const openQuest = (quest: QuestSummary) => {
     if (quest.completed) {
@@ -397,40 +477,24 @@ export default function QuestsScreen() {
               className="flex-1 px-6"
               showsVerticalScrollIndicator={false}
             >
-              {/* Gems summary */}
-              <View className="mb-6 flex-row items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg">
-                <View className="flex-row items-center gap-3">
-                  <Image
-                    source={GEM}
-                    style={{ width: 36, height: 36 }}
-                    contentFit="contain"
-                  />
-                  <View>
-                    <Text className="font-sans text-xs text-zinc-400">
-                      Your Gems
-                    </Text>
-                    <Text className="font-product text-xl text-zinc-900">
-                      {quests.reduce(
-                        (total, quest) =>
-                          total + (quest.completed ? quest.gems : 0),
-                        0
-                      )}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
               {loading ? (
                 <>
                   {/* Gems summary skeleton */}
-                  <View className="mb-6 flex-row items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg">
-                    <View className="flex-row items-center gap-3">
-                      <View className="h-9 w-9 rounded-lg bg-zinc-100" />
-                      <View>
-                        <View className="mb-1.5 h-3 w-16 rounded bg-zinc-100" />
-                        <View className="h-5 w-12 rounded bg-zinc-200" />
+                  <View className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg">
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3">
+                        <View className="h-11 w-11 rounded-2xl bg-zinc-100" />
+                        <View>
+                          <View className="mb-1.5 h-3 w-16 rounded bg-zinc-100" />
+                          <View className="h-7 w-12 rounded bg-zinc-200" />
+                        </View>
+                      </View>
+                      <View className="items-end gap-2">
+                        <View className="h-5 w-16 rounded-full bg-zinc-100" />
+                        <View className="h-3 w-24 rounded bg-zinc-100" />
                       </View>
                     </View>
+                    <View className="mt-4 h-1.5 w-full rounded-full bg-zinc-100" />
                   </View>
 
                   {/* Quest row skeletons */}
@@ -468,6 +532,13 @@ export default function QuestsScreen() {
                 </View>
               ) : (
                 <>
+                  <GemsSummaryCard
+                    earned={earnedGems}
+                    done={completed.length}
+                    total={quests.length}
+                    remaining={remainingGems}
+                  />
+
                   {/* Available quests */}
                   <Text className="mb-2 font-sans text-xs uppercase tracking-widest text-zinc-400">
                     Available
