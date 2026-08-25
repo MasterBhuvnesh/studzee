@@ -4,17 +4,18 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
-import { forwardRef, ReactNode, useCallback, useMemo } from 'react';
+import { forwardRef, ReactNode, useCallback } from 'react';
 
 export type Ref = BottomSheetModal;
 
 interface CustomBottomSheetModalProps {
   children?: ReactNode;
+  /** Snap points as percentages of screen height; defaults to a short sheet */
+  snapPoints?: string[];
 }
 
 const CustomBottomSheetModal = forwardRef<Ref, CustomBottomSheetModalProps>(
-  ({ children }, ref) => {
-    const snapPoints = useMemo(() => ['30%'], []);
+  ({ children, snapPoints = ['30%'] }, ref) => {
     const renderBackdrop = useCallback(
       (props: any) => (
         <BottomSheetBackdrop

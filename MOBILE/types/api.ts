@@ -69,6 +69,52 @@ export interface Topic {
 }
 
 /**
+ * Question in a quest payload, sanitized by the backend: no answers
+ */
+export interface QuestQuestion {
+  key: string;
+  que: string;
+  options?: string[];
+}
+
+/**
+ * Quest from /quests, in window for the caller
+ */
+export interface QuestSummary {
+  id: string;
+  title: string;
+  description: string;
+  /** mcq | scq | fill_blank | read_blog */
+  type: string;
+  gems: number;
+  contentId: string | null;
+  passScore: number;
+  questions: QuestQuestion[];
+  startsAt: string;
+  endsAt: string;
+  completed: boolean;
+}
+
+/**
+ * Response type for /quests endpoint
+ */
+export interface QuestsResponse {
+  success: boolean;
+  data: QuestSummary[];
+}
+
+/**
+ * Result of POST /quests/:id/complete
+ */
+export interface QuestCompletionResult {
+  alreadyCompleted?: boolean;
+  passed?: boolean;
+  score?: number;
+  total?: number;
+  gemsAwarded?: number;
+}
+
+/**
  * Response type for /content/topics endpoint
  */
 export interface TopicsResponse {
