@@ -5,13 +5,12 @@ import { colors } from '@/constants/colors';
 import { getMyProgress } from '@/lib/api';
 import { ProfileCardProps } from '@/types';
 import type { MyProgress } from '@/types';
-import { useLogTokenDev } from '@/utils/jwt.dev';
 import logger from '@/utils/logger';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Link, TriangleAlertIcon, Key } from 'lucide-react-native';
+import { Link, TriangleAlertIcon } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   RefreshControl,
@@ -21,6 +20,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Dev token logger, commented out at the owner's request. Lives in
+// utils/jwt.dev.ts; uncomment with its button below when needed.
+// import { useLogTokenDev } from '@/utils/jwt.dev';
+// import { Key } from 'lucide-react-native';
 
 interface ExtendedProfileCardProps extends ProfileCardProps {
   onEditBio?: () => void;
@@ -81,7 +85,7 @@ export default function ProfilePage() {
   const { user } = useUser();
   const { getToken } = useAuth();
   const router = useRouter();
-  const logToken = useLogTokenDev();
+  // const logToken = useLogTokenDev();
 
   const [refreshing, setRefreshing] = useState(false);
   const [progress, setProgress] = useState<MyProgress | null>(null);
@@ -211,7 +215,9 @@ export default function ProfilePage() {
             onRetry={() => void fetchProgress()}
           />
 
-          {process.env.NODE_ENV !== 'production' && (
+          {/* Dev token logger, commented out at the owner's request.
+              Uncomment with the useLogTokenDev import and hook above. */}
+          {/* {process.env.NODE_ENV !== 'production' && (
             <View className="flex-row items-center justify-center">
               <TouchableOpacity
                 onPress={logToken}
@@ -224,7 +230,7 @@ export default function ProfilePage() {
                 </Text>
               </TouchableOpacity>
             </View>
-          )}
+          )} */}
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>

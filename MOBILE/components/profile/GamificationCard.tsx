@@ -1,5 +1,5 @@
 import { AppIcon } from '@/components/global/AppIcon';
-import { RecentAttemptRow } from '@/components/profile/RecentAttemptRow';
+import { RecentQuizzesSection } from '@/components/profile/RecentQuizzesSection';
 import { colors } from '@/constants/colors';
 import type { BadgeStatus, MyProgress } from '@/types';
 import { Award, ChevronRight, Flame, Lock } from 'lucide-react-native';
@@ -220,38 +220,10 @@ export const GamificationCard = ({
         )}
 
         {/* Recent quizzes */}
-        {progress.recentAttempts.length > 0 && (
-          <View className="border-t border-zinc-200 p-6 pt-4">
-            <View className="mb-3 flex-row items-center justify-between">
-              <Text className="font-product text-sm text-zinc-800">
-                Recent Quizzes
-              </Text>
-              {progress.recentAttempts.length > recentLimit && (
-                <TouchableOpacity
-                  onPress={() => router.push('/screens/recent-quizzes')}
-                  className="flex-row items-center gap-1 active:opacity-70"
-                  activeOpacity={0.7}
-                >
-                  <Text className="font-sans text-xs text-zinc-500">
-                    View All
-                  </Text>
-                  <AppIcon
-                    Icon={ChevronRight}
-                    size={13}
-                    strokeWidth={2}
-                    color={colors.zinc[500]}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-            {progress.recentAttempts.slice(0, recentLimit).map(attempt => (
-              <RecentAttemptRow
-                key={`${attempt.contentId}-${attempt.createdAt}`}
-                attempt={attempt}
-              />
-            ))}
-          </View>
-        )}
+        <RecentQuizzesSection
+          attempts={progress.recentAttempts}
+          limit={recentLimit}
+        />
       </View>
     </View>
   );
