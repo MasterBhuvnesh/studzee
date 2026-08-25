@@ -11,6 +11,11 @@ export interface Level {
   key: string
   label: string
   minPoints: number
+  /**
+   * Optional artwork. Left undefined for every entry for now; the client
+   * falls back to a bundled placeholder when it is absent.
+   */
+  imageUrl?: string
 }
 
 /**
@@ -52,8 +57,18 @@ export interface Badge {
    * names: attempts, streak days, points or perfect attempts.
    */
   threshold: number
+  /**
+   * Optional artwork. Left undefined for every entry for now; the client
+   * falls back to a bundled placeholder when it is absent.
+   */
+  imageUrl?: string
 }
 
+/**
+ * The perfectionist badge is a tiered ladder sharing one predicate over
+ * fullScoreCount. Tiers ascend by threshold, so a user crossing a higher rung
+ * has already earned every lower one.
+ */
 export const BADGES: Badge[] = [
   {
     key: 'first-steps',
@@ -91,13 +106,39 @@ export const BADGES: Badge[] = [
     description: 'Score full marks on a quiz attempt',
     threshold: 1,
   },
+  {
+    key: 'perfectionist-x2',
+    label: 'Perfectionist II',
+    description: 'Score full marks on 10 quiz attempts',
+    threshold: 10,
+  },
+  {
+    key: 'perfectionist-x3',
+    label: 'Perfectionist III',
+    description: 'Score full marks on 25 quiz attempts',
+    threshold: 25,
+  },
+  {
+    key: 'perfectionist-x4',
+    label: 'Perfectionist IV',
+    description: 'Score full marks on 100 quiz attempts',
+    threshold: 100,
+  },
 ]
 
 export interface BadgeContext {
   attemptCount: number
   longestStreak: number
   totalPoints: number
-  hasPerfectAttempt: boolean
+  /**
+   * Stored full-score attempts PLUS the current attempt when it graded
+   * perfect. The stored rows are written after evaluation, so counting them
+   * alone would miss the attempt that crosses the threshold; the caller adds
+   * the in-flight submission to keep the predicates seeing post-submission
+   * state. This replaces the old hasPerfectAttempt boolean, which was
+   * equivalent only for the single-badge tier.
+   */
+  fullScoreCount: number
 }
 
 /**
@@ -114,7 +155,10 @@ const BADGE_PREDICATES: Record<
   'week-warrior': (ctx, threshold) => ctx.longestStreak >= threshold,
   century: (ctx, threshold) => ctx.totalPoints >= threshold,
   'half-k': (ctx, threshold) => ctx.totalPoints >= threshold,
-  perfectionist: (ctx) => ctx.hasPerfectAttempt,
+  perfectionist: (ctx, threshold) => ctx.fullScoreCount >= threshold,
+  'perfectionist-x2': (ctx, threshold) => ctx.fullScoreCount >= threshold,
+  'perfectionist-x3': (ctx, threshold) => ctx.fullScoreCount >= threshold,
+  'perfectionist-x4': (ctx, threshold) => ctx.fullScoreCount >= threshold,
 }
 
 /**

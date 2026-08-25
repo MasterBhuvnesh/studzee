@@ -127,8 +127,14 @@ describe('ContentController - getPaginatedContent', () => {
     )
 
     // ASSERT: Service was called with correct params, including the
-    // undefined topic slot the route level middleware leaves when absent
-    expect(ContentService.listContent).toHaveBeenCalledWith(1, 20, undefined)
+    // undefined topic and tag slots the route level middleware leaves when
+    // absent
+    expect(ContentService.listContent).toHaveBeenCalledWith(
+      1,
+      20,
+      undefined,
+      undefined
+    )
 
     // ASSERT: Response was sent with correct data
     expect(mockRes.json).toHaveBeenCalledWith(fakeServiceResponse)
@@ -161,7 +167,47 @@ describe('ContentController - getPaginatedContent', () => {
     )
 
     // ASSERT
-    expect(ContentService.listContent).toHaveBeenCalledWith(2, 10, 'devops')
+    expect(ContentService.listContent).toHaveBeenCalledWith(
+      2,
+      10,
+      'devops',
+      undefined
+    )
+    expect(mockRes.json).toHaveBeenCalledWith(fakeServiceResponse)
+  })
+
+  /**
+   * TEST CASE 3: Tag Passthrough
+   *
+   * Tags are freeform, so any validated string reaches the service untouched;
+   * whether it matches documents is the query's business, not the schema's.
+   */
+  it('should pass a validated tag through to the service', async () => {
+    // ARRANGE
+    const fakeServiceResponse = {
+      data: [],
+      meta: { page: 1, limit: 20, total: 0 },
+    }
+    vi.mocked(ContentService.listContent).mockResolvedValue(fakeServiceResponse)
+
+    mockRes.locals = {
+      query: { page: 1, limit: 20, topic: 'machine-learning', tag: 'nlp' },
+    }
+
+    // ACT
+    await ContentController.getPaginatedContent(
+      mockReq as Request,
+      mockRes as Response,
+      mockNext
+    )
+
+    // ASSERT
+    expect(ContentService.listContent).toHaveBeenCalledWith(
+      1,
+      20,
+      'machine-learning',
+      'nlp'
+    )
     expect(mockRes.json).toHaveBeenCalledWith(fakeServiceResponse)
   })
 

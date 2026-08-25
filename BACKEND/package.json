@@ -19,6 +19,7 @@
     "seed": "ts-node -r tsconfig-paths/register src/cli/seeds/seed.ts",
     "seed:today": "ts-node -r tsconfig-paths/register src/cli/seeds/today.seed.ts",
     "seed:topics": "ts-node -r tsconfig-paths/register src/cli/seeds/sample-topics.seed.ts",
+    "seed:quests": "ts-node -r tsconfig-paths/register src/cli/seeds/quests.seed.ts",
     "job:refresh-cache": "ts-node -r tsconfig-paths/register src/cli/tools/run-job.ts",
     "do-release": "bash ../release.sh backend patch",
     "do-release:minor": "bash ../release.sh backend minor",

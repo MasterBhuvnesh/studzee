@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/config'
 import { DocumentModel } from '@/models/document.model'
 import {
@@ -9,6 +10,7 @@ import {
   resolveLevel,
   resolveNextLevel,
 } from '@/models/gamification'
+import { getFullScoreAttemptCount } from '@/services/badge-stats'
 import { AppError } from '@/types/errors'
 import logger from '@/utils/logger'
 
@@ -102,6 +104,163 @@ export interface AttemptResult {
   newBadges: Pick<Badge, 'key' | 'label' | 'description'>[]
 }
 
+export interface AwardSummary {
+  totalPoints: number
+  streak: Streaks
+  newBadges: Pick<Badge, 'key' | 'label' | 'description'>[]
+}
+
+export interface AwardOptions {
+  /**
+   * True when the triggering event is itself a quiz attempt, so the attempt
+   * count fed to the badges grows by one. Quest completions are activity but
+   * not attempts and leave the count alone.
+   */
+  countsAsAttempt?: boolean
+  /** True when the triggering event was itself a full score quiz attempt. */
+  isFullScore?: boolean
+  /**
+   * Extra writes that must commit atomically with the activity recording,
+   * such as the QuizAttempt insert on the quiz path.
+   */
+  withinTransaction?: (tx: Prisma.TransactionClient) => Promise<void>
+}
+
+/**
+ * Shared award path for anything that counts as user activity: upsert today's
+ * UTC day, move points by delta, recompute streaks from full history and grant
+ * any newly deserved badges. The quiz path and the quest completion path both
+ * funnel through here so streaks and badges stay consistent across features.
+ *
+ * Every read happens before the transaction so the interactive window only
+ * carries the writes it needs. Against a pooled remote Postgres the default 5s
+ * budget is easily spent by latency alone when reads sit inside, which is
+ * exactly how this used to fail.
+ */
+export const recordActivityAndAward = async (
+  userId: string,
+  pointsDelta: number,
+  options: AwardOptions = {}
+): Promise<AwardSummary> => {
+  const todayUtc = new Date(
+    Date.UTC(
+      new Date().getUTCFullYear(),
+      new Date().getUTCMonth(),
+      new Date().getUTCDate()
+    )
+  )
+
+  const [
+    ownedBadges,
+    activity,
+    existingProgress,
+    priorAttemptsCount,
+    fullScoreCount,
+  ] = await Promise.all([
+    prisma.awardedBadge.findMany({
+      where: { userId },
+      select: { badgeKey: true },
+    }),
+    prisma.dailyActivity.findMany({
+      where: { userId },
+      select: { date: true },
+      orderBy: { date: 'asc' },
+    }),
+    prisma.userProgress.findUnique({
+      where: { userId },
+    }),
+    prisma.quizAttempt.count({ where: { userId } }),
+    getFullScoreAttemptCount(userId),
+  ])
+
+  // The event being recorded is itself activity, so today joins the history
+  // before the chain is walked.
+  const dayKeys = activity.map((row) => row.date.toISOString().slice(0, 10))
+  const todayKey = todayUtc.toISOString().slice(0, 10)
+  const streaks = computeStreaks([...dayKeys, todayKey])
+
+  const totalPoints = (existingProgress?.points ?? 0) + pointsDelta
+  const longestStreak = Math.max(
+    streaks.longest,
+    existingProgress?.longestStreak ?? 0
+  )
+
+  const attemptCount = priorAttemptsCount + (options.countsAsAttempt ? 1 : 0)
+  const ownedKeys = new Set(ownedBadges.map((badge) => badge.badgeKey))
+  const context = {
+    attemptCount,
+    longestStreak,
+    totalPoints,
+    // The stored rows are written after evaluation, so the event in flight is
+    // not among them: a quiz submission that graded full marks adds itself.
+    fullScoreCount: fullScoreCount + (options.isFullScore ? 1 : 0),
+  }
+  const newKeys = evaluateBadges(context).filter((key) => !ownedKeys.has(key))
+
+  const recorded = await prisma.$transaction(
+    async (tx) => {
+      if (options.withinTransaction) {
+        await options.withinTransaction(tx)
+      }
+
+      await tx.dailyActivity.upsert({
+        where: { userId_date: { userId, date: todayUtc } },
+        create: { userId, date: todayUtc },
+        update: {},
+      })
+
+      await tx.userProgress.upsert({
+        where: { userId },
+        create: {
+          userId,
+          points: totalPoints,
+          currentStreak: streaks.current,
+          longestStreak,
+        },
+        update: {
+          points: { increment: pointsDelta },
+          currentStreak: streaks.current,
+          longestStreak,
+        },
+      })
+
+      if (newKeys.length > 0) {
+        // skipDuplicates keeps a concurrent attempt from failing on the
+        // unique (userId, badgeKey) pair; both sides awarding is harmless.
+        await tx.awardedBadge.createMany({
+          data: newKeys.map((badgeKey) => ({ userId, badgeKey })),
+          skipDuplicates: true,
+        })
+      }
+
+      return { totalPoints, streaks, newKeys }
+    },
+    { timeout: 15000, maxWait: 10000 }
+  )
+
+  return {
+    totalPoints: recorded.totalPoints,
+    streak: recorded.streaks,
+    newBadges: toBadgeSummaries(recorded.newKeys),
+  }
+}
+
+const toBadgeSummaries = (
+  keys: string[]
+): Pick<Badge, 'key' | 'label' | 'description'>[] =>
+  keys.flatMap((key) => {
+    const badge = findBadge(key)
+    return badge
+      ? [
+          {
+            key: badge.key,
+            label: badge.label,
+            description: badge.description,
+          },
+        ]
+      : []
+  })
+
 /**
  * Grade a quiz submission and record everything the tracker derives from it.
  *
@@ -151,101 +310,15 @@ export const gradeAndRecordAttempt = async (
     POINTS_PER_CORRECT * score - POINTS_PER_CORRECT * (priorBest?.score ?? 0)
   )
 
-  // A perfect prior attempt implies this content was fully scored before, so
-  // the perfectionist badge must not depend on beating your own best.
-  const hasPerfectAttempt =
-    total > 0 &&
-    (score === total ||
-      (priorBest != null && priorBest.score === priorBest.total))
-
-  const todayUtc = new Date(
-    Date.UTC(
-      new Date().getUTCFullYear(),
-      new Date().getUTCMonth(),
-      new Date().getUTCDate()
-    )
-  )
-
-  // Every read happens before the transaction so the interactive window only
-  // carries the four writes it needs. Against a pooled remote Postgres the
-  // default 5s budget is easily spent by latency alone when reads sit inside,
-  // which is exactly how this used to fail.
-  const [priorAttemptsCount, ownedBadges, activity] = await Promise.all([
-    prisma.quizAttempt.count({ where: { userId } }),
-    prisma.awardedBadge.findMany({
-      where: { userId },
-      select: { badgeKey: true },
-    }),
-    prisma.dailyActivity.findMany({
-      where: { userId },
-      select: { date: true },
-      orderBy: { date: 'asc' },
-    }),
-  ])
-
-  const dayKeys = activity.map((row) => row.date.toISOString().slice(0, 10))
-  const todayKey = todayUtc.toISOString().slice(0, 10)
-  const streaks = computeStreaks([...dayKeys, todayKey])
-
-  const existingProgress = await prisma.userProgress.findUnique({
-    where: { userId },
-  })
-  const totalPoints = (existingProgress?.points ?? 0) + pointsAwarded
-  const longestStreak = Math.max(
-    streaks.longest,
-    existingProgress?.longestStreak ?? 0
-  )
-
-  const attemptCount = priorAttemptsCount + 1
-  const ownedKeys = new Set(ownedBadges.map((badge) => badge.badgeKey))
-  const deservedKeys = evaluateBadges({
-    attemptCount,
-    longestStreak,
-    totalPoints,
-    hasPerfectAttempt,
-  })
-  const newKeys = deservedKeys.filter((key) => !ownedKeys.has(key))
-
-  const recorded = await prisma.$transaction(
-    async (tx) => {
+  const summary = await recordActivityAndAward(userId, pointsAwarded, {
+    countsAsAttempt: true,
+    isFullScore: total > 0 && score === total,
+    withinTransaction: async (tx) => {
       await tx.quizAttempt.create({
         data: { userId, contentId, score, total, pointsAwarded },
       })
-
-      await tx.dailyActivity.upsert({
-        where: { userId_date: { userId, date: todayUtc } },
-        create: { userId, date: todayUtc },
-        update: {},
-      })
-
-      await tx.userProgress.upsert({
-        where: { userId },
-        create: {
-          userId,
-          points: totalPoints,
-          currentStreak: streaks.current,
-          longestStreak,
-        },
-        update: {
-          points: { increment: pointsAwarded },
-          currentStreak: streaks.current,
-          longestStreak,
-        },
-      })
-
-      if (newKeys.length > 0) {
-        // skipDuplicates keeps a concurrent attempt from failing on the
-        // unique (userId, badgeKey) pair; both sides awarding is harmless.
-        await tx.awardedBadge.createMany({
-          data: newKeys.map((badgeKey) => ({ userId, badgeKey })),
-          skipDuplicates: true,
-        })
-      }
-
-      return { totalPoints, streaks, newKeys }
     },
-    { timeout: 15000, maxWait: 10000 }
-  )
+  })
 
   logger.debug(
     { userId, contentId, score, total, pointsAwarded },
@@ -257,20 +330,9 @@ export const gradeAndRecordAttempt = async (
     score,
     total,
     pointsAwarded,
-    totalPoints: recorded.totalPoints,
-    streak: recorded.streaks,
-    newBadges: recorded.newKeys.flatMap((key) => {
-      const badge = findBadge(key)
-      return badge
-        ? [
-            {
-              key: badge.key,
-              label: badge.label,
-              description: badge.description,
-            },
-          ]
-        : []
-    }),
+    totalPoints: summary.totalPoints,
+    streak: summary.streak,
+    newBadges: summary.newBadges,
   }
 }
 
