@@ -11,6 +11,50 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 25-08-2026
 
+**Branch:** `feat/mobile-achievements`
+
+### Achievements screen, gems, and celebration moments
+
+The owner refined the game feel backlog with concrete decisions and supplied
+assets, so items 1 to 4 moved from plan to build in one pass.
+
+- New `screens/achievements.tsx` with in screen Badges and Levels tabs,
+  locked versus unlocked states, a current level highlight, and a bottom
+  sheet detail per entry. Badge and level art renders remote first with the
+  bundled `sample_badge_level.png` as fallback, because art added later
+  cannot ship through EAS Update. The level ladder is mirrored client side
+  until the catalog endpoint grows one.
+- Points are gems now: `assets/images/gem.png` renders on the profile card,
+  the achievements header, quiz results and the quests placeholder. The word
+  points gives way to gems in user facing copy.
+- Two celebration moments, deliberately separate: badge unlocks raise a
+  centred modal on a dimmed transparent backdrop (the reference screenshot
+  style), while a perfect quiz score plays the committed
+  `assets/lottie/celebrate.json` once over the results via
+  `lottie-react-native` 7.3.8.
+- `screens/quests.tsx` is a styled placeholder so the route exists before
+  the backend does; quest types and admin creation stay recorded in TCSK
+  item 5.
+- Profile card links to Achievements and shows the gem count.
+
+Verification: `npx tsc --noEmit` clean and prettier clean on every touched
+file. Device behaviour (Lottie playback, bottom sheet gestures) is untested
+from this machine and needs a run on the Expo dev client.
+
+### Stop the progress fetch loop
+
+- The profile and achievements screens hammered `GET /progress/me` in an
+  infinite loop and tripped the global rate limiter. Root cause is the same
+  one fixed for notification registration on 20-08-2026: `fetchProgress` was
+  keyed on Clerk's `getToken`, which is not referentially stable, so every
+  fetch's own re-render rebuilt the callback and refired the effect. Fixed
+  with the established pattern: `getToken` read through a ref, empty
+  callback dependencies, and an in flight guard against overlapping manual
+  pulls. Recorded in FIXES with the general lesson, since this will bite
+  every future screen that keys an effect on a Clerk hook return value.
+
+## 25-08-2026
+
 **Branch:** `main` (release)
 
 ### Release backend v4.1.0
@@ -28,6 +72,13 @@ One entry per unit of work, with the branch, what changed, and why.
 ## PENDING
 
 Open items carried forward. Move each into a dated entry once it is done.
+
+- **Work through the mobile game feel and growth backlog.** Recorded in
+  TCSK on 25-08-2026 as twelve numbered items: achievements screen, badge and
+  level artwork, points as gems, celebration animations, quests, streak
+  heatmap, reading polish, in app notifications, blog tags, support agent,
+  newsletter agent with its mandatory approval gate, and the subscription or
+  bring your own key AI agent. Suggested order is in the section.
 
 - **Repoint the ingress so already installed apps keep working.** MOBILE source
   now calls `/notifications/register`, but every device running the released
@@ -820,4 +871,3 @@ live against a running instance.
   PACKAGES, SERVICES, TERRAFORM, WEBSITE, and `.vscode`, along with the stray
   root `package.json` and `package-lock.json`. Kept BACKEND, NOTIFICATION,
   MOBILE, DESKTOP, `.github`, `code.sh`, `.docs`, and this worklog.
-

@@ -1,9 +1,13 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
 import type { BadgeStatus, MyProgress, RecentAttempt } from '@/types';
-import { Award, Flame, Lock } from 'lucide-react-native';
+import { Award, ChevronRight, Flame, Lock } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+
+const GEM = require('@/assets/images/gem.png');
 
 interface GamificationCardProps {
   progress: MyProgress | null;
@@ -110,6 +114,8 @@ export const GamificationCard = ({
   error,
   onRetry,
 }: GamificationCardProps) => {
+  const router = useRouter();
+
   if (loading && !progress) {
     return <GamificationSkeleton />;
   }
@@ -154,9 +160,24 @@ export const GamificationCard = ({
 
   return (
     <View className="mb-6">
-      <Text className="mb-4 font-product text-xl text-zinc-800">
-        Your Progress
-      </Text>
+      <View className="mb-4 flex-row items-center justify-between">
+        <Text className="font-product text-xl text-zinc-800">
+          Your Progress
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push('/screens/achievements')}
+          className="flex-row items-center gap-1 active:opacity-70"
+          activeOpacity={0.7}
+        >
+          <Text className="font-sans text-sm text-zinc-500">Achievements</Text>
+          <AppIcon
+            Icon={ChevronRight}
+            size={16}
+            strokeWidth={2}
+            color={colors.zinc[500]}
+          />
+        </TouchableOpacity>
+      </View>
 
       <View className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
         <View className="p-6 pb-4">
@@ -172,9 +193,14 @@ export const GamificationCard = ({
                   : 'Top level reached'}
               </Text>
             </View>
-            <View className="rounded-xl bg-zinc-100 px-3 py-1.5">
+            <View className="flex-row items-center gap-1.5 rounded-xl bg-zinc-100 px-3 py-1.5">
+              <Image
+                source={GEM}
+                style={{ width: 18, height: 18 }}
+                contentFit="contain"
+              />
               <Text className="font-product text-base text-zinc-800">
-                {progress.points} pts
+                {progress.points}
               </Text>
             </View>
           </View>

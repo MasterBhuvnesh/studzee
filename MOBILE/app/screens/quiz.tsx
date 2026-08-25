@@ -1,3 +1,4 @@
+import { AchievementCelebrationModal } from '@/components/achievements/AchievementCelebrationModal';
 import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
 import { submitQuizAttempt } from '@/lib/api';
@@ -5,12 +6,17 @@ import type { QuizAttemptResult } from '@/types';
 import { Quiz, QuizQuestion } from '@/types';
 import logger from '@/utils/logger';
 import { useAuth } from '@clerk/clerk-expo';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Award, Check, Flame, X as XIcon } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import LottieView from 'lottie-react-native';
+import { Check, Flame, X as XIcon } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const GEM = require('@/assets/images/gem.png');
+const CELEBRATE = require('@/assets/lottie/celebrate.json');
 
 // ============ TYPES ============
 
@@ -131,6 +137,25 @@ export default function QuizScreen() {
     null
   );
   const [submittingAttempt, setSubmittingAttempt] = useState(false);
+  const [celebrationBadge, setCelebrationBadge] = useState<
+    QuizAttemptResult['newBadges'][number] | null
+  >(null);
+  const [lottieVisible, setLottieVisible] = useState(false);
+
+  // The Lottie overlay is reserved for a perfect score; badge unlocks use
+  // the celebration modal instead, so the two moments stay distinct.
+  useEffect(() => {
+    if (showResults && results.length > 0 && results.every(r => r.isCorrect)) {
+      setLottieVisible(true);
+    }
+  }, [showResults, results]);
+
+  // Surface the first newly earned badge as a celebration once it arrives
+  useEffect(() => {
+    if (attemptResult && attemptResult.newBadges.length > 0) {
+      setCelebrationBadge(attemptResult.newBadges[0]);
+    }
+  }, [attemptResult]);
 
   // Initialize quiz questions
   useEffect(() => {
@@ -293,7 +318,7 @@ export default function QuizScreen() {
               </Text>
             </View>
 
-            {/* Earned points and badges from the backend attempt */}
+            {/* Earned gems and badges from the backend attempt */}
             {submittingAttempt && !attemptResult && (
               <Text className="mb-6 text-center font-sans text-xs text-zinc-400">
                 Saving your progress...
@@ -302,14 +327,26 @@ export default function QuizScreen() {
             {attemptResult && (
               <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <View className="flex-row items-center justify-center gap-2">
-                  <AppIcon Icon={Award} size={18} color={colors.amber[500]} />
+                  <Image
+                    source={GEM}
+                    style={{ width: 20, height: 20 }}
+                    contentFit="contain"
+                  />
                   <Text className="font-product text-lg text-zinc-800">
-                    +{attemptResult.pointsAwarded} points earned
+                    +{attemptResult.pointsAwarded} gems earned
                   </Text>
                 </View>
-                <Text className="mt-1 text-center font-sans text-sm text-zinc-500">
-                  {attemptResult.totalPoints} total points
-                </Text>
+                <View className="mt-1 flex-row items-center justify-center gap-1">
+                  <Text className="text-center font-sans text-sm text-zinc-500">
+                    {attemptResult.totalPoints}
+                  </Text>
+                  <Image
+                    source={GEM}
+                    style={{ width: 13, height: 13 }}
+                    contentFit="contain"
+                  />
+                  <Text className="font-sans text-sm text-zinc-500">total</Text>
+                </View>
                 <View className="mt-3 flex-row items-center justify-center gap-1.5">
                   <AppIcon Icon={Flame} size={14} color={colors.orange[500]} />
                   <Text className="font-sans text-xs text-zinc-500">
@@ -332,11 +369,6 @@ export default function QuizScreen() {
                           key={badge.key}
                           className="mr-2 flex-row items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5"
                         >
-                          <AppIcon
-                            Icon={Award}
-                            size={13}
-                            color={colors.amber[500]}
-                          />
                           <Text className="font-sans text-xs font-medium text-amber-700">
                             {badge.label}
                           </Text>
@@ -422,6 +454,32 @@ export default function QuizScreen() {
             })}
           </ScrollView>
         </SafeAreaView>
+
+        {/* Full marks celebration, plays once over the results */}
+        {lottieVisible && (
+          <View
+            pointerEvents="none"
+            className="absolute inset-0 items-center justify-center"
+          >
+            <LottieView
+              source={CELEBRATE}
+              autoPlay
+              loop={false}
+              style={{ width: '100%', height: '100%' }}
+              onAnimationFinish={() => setLottieVisible(false)}
+            />
+          </View>
+        )}
+
+        {/* Badge unlock celebration */}
+        <AchievementCelebrationModal
+          visible={celebrationBadge !== null}
+          imageSource={require('@/assets/images/sample_badge_level.png')}
+          eyebrow="Badge Unlocked"
+          title={celebrationBadge?.label ?? ''}
+          subtitle={celebrationBadge?.description ?? ''}
+          onClose={() => setCelebrationBadge(null)}
+        />
       </LinearGradient>
     );
   }

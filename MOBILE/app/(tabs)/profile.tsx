@@ -12,7 +12,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Link, TriangleAlertIcon, Key } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -88,13 +88,27 @@ export default function ProfilePage() {
   const [progressLoading, setProgressLoading] = useState(true);
   const [progressError, setProgressError] = useState<string | null>(null);
 
+  // Clerk does not guarantee getToken is referentially stable. Reading it
+  // through a ref keeps fetchProgress, and therefore the mount effect below,
+  // from being rebuilt on every render this fetch causes itself. That
+  // rebuild loop was hammering /progress/me until the global rate limiter
+  // cut the app off. Same pattern as NotificationContext.
+  const getTokenRef = useRef(getToken);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
+
+  const inFlight = useRef(false);
+
   const fetchProgress = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     try {
       setProgressLoading(true);
       setProgressError(null);
 
       // Get auth token from Clerk
-      const token = await getToken();
+      const token = await getTokenRef.current();
       if (!token) {
         throw new Error('Authentication required. Please sign in.');
       }
@@ -109,9 +123,10 @@ export default function ProfilePage() {
       setProgressError(errorMessage);
       logger.error(`Error loading progress: ${errorMessage}`);
     } finally {
+      inFlight.current = false;
       setProgressLoading(false);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
     void fetchProgress();
