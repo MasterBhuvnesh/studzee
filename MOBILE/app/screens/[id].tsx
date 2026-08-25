@@ -4,7 +4,8 @@ import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { CustomAlert } from '@/components/global/CustomAlert';
 import { FactModal } from '@/components/global/FactModal';
 import { colors } from '@/constants/colors';
-import { getContentById, ApiError } from '@/lib/api';
+import { getContentById, completeQuest, ApiError } from '@/lib/api';
+import { addNotification } from '@/lib/inapp';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { usePdfDownloads } from '@/hooks/usePdfDownloads';
 import { ContentDetail } from '@/types';
@@ -241,7 +242,10 @@ const QuizIllustration = () => {
 
 export default function ContentDetailPage() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, questId } = useLocalSearchParams<{
+    id: string;
+    questId?: string;
+  }>();
   const { getToken } = useAuth();
   const keyNotesSheetRef = useRef<BottomSheetModal>(null);
 
@@ -259,6 +263,37 @@ export default function ContentDetailPage() {
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
   const { downloadingIds, downloadedUrls, download, viewRemote } =
     usePdfDownloads({ showAlert });
+
+  // Read a blog quest: when opened from a quest, reaching the end of the
+  // document claims it. The ref keeps the claim to one attempt per mount.
+  const questClaimedRef = useRef(false);
+  const claimReadQuest = async (quest: string) => {
+    if (questClaimedRef.current) return;
+    questClaimedRef.current = true;
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const result = await completeQuest(token, quest, { read: true });
+      if (result.passed) {
+        logger.success(
+          `Read quest completed: +${result.gemsAwarded ?? 0} gems`
+        );
+        void addNotification(
+          'Quest Complete',
+          `You finished the reading quest and earned ${result.gemsAwarded ?? 0} gems.`
+        );
+        showAlert(
+          'Quest Complete',
+          `You read it to the end and earned ${result.gemsAwarded ?? 0} gems.`,
+          [{ text: 'Nice', style: 'default' }]
+        );
+      }
+    } catch (err) {
+      logger.warn(`Read quest claim failed: ${err}`);
+      questClaimedRef.current = false;
+    }
+  };
 
   const fetchContent = async () => {
     try {
@@ -399,6 +434,18 @@ export default function ContentDetailPage() {
                 100
               );
               setReadProgress(percentage);
+
+              // Read a blog quest: reaching the end proves the read. Guarded
+              // to loaded content so scrolling a skeleton cannot claim it.
+              if (
+                questId &&
+                percentage >= 95 &&
+                !loading &&
+                !error &&
+                content
+              ) {
+                void claimReadQuest(questId as string);
+              }
             }}
             scrollEventThrottle={16}
           >
