@@ -234,8 +234,9 @@ storage design reopens.
 > migration `20260824202549_user_tracker` applied to Neon. MOBILE got the
 > profile gamification card and server graded quiz submission. Still open
 > below: home screen sections still hardcode "Machine Learning" and "System
-> Design" instead of rendering real topics, the blog is unbuilt, markdown
-> authoring stays provisional, DESKTOP admin screens are noted for later.
+> Design" instead of rendering real topics, the blog is unbuilt, DESKTOP
+> admin screens are noted for later. Markdown authoring was dropped on this
+> date, see workstream 3.
 
 ### 1. GAMIFIED USER TRACKER
 
@@ -277,23 +278,13 @@ is effectively single subject today despite looking topic based.
 
 ### 3. CONTENT AUTHORING, JSON BLOCKS TOWARD MARKDOWN
 
-Explicitly provisional. The owner said outright they are not sure yet and
-expect this to change based on user feedback.
-
-- Motivation is diagram support in content, which the current block structure
-  does not carry.
-- Today's shape, confirmed 21-08-2026 in `MOBILE/components/content/contentmd.tsx`:
-  content is a typed JSON structure, `ContentSection[]`, sections holding
-  typed blocks (`type: 'text'`, and others). Individual text blocks already
-  render through `react-native-enriched-markdown`'s `EnrichedMarkdownText`,
-  so markdown syntax inside a text block already works. Moving to markdown
-  authoring is a structural change away from typed JSON blocks, not merely
-  turning on markdown rendering, most of which already exists.
-- A sibling file, `contentmd.backup.tsx`, sits next to the live component.
-  Someone already iterated on this once. Worth reading before redesigning it.
-- Open questions once this is picked up: markdown stored as a string field
-  versus actual files, migrating existing JSON content, and how a markdown
-  document maps onto the section structure the renderer expects today.
+DROPPED 25-08-2026 by owner decision. Recorded so the shape is not lost:
+the motivation was diagram support in content, which the typed JSON block
+structure does not carry. Text blocks already render markdown syntax
+through `react-native-enriched-markdown`, so most rendering exists; what
+was proposed was moving authoring from typed JSON blocks to markdown
+strings or files, and migrating existing content. Content direction has
+since moved to AI generation instead, see the AI agentic track below.
 
 ### 4. PROFILE SECTION GAMIFICATION
 
@@ -445,6 +436,23 @@ already exists and what it needs so tomorrow's work can start anywhere.
 - Open questions before design: daily versus weekly versus both, whether a
   period's completion history stays visible to the user, gem caps per cycle,
   and how a reset is computed (lazy on read, or a scheduled job).
+
+## AI AGENTIC TRACK, GROUPED 25-08-2026
+
+The owner grouped the agent work into one track on this date. Everything
+below is one program, not four separate features. Application content will
+be AI generated rather than only admin authored, which replaces the dropped
+markdown authoring workstream as the content direction. The quests screen
+and the future AI agent screen are part of this track's client surface.
+
+| Piece | Section | State |
+| ----- | ------- | ----- |
+| Quest recurrence, daily and weekly templates that reset | 13 above | planned |
+| In app support agent, small model | 10 above | planned |
+| Newsletter agent with draft and approval gate | 11 above | planned |
+| AI agent with subscription or bring your own key | 12 above | planned |
+| AI generated application content | this table | planned |
+| Quest and AI agent screens as the track's app surface | this table | planned |
 
 ### FUTURE PLANS, DEMOTED 25-08-2026
 
