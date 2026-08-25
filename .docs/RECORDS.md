@@ -56,7 +56,7 @@ Date is the date the status last changed.
 | Rename the published image from `studzee-backend` to `studzee-api`                               | BHUVNESH  | DONE        | 18-08-2026 |
 | Cache or tokenise the admin role instead of calling Clerk per request                            | BHUVNESH  | PLANNED     | 14-08-2026 |
 | Move Prisma migrations out of the container start command                                        | BHUVNESH  | PLANNED     | 13-08-2026 |
-| Data storage layer, database design                                                              | BHUVNESH  | BLOCKED     | 18-08-2026 |
+| Data storage layer, database design                                                              | BHUVNESH  | DONE        | 25-08-2026 |
 | Fixed topic registry and topic filtering on the content API, with sample content for four topics | BHUVNESH  | DONE        | 25-08-2026 |
 | Gamified user tracker on Postgres: quiz attempts, points, streaks, badges, levels, unlock gate   | BHUVNESH  | DONE        | 25-08-2026 |
 | MOBILE profile gamification card and server graded quiz submission                               | BHUVNESH  | DONE        | 25-08-2026 |
@@ -73,6 +73,7 @@ Date is the date the status last changed.
 | In app notification centre with bell, fed by badge unlocks and perfect scores                    | BHUVNESH  | DONE        | 25-08-2026 |
 | Recent quizzes screen, profile card shows three                                                  | BHUVNESH  | DONE        | 25-08-2026 |
 | Blog content tags, backend and client rendering                                                 | BHUVNESH  | DONE        | 25-08-2026 |
+| AI generated application content                                                                 | BHUVNESH  | PLANNED     | 25-08-2026 |
 | Agent quest recurrence (daily and weekly quest templates that reset)                             | BHUVNESH  | PLANNED     | 25-08-2026 |
 | In app support agent (small model)                                                               | BHUVNESH  | PLANNED     | 25-08-2026 |
 | Newsletter agent with approval gate                                                              | BHUVNESH  | PLANNED     | 25-08-2026 |
@@ -110,9 +111,6 @@ Date is the date the status last changed.
 
 | FEATURE                                                                                                        | DEVELOPER | STATUS      | DATE       |
 | -------------------------------------------------------------------------------------------------------------- | --------- | ----------- | ---------- |
-| Terraform infrastructure as code for AWS                                                                       | BHUVNESH  | PLANNED     | 18-08-2026 |
-| Deploy the backend on ECS with the image in ECR                                                                | BHUVNESH  | PLANNED     | 18-08-2026 |
-| Load balancing, autoscaling and Route 53 for the backend                                                       | BHUVNESH  | PLANNED     | 18-08-2026 |
+| Backend on AWS end to end: Terraform IaC, ECS with the ECR image, load balancing, autoscaling and Route 53       | BHUVNESH  | PLANNED     | 25-08-2026 |
 | Old MOBILE builds calling `/noti/api/register`, resolved by updating the clients rather than a backend repoint | BHUVNESH  | DONE        | 21-08-2026 |
-| Set the renamed and new environment variables in the deployed environment                                      | BHUVNESH  | PLANNED     | 11-08-2026 |
 | V2 architecture, overall                                                                                       | BHUVNESH  | IN PROGRESS | 10-08-2026 |
