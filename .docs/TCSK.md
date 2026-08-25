@@ -87,7 +87,7 @@ Stated by the user on 10-08-2026. This is the agreed direction. Follow it in ord
 
 1. **Merge NOTIFICATION into BACKEND and keep BACKEND only.** **DONE 10-08-2026.** Expo push delivery, transactional email, the Clerk webhook, user and token registration, and the audit logs all moved into BACKEND. The folder is deleted.
 2. **Then work on the data storage layer.** **ON HOLD, decided by the owner on 18-08-2026.** Object storage moved to Supabase on 11-08-2026, but the database design itself is deliberately not specified yet, and it is not to be proposed until the owner reopens it. The reason is that new features are coming that would change the schema: a user tracker that records quiz results and per user responses, and surprise or scheduled quizzes built on top of that history. The shape of those features is not settled yet either. Designing the schema now would mean fixing a shape before the requirements that determine it exist, so the design waits until MOBILE and DESKTOP are done and the feature set is known. **Do not raise this or offer a schema until then.**
-2a. **Backend first, frontend second.** Confirmed on 10-08-2026, **and revised on 18-08-2026** by the hold on step 2. The backend is otherwise finished, so MOBILE and DESKTOP now come next, and the data storage design follows them rather than preceding them. Everything the clients consume today is a stable contract; the quiz and tracking surface is the part still to be designed, and it will be designed with the clients in hand.
+   2a. **Backend first, frontend second.** Confirmed on 10-08-2026, **and revised on 18-08-2026** by the hold on step 2. The backend is otherwise finished, so MOBILE and DESKTOP now come next, and the data storage design follows them rather than preceding them. Everything the clients consume today is a stable contract; the quiz and tracking surface is the part still to be designed, and it will be designed with the clients in hand.
 3. **Keep both databases.** MongoDB stays for content, Postgres stays for the notification data. The user has explicitly confirmed this split is acceptable, so do not propose consolidating them onto one engine.
 4. **Update the docker compose file as part of the merge.** **DONE.** `BACKEND/docker-compose.yml` now runs mongo, postgres, redis, minio, minio-init, mailpit and mongo-express. `NOTIFICATION/docker-compose.yml` is gone.
 
@@ -164,6 +164,7 @@ These are facts about the service today, not decisions about the design.
 
   This is an engine and hosting decision either way. It does not unblock the
   data storage design, which is a schema question and stays on hold.
+
 - **Fargate**, not EC2 backed capacity, on the AWS path.
 - **The image publishes to both ECR and Docker Hub**, from a separate workflow
   file rather than by extending
@@ -190,6 +191,7 @@ through a migration.
   models should be checked against the target DocumentDB version before this is
   committed to, because a query that looks compatible and then fails on one
   aggregation stage in production is the bad outcome here.
+
 - **The S3 move is nearly free, and that is not an accident.** Storage already
   speaks the S3 protocol through the AWS SDK, because Supabase was adopted over
   that protocol on 11-08-2026. Moving to real S3 is mostly endpoint and
@@ -232,8 +234,8 @@ storage design reopens.
 > migration `20260824202549_user_tracker` applied to Neon. MOBILE got the
 > profile gamification card and server graded quiz submission. Still open
 > below: home screen sections still hardcode "Machine Learning" and "System
- Design" instead of rendering real topics, the blog is unbuilt, markdown
- authoring stays provisional, DESKTOP admin screens are noted for later.
+> Design" instead of rendering real topics, the blog is unbuilt, markdown
+> authoring stays provisional, DESKTOP admin screens are noted for later.
 
 ### 1. GAMIFIED USER TRACKER
 
@@ -309,39 +311,56 @@ already exists and what it needs so tomorrow's work can start anywhere.
 ### 1. ACHIEVEMENTS SCREEN
 
 - New pushed screen (`app/screens/achievements.tsx`), deliberately not a tab.
-- Levels: highlight the current level and show the point cost of the next.
-- Badges: unlocked versus locked state for every badge in the catalog.
+- Two in screen tabs: Badges and Levels.
+- Badges: name and image per badge, locked versus unlocked state.
+- Levels: current level highlighted, points needed for the next one.
+- Tapping a badge or a level opens a bottom sheet with the image and the
+  details for it.
 - Data already sufficient for v1: `GET /progress/me` returns `level`,
   `nextLevel`, `badges` and `allBadges` with awarded flags.
 
-### 2. BADGE AND LEVEL ARTWORK
+### 2. BADGE AND LEVEL ARTWORK, SERVED BY URL
 
-- The owner will supply images or SVGs per badge and level.
-- Render through `react-native-svg` or `expo-image`; keep the current lucide
-  chips as the fallback until assets land.
+- Decision: images are never bundled, because assets added later cannot ship
+  through EAS Update. Badge and level images live at URLs on the S3
+  compatible store, Supabase in production and MinIO locally.
+- A bundled placeholder renders when an image is missing or fails to load.
+  `MOBILE/assets/images/sample_badge_level.png` is the placeholder until the
+  owner supplies per badge and level art.
+- The badge catalog will grow `imageUrl` fields; the client falls back to the
+  placeholder for any entry without one.
 
 ### 3. POINTS AS GEMS
 
-- Give the points currency a gem style logo used across profile,
-  achievements, quiz results and the locked content message, for game feel.
+- Points are presented as a gem everywhere. The asset is committed at
+  `MOBILE/assets/images/gem.png` and is considered permanent, unlike badge
+  art, so bundling it is fine.
+- Used on the profile card, quiz results, the achievements screen and the
+  locked content message.
 
-### 4. ACHIEVEMENT CELEBRATION ANIMATION
+### 4. CELEBRATION MOMENTS
 
-- Modal component in the spirit of `CustomAlert` that fires when any badge or
-  level is hit, plus a full score celebration on quizzes.
-- Lottie based (`lottie-react-native`, a new dependency) with animation files
-  to be sourced by the owner.
+- Two distinct moments, deliberately:
+  - Badge or level unlock: a modal in the style of the owner's reference
+    screenshots, a centred card on a dimmed, transparent background, showing
+    the badge image, its name and a short line.
+  - Full marks on a quiz: a Lottie celebration overlay. This one fires only
+    for a perfect score, not for every completion.
+- Package: `lottie-react-native`; the animation file is committed at
+  `MOBILE/assets/lottie/celebrate.json`.
 - Trigger data already flows today: `submitQuizAttempt` returns `newBadges`
-  and the updated totals.
+  and the score, so both moments hang off the existing result.
 
 ### 5. QUESTS
 
-- Quest types named by the owner: weekly test, monthly test, prove your
-  knowledge of a specific topic, and other tasks, awarding points on
-  completion.
-- Needs backend design first: quest definitions, scheduling (node-cron is
-  already a dependency), assignment and completion tracking, and award
-  integration with the existing points service.
+- A quests screen ships early so pushing a quest later has a home, even
+  before the backend exists.
+- Admin can create quests and set the point value of each.
+- Quest types: MCQ, single choice, fill in the blank, and read a blog,
+  where completion is the read itself and there are no questions.
+- Needs backend design: quest definitions, scheduling (node-cron is already a
+  dependency), assignment and completion tracking, award integration with the
+  existing points service, and an admin creation surface.
 - Extends the tracker schema, so picking this up reopens a slice of the
   storage design with the owner.
 
@@ -382,11 +401,19 @@ already exists and what it needs so tomorrow's work can start anywhere.
   live (device SecureStore versus server side), usage limits, and how
   subscription payment is processed.
 
-### SUGGESTED ORDER FOR TOMORROW
+### FUTURE PLANS, DEMOTED 25-08-2026
 
-Quick client wins first (1 to 4 use endpoints that exist), then the two
-small backend slices (5 and 6), then the larger product pieces (8 to 12).
-Items 2 and 3 are blocked only on artwork arriving.
+The owner moved these out of the near term list. Recorded so the shape is not
+lost; none are designed or built.
+
+- Reading gradient polish above the tab bar.
+- In app notifications for quizzes and events.
+- Blog content tags.
+- In app support agent (small model).
+- Newsletter agent. The standing house rule holds: it ships with a draft and
+  approval gate, never an unattended sender.
+- AI agent monetized by subscription or bring your own key; open questions on
+  provider list, key storage, usage limits and payments.
 
 ### DESKTOP WORK NOTED FOR LATER, 25-08-2026
 
