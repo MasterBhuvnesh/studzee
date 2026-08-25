@@ -289,3 +289,14 @@ opening system settings directly. It is wired into `settings.tsx` now:
   permission and, if it became granted while no push token exists, completes
   the backend registration the automatic flow skipped while denied. This is
   the path that used to leave a user unregistered until the next login.
+
+### LOCKED CONTENT VIEW, ADDED 25-08-2026
+
+Documents carrying `unlockPoints` answer 403 with code `CONTENT_LOCKED` from
+`GET /content/:id`. `lib/api.ts` surfaces that code through a typed `ApiError`
+carrying `code` and `status`, and `screens/[id].tsx` renders a dedicated
+Content Locked card for it: lock icon, the backend message naming points
+needed versus held, and a Go Back action instead of a retry button that could
+never succeed. Every other failure keeps the generic retry error state.
+=======
+

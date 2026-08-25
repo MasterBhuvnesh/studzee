@@ -4,7 +4,7 @@ import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { CustomAlert } from '@/components/global/CustomAlert';
 import { FactModal } from '@/components/global/FactModal';
 import { colors } from '@/constants/colors';
-import { getContentById } from '@/lib/api';
+import { getContentById, ApiError } from '@/lib/api';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { usePdfDownloads } from '@/hooks/usePdfDownloads';
 import { ContentDetail } from '@/types';
@@ -21,6 +21,7 @@ import {
   Download,
   Eye,
   Loader2,
+  Lock,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -154,6 +155,48 @@ const ErrorState = ({
 };
 
 /**
+ * Points gated document. Retry cannot help here: the caller earns the
+ * missing points by completing quizzes elsewhere and returns later.
+ */
+const LockedState = ({
+  message,
+  onBack,
+}: {
+  message: string;
+  onBack: () => void;
+}) => {
+  return (
+    <View className="flex-1 items-center justify-center px-6">
+      <View className="w-full items-center rounded-2xl border border-zinc-200 bg-white p-8 shadow-lg">
+        <View className="mb-4 rounded-full bg-zinc-100 p-3">
+          <AppIcon
+            Icon={Lock}
+            color={colors.zinc[400]}
+            size={22}
+            strokeWidth={1.5}
+          />
+        </View>
+        <Text className="font-product text-lg text-zinc-800">
+          Content Locked
+        </Text>
+        <Text className="mt-2 text-center font-sans text-sm leading-5 text-zinc-500">
+          {message}
+        </Text>
+        <TouchableOpacity
+          onPress={onBack}
+          className="mt-6 rounded-xl bg-zinc-900 px-6 py-3 active:bg-zinc-700"
+          activeOpacity={0.8}
+        >
+          <Text className="text-center font-sans text-sm font-medium text-white">
+            Go Back
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+/**
  * Animated quiz illustration component
  */
 const QuizIllustration = () => {
@@ -204,7 +247,9 @@ export default function ContentDetailPage() {
 
   const [content, setContent] = useState<ContentDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; code?: string } | null>(
+    null
+  );
   const [factsModalVisible, setFactsModalVisible] = useState(false);
   const [readProgress, setReadProgress] = useState(0);
 
@@ -250,10 +295,11 @@ export default function ContentDetailPage() {
       setContent(contentDetail);
       logger.success('Content detail loaded successfully');
     } catch (err) {
-      const errorMessage =
+      const message =
         err instanceof Error ? err.message : 'Failed to load content';
-      setError(errorMessage);
-      logger.error(`Error loading content: ${errorMessage}`);
+      const code = err instanceof ApiError ? err.code : undefined;
+      setError({ message, code });
+      logger.error(`Error loading content: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -359,7 +405,14 @@ export default function ContentDetailPage() {
             {loading ? (
               <ContentDetailSkeleton />
             ) : error ? (
-              <ErrorState error={error} onRetry={fetchContent} />
+              error.code === 'CONTENT_LOCKED' ? (
+                <LockedState
+                  message={error.message}
+                  onBack={() => router.back()}
+                />
+              ) : (
+                <ErrorState error={error.message} onRetry={fetchContent} />
+              )
             ) : content ? (
               <View className="px-6 pb-8">
                 {/* Image */}
