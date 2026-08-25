@@ -20,14 +20,8 @@ import { errorHandler } from '@/middleware/errorHandler'
 import contentRoutes from '@/api/routes/content.route'
 import progressRoutes from '@/api/routes/progress.route'
 import questRoutes from '@/api/routes/quest.route'
-import { DocumentModel } from '@/models/document.model'
 
 const devUserId = 'dev-user-id'
-
-function quizToObject(quiz: unknown): Record<string, any> {
-  if (quiz instanceof Map) return Object.fromEntries(quiz)
-  return (quiz as Record<string, any>) ?? {}
-}
 
 async function main() {
   if (!process.env.DEV_TOKEN) throw new Error('DEV_TOKEN missing in env')
