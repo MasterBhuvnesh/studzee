@@ -329,6 +329,12 @@ already exists and what it needs so tomorrow's work can start anywhere.
   owner supplies per badge and level art.
 - The badge catalog will grow `imageUrl` fields; the client falls back to the
   placeholder for any entry without one.
+- Perfectionist becomes tiered, decided 25-08-2026: x1 at one full score
+  attempt, x2 at ten, x3 at twenty five, x4 at one hundred. Each tier carries
+  its own image. Cleanest shape is one catalog entry per tier
+  (`perfectionist`, `perfectionist-x2`, `perfectionist-x3`, `perfectionist-x4`)
+  so the existing unique badge storage holds with no migration, and the
+  badge context gains a full score attempt count for the predicates.
 
 ### 3. POINTS AS GEMS
 
@@ -358,11 +364,30 @@ already exists and what it needs so tomorrow's work can start anywhere.
 - Admin can create quests and set the point value of each.
 - Quest types: MCQ, single choice, fill in the blank, and read a blog,
   where completion is the read itself and there are no questions.
+- Quests are limited time: each carries a start and end window, and quests
+  outside their window are hidden or shown as ended rather than attemptable.
+- Storage lives in Postgres alongside the tracker, decided 25-08-2026. Draft
+  shape, to be finalised during the build: a `Quest` table carrying type,
+  gem value, the window, an optional link to the Mongo content it tests or
+  asks to read, and the question payload for MCQ and single choice; a
+  `QuestCompletion` table unique per user and quest. The existing
+  `DailyActivity` and points flow absorb the awards.
+- Two or three seeded samples ship with the schema, at least one read a blog
+  quest and one MCQ quest, so both client paths are testable immediately.
 - Needs backend design: quest definitions, scheduling (node-cron is already a
   dependency), assignment and completion tracking, award integration with the
   existing points service, and an admin creation surface.
 - Extends the tracker schema, so picking this up reopens a slice of the
   storage design with the owner.
+
+### 7. BLOG TAGS, PROMOTED 25-08-2026
+
+- Promoted out of future plans. Documents gain a `tags` string array in
+  Mongo, two to five tags validated by the document schema, sitting beside
+  the existing topic field.
+- Filtering follows the topic pattern: a `tag` query parameter on
+  `GET /content` with its own cache key suffix.
+- Sample content ships with tags so the client has something real to render.
 
 ### 6. STREAK HEATMAP
 
@@ -408,7 +433,6 @@ lost; none are designed or built.
 
 - Reading gradient polish above the tab bar.
 - In app notifications for quizzes and events.
-- Blog content tags.
 - In app support agent (small model).
 - Newsletter agent. The standing house rule holds: it ships with a draft and
   approval gate, never an unattended sender.
