@@ -215,9 +215,8 @@ cause a layout jump.
    from a sanitized title plus a timestamp, so re-downloading the same
    document never collides with an existing file.
 2. `File.downloadFileAsync(pdfUrl, destinationFile, { idempotent: true })`
-   downloads it into `Paths.document`. No progress callback is wired up
-   despite `DownloadProgress` existing as a type, the new File API does not
-   expose one the way the legacy API did.
+   downloads it into `Paths.document`. There is no progress callback: the new
+   File API does not expose one the way the legacy API did.
 3. Actual file size is read back from disk (`downloadedFile.info().size`)
    rather than trusting the `size` the caller passed in, since that number
    comes from the content API and can be stale or approximate.
@@ -271,8 +270,11 @@ are kept so the record shows what changed.
   per source URL because storage is keyed by document ID while one document
   can hold several PDFs; pressing Download on any file of an already
   downloaded document still asks the re-download confirmation.
-- `DownloadProgress` is defined in `lib/download.ts` but nothing produces it,
-  the new `expo-file-system` `File` API does not expose a progress callback.
+- CLOSED 25-08-2026. `DownloadProgress` and the unused `onProgress`
+  parameter were removed from `lib/download.ts`; the new `expo-file-system`
+  `File` API exposes no progress callback, so the type described a contract
+  nothing could honour. A progress bar would need a chunked download or a
+  native module and has not been asked for.
 
 ### NOTIFICATION PERMISSIONS, WIRED UP 25-08-2026
 
@@ -296,3 +298,5 @@ carrying `code` and `status`, and `screens/[id].tsx` renders a dedicated
 Content Locked card for it: lock icon, the backend message naming points
 needed versus held, and a Go Back action instead of a retry button that could
 never succeed. Every other failure keeps the generic retry error state.
+=======
+
