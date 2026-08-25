@@ -12,6 +12,7 @@ Every response body below is what the handler actually returns. Import [postman.
 - [Content Endpoints](#content-endpoints)
 - [PDF Endpoints](#pdf-endpoints)
 - [Notification Endpoints](#notification-endpoints)
+- [Progress Endpoints](#progress-endpoints)
 - [Webhook Endpoints](#webhook-endpoints)
 - [Admin Endpoints](#admin-endpoints)
 - [Migrated Endpoints](#migrated-endpoints)
@@ -134,6 +135,27 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
 
 ## Content Endpoints
 
+### List Topics
+
+- **Route:** `GET /content/topics`
+- **Description:** The fixed topic registry in display order
+- **Protected:** No
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "data": [
+        { "key": "machine-learning", "label": "Machine Learning" },
+        { "key": "system-design", "label": "System Design" },
+        { "key": "devops", "label": "DevOps" },
+        { "key": "aws", "label": "AWS" },
+        { "key": "data", "label": "Data" },
+        { "key": "deep-learning", "label": "Deep Learning" }
+      ]
+    }
+    ```
+- **Note:** the registry is a code level constant, not stored data. Documents may only carry one of these keys, and unknown keys are rejected wherever a topic is accepted.
+
 ### Get Today's Content
 
 - **Route:** `GET /content/today`
@@ -170,6 +192,7 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
 - **Query Parameters:**
   - `page` (number, optional, default 1, min 1)
   - `limit` (number, optional, default 20, min 1, max 100)
+  - `topic` (string, optional) - a registry key from `GET /content/topics`; unknown keys answer `400`
 - **Response:**
   - `200 OK`
     ```json
@@ -180,19 +203,21 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
           "id": "507f1f77bcf86cd799439011",
           "title": "Introduction to TypeScript",
           "summary": "A comprehensive guide to TypeScript basics",
-          "createdAt": "2026-08-10T10:30:00.000Z"
+          "createdAt": "2026-08-10T10:30:00.000Z",
+          "topic": "machine-learning"
         }
       ],
       "meta": { "page": 1, "limit": 20, "total": 50 }
     }
     ```
   - `400 Bad Request` - Invalid query parameters
+  - `400 Bad Request` - Unknown topic key; `errors.topic` names every allowed key
 
-> **Note:** the list projection returns only `title`, `summary` and `createdAt` alongside the identifiers. Fetch a document by ID for its full body.
+> **Note:** the list projection returns only `title`, `summary`, `createdAt` and `topic` alongside the identifiers. Fetch a document by ID for its full body.
 
 - **Example:**
   ```bash
-  curl "http://localhost:4000/content?page=1&limit=10"
+  curl "http://localhost:4000/content?page=1&limit=10&topic=devops"
   ```
 
 ### Get Document by ID
@@ -254,9 +279,19 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
     }
     ```
   - `401 Unauthorized` - Missing or invalid authentication token
+  - `403 Forbidden` - Document carries an `unlockPoints` cost the caller has not met yet
   - `404 Not Found` - Document does not exist
 
 > **Note:** `content` is structured, either an array of sections or an object. It is not a plain string. Each block carries a `type` of `text`, `list`, `table`, `formula` or `code`.
+
+> **Unlock gate:** documents may carry an optional `unlockPoints` number. When it is greater than zero and the authenticated caller's total points from `GET /progress/me` are below that cost, the request answers `403` before any content is returned. The check runs after the cache lookup, so caching behaviour is unchanged, and the response carries a machine readable code:
+
+```json
+{
+  "message": "This content needs 50 points to unlock. You have 10 points. Earn more by completing quizzes.",
+  "code": "CONTENT_LOCKED"
+}
+```
 
 - **Example:**
   ```bash
@@ -349,6 +384,105 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
        -H "Content-Type: application/json" \
        -d '{"email":"learner@example.com","expoToken":"ExponentPushToken[xxx]"}'
   ```
+
+---
+
+## Progress Endpoints
+
+The gamified user tracker lives in Postgres. Points come from server graded quiz attempts: each correct answer is worth 10 points, and an attempt only pays the difference over the caller's previous best score on the same content, so replaying a quiz earns nothing. A streak counts consecutive UTC days with at least one recorded attempt; today or yesterday anchors the current streak. Badges and levels are derived from config thresholds.
+
+### Submit Quiz Attempt
+
+- **Route:** `POST /progress/attempts`
+- **Description:** Grade a quiz submission, record the attempt, update points, streak and badges
+- **Protected:** Yes
+- **Rate limit:** 30 per minute
+- **Body:**
+  ```json
+  {
+    "contentId": "507f1f77bcf86cd799439011",
+    "responses": { "q1": 0, "q2": 2 }
+  }
+  ```
+- **Field notes:** `contentId` must be a 24 character hex MongoDB ID. `responses` maps each stored quiz question key to the index of the chosen option; unknown keys are ignored rather than penalised.
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "success": true,
+      "data": {
+        "contentId": "507f1f77bcf86cd799439011",
+        "score": 3,
+        "total": 4,
+        "pointsAwarded": 30,
+        "totalPoints": 130,
+        "streak": { "current": 2, "longest": 5 },
+        "newBadges": [
+          {
+            "key": "century",
+            "label": "Century",
+            "description": "Earn 100 points"
+          }
+        ]
+      }
+    }
+    ```
+  - `400 Bad Request` - Validation error
+  - `401 Unauthorized`
+  - `404 Not Found` - Content does not exist or carries no quiz
+
+### Get My Progress
+
+- **Route:** `GET /progress/me`
+- **Description:** Everything the profile screen renders for the caller
+- **Protected:** Yes
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "success": true,
+      "data": {
+        "points": 130,
+        "level": {
+          "key": "apprentice",
+          "label": "Apprentice",
+          "minPoints": 100
+        },
+        "nextLevel": { "key": "scholar", "label": "Scholar", "minPoints": 250 },
+        "streak": { "current": 2, "longest": 5 },
+        "activeDays": 4,
+        "badges": [
+          {
+            "key": "first-steps",
+            "label": "First Steps",
+            "description": "Complete your first quiz",
+            "awardedAt": "2026-08-25T10:00:00.000Z"
+          }
+        ],
+        "allBadges": [
+          {
+            "key": "first-steps",
+            "label": "First Steps",
+            "description": "Complete your first quiz",
+            "threshold": 1,
+            "awarded": true
+          }
+        ],
+        "recentAttempts": [
+          {
+            "contentId": "507f1f77bcf86cd799439011",
+            "title": "Introduction to TypeScript",
+            "score": 3,
+            "total": 4,
+            "createdAt": "2026-08-25T10:00:00.000Z"
+          }
+        ]
+      }
+    }
+    ```
+  - `401 Unauthorized`
+
+> **Note:** `level` is null only before the first point arrives; the novice level starts at 0. `nextLevel` is null once the caller holds the highest level. Levels are novice (0), apprentice (100), scholar (250) and master (500).
 
 ---
 
@@ -779,6 +913,8 @@ Errors carry a `message`, and validation failures add an `errors` object keyed b
 }
 ```
 
+Application errors may also carry a machine readable `code`, such as `CONTENT_LOCKED` on a gated document, so clients can branch on failure mode without parsing messages.
+
 A request to a path that matches no route returns 404 with the path echoed back:
 
 ```json
@@ -814,6 +950,7 @@ A global limiter applies to every request, and the expensive admin endpoints car
 | -------------------------------- | ------------------ |
 | Global, all routes               | 100 per 15 minutes |
 | `POST /notifications/register`   | 10 per minute      |
+| `POST /progress/attempts`        | 30 per minute      |
 | `POST /admin/notifications/send` | 20 per minute      |
 | `POST /admin/emails/send`        | 10 per minute      |
 | Admin listing endpoints          | 30 per minute      |
@@ -824,10 +961,12 @@ Exceeding a limit returns `429 Too Many Requests`. Limits are reported in the st
 
 Redis caches read responses using the cache aside pattern.
 
-| Cache    | Key pattern                              | TTL variable      | Default   |
-| -------- | ---------------------------------------- | ----------------- | --------- |
-| List     | `content:list:page:<page>:limit:<limit>` | `LIST_CACHE_TTL`  | 5 minutes |
-| Document | `content:doc:<id>`                       | `DOC_CACHE_TTL`   | 24 hours  |
-| Today    | `content:today`                          | `TODAY_CACHE_TTL` | 1 hour    |
+| Cache    | Key pattern                                            | TTL variable      | Default   |
+| -------- | ------------------------------------------------------ | ----------------- | --------- |
+| List     | `content:list:page:<page>:limit:<limit>[:topic:<key>]` | `LIST_CACHE_TTL`  | 5 minutes |
+| Document | `content:doc:<id>`                                     | `DOC_CACHE_TTL`   | 24 hours  |
+| Today    | `content:today`                                        | `TODAY_CACHE_TTL` | 1 hour    |
+
+The list entry gains the `:topic:<key>` suffix only when a topic filter is present, so unfiltered pages keep their original cache key and existing entries stay warm.
 
 Any admin write invalidates every content cache entry. Cache hits and misses are visible in the application log; no cache status is exposed in response headers.
