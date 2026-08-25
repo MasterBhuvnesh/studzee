@@ -5,6 +5,23 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 25-08-2026
 
+**Branch:** `main` (release)
+
+### Release backend v4.2.0
+
+- Minor bump shipping phase 2: quests with limited time windows and their
+  three seeded samples, blog tags with filtering, and the tiered
+  perfectionist badge. The quest list serves sanitized questions without
+  answers so clients can render MCQ quests while grading stays server side.
+- Migration `20260825072433_quests` is already applied to the Neon dev
+  database; any other deploy environment applies it automatically on boot
+  through `prisma migrate deploy`. No new required environment variables.
+- Cut from `main` at the merge of PRs 43 and 44; pushing `backend-v4.2.0`
+  triggers docker-backend.testing.yml, which gates the publish on lint,
+  typecheck and the suite.
+
+## 25-08-2026
+
 **Branch:** `feat/mobile-fixes-3`
 
 ### Fix the achievements crash, recent quizzes screen, in-app notification centre
