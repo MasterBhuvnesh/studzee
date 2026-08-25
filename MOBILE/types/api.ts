@@ -115,6 +115,18 @@ export interface QuestCompletionResult {
 }
 
 /**
+ * Active day map for one year, the data behind the streak heatmap
+ */
+export interface MyActivity {
+  year: number;
+  /** UTC day keys with activity, ascending, YYYY-MM-DD */
+  activeDays: string[];
+  totalActive: number;
+}
+
+export type MyActivityResponse = ApiSuccess<MyActivity>;
+
+/**
  * Response type for /content/topics endpoint
  */
 export interface TopicsResponse {

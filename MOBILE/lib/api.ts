@@ -3,6 +3,8 @@ import axios, { type AxiosError } from 'axios';
 import type {
   ContentDetail,
   ContentListResponse,
+  MyActivity,
+  MyActivityResponse,
   MyProgress,
   MyProgressResponse,
   PaginationParams,
@@ -402,6 +404,58 @@ export async function completeQuest(
     }
 
     logger.error(`Unexpected error completing quest: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Fetches the caller's active day map for one year, the streak heatmap data
+ * (requires authentication)
+ * @param authToken - Bearer authentication token from Clerk
+ * @param year - Calendar year, defaults to the current year server side
+ * @returns Promise with the year and its ascending active day keys
+ */
+export async function getMyActivity(
+  authToken: string,
+  year?: number
+): Promise<MyActivity> {
+  try {
+    logger.info(`Fetching activity map${year ? ` for ${year}` : ''}`);
+
+    const response = await axios.get<MyActivityResponse>(
+      `${API_BASE_URL}/progress/activity`,
+      {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        params: year ? { year } : undefined,
+        timeout: 10000, // 10 second timeout
+      }
+    );
+
+    logger.success(
+      `Activity map fetched successfully - ${response.data.data.totalActive} active days`
+    );
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.message;
+
+      logger.error(`Failed to fetch activity map - Message: ${errorMessage}`);
+
+      if (axiosError.response?.status === 401) {
+        throw new ApiError('Authentication required. Please sign in.', 401);
+      }
+
+      throw new ApiError(
+        errorMessage || 'Failed to fetch activity map',
+        axiosError.response?.status
+      );
+    }
+
+    logger.error(`Unexpected error fetching activity map: ${error}`);
     throw error;
   }
 }
