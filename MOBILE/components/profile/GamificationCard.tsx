@@ -65,6 +65,30 @@ const BadgeChip = ({ badge }: { badge: BadgeStatus }) => (
   </View>
 );
 
+const RecentAttemptRow = ({ attempt }: { attempt: RecentAttempt }) => (
+  <View className="mb-2 flex-row items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
+    <View
+      className={`items-center justify-center rounded-lg px-2 py-1 ${
+        attempt.score === attempt.total && attempt.total > 0
+          ? 'bg-green-100'
+          : 'bg-zinc-200'
+      }`}
+    >
+      <Text className="font-product text-xs text-zinc-700">
+        {attempt.score}/{attempt.total}
+      </Text>
+    </View>
+    <View className="flex-1">
+      <Text className="font-sans text-sm text-zinc-800" numberOfLines={1}>
+        {attempt.title || 'Quiz'}
+      </Text>
+      <Text className="font-sans text-xs text-zinc-400">
+        {new Date(attempt.createdAt).toLocaleDateString()}
+      </Text>
+    </View>
+  </View>
+);
+
 /**
  * Loading skeleton matching the card's layout
  */
@@ -212,6 +236,21 @@ export const GamificationCard = ({
                 <BadgeChip key={badge.key} badge={badge} />
               ))}
             </ScrollView>
+          </View>
+        )}
+
+        {/* Recent quizzes */}
+        {progress.recentAttempts.length > 0 && (
+          <View className="border-t border-zinc-200 p-6 pt-4">
+            <Text className="mb-3 font-product text-sm text-zinc-800">
+              Recent Quizzes
+            </Text>
+            {progress.recentAttempts.slice(0, 5).map(attempt => (
+              <RecentAttemptRow
+                key={`${attempt.contentId}-${attempt.createdAt}`}
+                attempt={attempt}
+              />
+            ))}
           </View>
         )}
       </View>

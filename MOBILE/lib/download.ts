@@ -19,11 +19,6 @@ export interface DownloadResult {
   error?: string;
 }
 
-export interface DownloadProgress {
-  totalBytesWritten: number;
-  totalBytesExpectedToWrite: number;
-}
-
 /**
  * Download a PDF file to device storage using the new File API
  */
@@ -32,8 +27,7 @@ export async function downloadPdf(
   title: string,
   pdfName: string,
   pdfUrl: string,
-  size: number,
-  onProgress?: (progress: DownloadProgress) => void
+  size: number
 ): Promise<DownloadResult> {
   try {
     // Create a unique filename using the title

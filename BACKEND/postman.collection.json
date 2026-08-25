@@ -71,6 +71,34 @@
       "name": "Content",
       "item": [
         {
+          "name": "List Topics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "topics"]
+            },
+            "description": "The fixed topic registry in display order. Public. Use these keys for filtering and for labelling sections."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"returns the registry\", function () {",
+                  "    pm.response.to.have.status(200)",
+                  "    pm.expect(pm.response.json().data).to.be.an(\"array\")",
+                  "})"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Get Today's Content",
           "request": {
             "method": "GET",
@@ -90,7 +118,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/content?page=1&limit=20",
+              "raw": "{{baseUrl}}/content?page=1&limit=20&topic=machine-learning",
               "host": ["{{baseUrl}}"],
               "path": ["content"],
               "query": [
@@ -101,10 +129,15 @@
                 {
                   "key": "limit",
                   "value": "20"
+                },
+                {
+                  "key": "topic",
+                  "value": "machine-learning",
+                  "description": "Optional registry key filter. Unknown keys answer 400."
                 }
               ]
             },
-            "description": "Retrieve a paginated list of documents."
+            "description": "Retrieve a paginated list of documents, optionally scoped to one topic from the fixed registry. Items carry their topic key so clients can group a page locally."
           },
           "response": [],
           "event": [
@@ -161,7 +194,7 @@
                 }
               ]
             },
-            "description": "Retrieve a complete document by its ID. Requires authentication."
+            "description": "Retrieve a complete document by its ID. Requires authentication. Documents carrying an unlockPoints cost answer 403 with code CONTENT_LOCKED when the caller has fewer points."
           },
           "response": []
         }
@@ -231,6 +264,89 @@
             "description": "Register the caller's device for push notifications, or attach another device token to an existing registration. The Clerk identity comes from the bearer token, never from the body. Tokens are deduplicated, so re-registering the same device does not create a second entry.\n\nReplaces POST /noti/api/register from the old notification service.\n\nRate limit: 10 requests per minute."
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Progress",
+      "item": [
+        {
+          "name": "Get My Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clerkToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/progress/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["progress", "me"]
+            },
+            "description": "Points, level and next level, streaks, active days, earned badges plus the full catalog with awarded flags, and recent attempts. Requires authentication."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"returns progress\", function () {",
+                  "    pm.response.to.have.status(200)",
+                  "    const d = pm.response.json().data",
+                  "    pm.expect(d).to.have.property(\"points\")",
+                  "    pm.expect(d).to.have.property(\"badges\")",
+                  "})"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Quiz Attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clerkToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{documentId}}\",\n  \"responses\": {\n    \"q1\": 0,\n    \"q2\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/progress/attempts",
+              "host": ["{{baseUrl}}"],
+              "path": ["progress", "attempts"]
+            },
+            "description": "Grades a quiz server side against the stored answers (responses maps each quiz question key to the chosen option index), records the attempt, awards points as a delta over prior best for that content, and updates streaks and badges. 404 when the content has no quiz."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"grades the attempt\", function () {",
+                  "    pm.response.to.have.status(200)",
+                  "    const d = pm.response.json().data",
+                  "    pm.expect(d).to.have.property(\"score\")",
+                  "    pm.expect(d).to.have.property(\"totalPoints\")",
+                  "})"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
