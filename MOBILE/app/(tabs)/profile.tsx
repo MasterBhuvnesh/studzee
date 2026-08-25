@@ -1,4 +1,5 @@
 import { AppIcon } from '@/components/global/AppIcon';
+import { BottomFade } from '@/components/global/BottomFade';
 import { Header } from '@/components/global/Header';
 import { GamificationCard } from '@/components/profile/GamificationCard';
 import { colors } from '@/constants/colors';
@@ -232,6 +233,7 @@ export default function ProfilePage() {
             </View>
           )} */}
         </ScrollView>
+        <BottomFade />
       </SafeAreaView>
     </LinearGradient>
   );

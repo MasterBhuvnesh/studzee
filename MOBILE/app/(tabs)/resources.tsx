@@ -2,6 +2,7 @@ import { AppIcon } from '@/components/global/AppIcon';
 import { CustomAlert } from '@/components/global/CustomAlert';
 import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { DownloadedPdfInfo } from '@/components/global/DownloadedPdfInfo';
+import { BottomFade } from '@/components/global/BottomFade';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { getPdfs } from '@/lib/api';
@@ -424,6 +425,7 @@ export default function ResourcesPage() {
               )}
             </View>
           </ScrollView>
+          <BottomFade />
         </SafeAreaView>
       </LinearGradient>
 
