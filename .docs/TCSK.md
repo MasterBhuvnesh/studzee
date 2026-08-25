@@ -430,6 +430,18 @@ already exists and what it needs so tomorrow's work can start anywhere.
   live (device SecureStore versus server side), usage limits, and how
   subscription payment is processed.
 
+### 13. AGENT QUEST RECURRENCE
+
+- Quests today are one shot: each has a `startsAt` and `endsAt` window and a
+  `QuestCompletion` row per user, so once the current batch is finished
+  nothing new appears until an admin creates more by hand.
+- Give quests a recurrence schedule, for example daily or weekly, so the
+  same template resets completions per period and hands out gems again each
+  cycle without admin work.
+- Open questions before design: daily versus weekly versus both, whether a
+  period's completion history stays visible to the user, gem caps per cycle,
+  and how a reset is computed (lazy on read, or a scheduled job).
+
 ### FUTURE PLANS, DEMOTED 25-08-2026
 
 The owner moved these out of the near term list. Recorded so the shape is not

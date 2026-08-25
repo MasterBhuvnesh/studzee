@@ -73,6 +73,7 @@ Date is the date the status last changed.
 | In app notification centre with bell, fed by badge unlocks and perfect scores                    | BHUVNESH  | DONE        | 25-08-2026 |
 | Recent quizzes screen, profile card shows three                                                  | BHUVNESH  | DONE        | 25-08-2026 |
 | Blog content tags, backend and client rendering                                                 | BHUVNESH  | DONE        | 25-08-2026 |
+| Agent quest recurrence (daily and weekly quest templates that reset)                             | BHUVNESH  | PLANNED     | 25-08-2026 |
 | In app support agent (small model)                                                               | BHUVNESH  | PLANNED     | 25-08-2026 |
 | Newsletter agent with approval gate                                                              | BHUVNESH  | PLANNED     | 25-08-2026 |
 | AI agent with subscription or bring your own key                                                 | BHUVNESH  | PLANNED     | 25-08-2026 |
