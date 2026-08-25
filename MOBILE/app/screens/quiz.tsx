@@ -1,6 +1,7 @@
 import { AchievementCelebrationModal } from '@/components/achievements/AchievementCelebrationModal';
 import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
+import { addNotification } from '@/lib/inapp';
 import { submitQuizAttempt } from '@/lib/api';
 import type { QuizAttemptResult } from '@/types';
 import { Quiz, QuizQuestion } from '@/types';
@@ -150,12 +151,27 @@ export default function QuizScreen() {
     }
   }, [showResults, results]);
 
-  // Surface the first newly earned badge as a celebration once it arrives
+  // Surface the first newly earned badge as a celebration once it arrives,
+  // and record the moment in the in-app notification centre.
   useEffect(() => {
     if (attemptResult && attemptResult.newBadges.length > 0) {
       setCelebrationBadge(attemptResult.newBadges[0]);
+      void addNotification(
+        'Badge Unlocked',
+        `${attemptResult.newBadges[0].label}: ${attemptResult.newBadges[0].description}`
+      );
     }
   }, [attemptResult]);
+
+  // Perfect scores land in the notification centre too
+  useEffect(() => {
+    if (showResults && results.length > 0 && results.every(r => r.isCorrect)) {
+      void addNotification(
+        'Perfect Score',
+        `${params.contentTitle ?? 'A quiz'}: ${results.length}/${results.length} correct`
+      );
+    }
+  }, [showResults, results, params.contentTitle]);
 
   // Initialize quiz questions
   useEffect(() => {

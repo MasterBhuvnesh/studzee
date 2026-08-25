@@ -1,4 +1,4 @@
-# RECORDS
+﻿# RECORDS
 
 Implementation record for Studzee. Each row is a feature, so any person or agent can see what is done and what is not. Update this table whenever a feature changes state and commit it with the change.
 
@@ -70,8 +70,9 @@ Date is the date the status last changed.
 | Perfectionist badge tiers x1 to x4 with per tier images                                          | BHUVNESH  | PLANNED     | 25-08-2026 |
 | Yearly streak heatmap from daily activity                                                        | BHUVNESH  | PLANNED     | 25-08-2026 |
 | Content reading gradient polish                                                                  | BHUVNESH  | PLANNED     | 25-08-2026 |
-| In app notifications for quizzes and events                                                      | BHUVNESH  | PLANNED     | 25-08-2026 |
-| Blog content tags                                                                                | BHUVNESH  | PLANNED     | 25-08-2026 |
+| In app notification centre with bell, fed by badge unlocks and perfect scores                    | BHUVNESH  | DONE        | 25-08-2026 |
+| Recent quizzes screen, profile card shows three                                                  | BHUVNESH  | DONE        | 25-08-2026 |
+| Blog content tags (backend done, client rendering pending)                                       | BHUVNESH  | IN PROGRESS | 25-08-2026 |
 | In app support agent (small model)                                                               | BHUVNESH  | PLANNED     | 25-08-2026 |
 | Newsletter agent with approval gate                                                              | BHUVNESH  | PLANNED     | 25-08-2026 |
 | AI agent with subscription or bring your own key                                                 | BHUVNESH  | PLANNED     | 25-08-2026 |

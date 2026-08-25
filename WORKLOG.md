@@ -5,6 +5,35 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 25-08-2026
 
+**Branch:** `feat/mobile-fixes-3`
+
+### Fix the achievements crash, recent quizzes screen, in-app notification centre
+
+- **Achievements render error.** The Levels tab crashed with `Couldn't find
+a navigation context`, and the real culprit was not navigation at all:
+  NativeWind's warning printer. The segmented tabs toggled `shadow-sm`
+  between renders, which trips the css-interop late upgrade path, and the
+  warning printer stringifies the component's captured props, walking into
+  `NavigationStateContext`'s default object whose `getKey` is a throwing
+  getter. Tab class sets are now static per state and the unused
+  `useLocalSearchParams` is gone. Recorded in FIXES with the general lesson
+  about dynamically toggled classes that alter upgrade state.
+- **Recent quizzes.** The row component moved to its own file, the profile
+  card shows three with a View All link past that, and a new
+  `screens/recent-quizzes.tsx` lists the full history the progress endpoint
+  returns.
+- **In-app notification centre.** `lib/inapp.ts` stores events in
+  SecureStore, newest first, capped at fifty. The quiz flow records badge
+  unlocks and perfect scores. A bell with an unread dot sits top right on
+  the home screen and opens `screens/notifications.tsx`, which lists events
+  and marks them read on open. Local-only by design: remote push needs a
+  development build per the Expo docs the owner shared.
+- Verified with `npx tsc --noEmit` and prettier on every touched file. The
+  achievements crash fix needs a device run to confirm, since the trigger
+  was a runtime style upgrade.
+
+## 25-08-2026
+
 - **Branch:** current working branch
 - **Changed:** Added `ignoreDeprecations: "6.0"` to the backend TypeScript configuration and upgraded the backend TypeScript dev dependency to 6.0.3.
 - **Why:** The editor reported that `baseUrl` will stop functioning in TypeScript 7. The project typecheck now accepts the suppression value and passes.

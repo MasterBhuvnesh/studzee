@@ -1,4 +1,5 @@
 import { AppIcon } from '@/components/global/AppIcon';
+import { NotificationBell } from '@/components/global/NotificationBell';
 import { colors } from '@/constants/colors';
 import { getContent, getTodayContent, getTopics } from '@/lib/api';
 import { ContentSummary, Topic } from '@/types';
@@ -421,8 +422,13 @@ export default function HomePage() {
       className="flex-1"
     >
       <SafeAreaView className="flex-1">
+        {/* Top row with the notification bell on the right */}
+        <View className="flex-row items-center justify-between px-6 pt-2">
+          <Text className="font-product text-2xl text-zinc-900">Studzee</Text>
+          <NotificationBell />
+        </View>
         <ScrollView
-          className="flex-1 px-6 pt-6"
+          className="flex-1 px-6 pt-4"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

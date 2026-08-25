@@ -1,6 +1,7 @@
 import { AppIcon } from '@/components/global/AppIcon';
+import { RecentAttemptRow } from '@/components/profile/RecentAttemptRow';
 import { colors } from '@/constants/colors';
-import type { BadgeStatus, MyProgress, RecentAttempt } from '@/types';
+import type { BadgeStatus, MyProgress } from '@/types';
 import { Award, ChevronRight, Flame, Lock } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -14,6 +15,8 @@ interface GamificationCardProps {
   loading: boolean;
   error: string | null;
   onRetry: () => void;
+  /** How many recent quizzes to show inline; the rest live on their screen */
+  recentLimit?: number;
 }
 
 /**
@@ -65,30 +68,6 @@ const BadgeChip = ({ badge }: { badge: BadgeStatus }) => (
   </View>
 );
 
-const RecentAttemptRow = ({ attempt }: { attempt: RecentAttempt }) => (
-  <View className="mb-2 flex-row items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
-    <View
-      className={`items-center justify-center rounded-lg px-2 py-1 ${
-        attempt.score === attempt.total && attempt.total > 0
-          ? 'bg-green-100'
-          : 'bg-zinc-200'
-      }`}
-    >
-      <Text className="font-product text-xs text-zinc-700">
-        {attempt.score}/{attempt.total}
-      </Text>
-    </View>
-    <View className="flex-1">
-      <Text className="font-sans text-sm text-zinc-800" numberOfLines={1}>
-        {attempt.title || 'Quiz'}
-      </Text>
-      <Text className="font-sans text-xs text-zinc-400">
-        {new Date(attempt.createdAt).toLocaleDateString()}
-      </Text>
-    </View>
-  </View>
-);
-
 /**
  * Loading skeleton matching the card's layout
  */
@@ -113,6 +92,7 @@ export const GamificationCard = ({
   loading,
   error,
   onRetry,
+  recentLimit = 3,
 }: GamificationCardProps) => {
   const router = useRouter();
 
@@ -242,10 +222,29 @@ export const GamificationCard = ({
         {/* Recent quizzes */}
         {progress.recentAttempts.length > 0 && (
           <View className="border-t border-zinc-200 p-6 pt-4">
-            <Text className="mb-3 font-product text-sm text-zinc-800">
-              Recent Quizzes
-            </Text>
-            {progress.recentAttempts.slice(0, 5).map(attempt => (
+            <View className="mb-3 flex-row items-center justify-between">
+              <Text className="font-product text-sm text-zinc-800">
+                Recent Quizzes
+              </Text>
+              {progress.recentAttempts.length > recentLimit && (
+                <TouchableOpacity
+                  onPress={() => router.push('/screens/recent-quizzes')}
+                  className="flex-row items-center gap-1 active:opacity-70"
+                  activeOpacity={0.7}
+                >
+                  <Text className="font-sans text-xs text-zinc-500">
+                    View All
+                  </Text>
+                  <AppIcon
+                    Icon={ChevronRight}
+                    size={13}
+                    strokeWidth={2}
+                    color={colors.zinc[500]}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+            {progress.recentAttempts.slice(0, recentLimit).map(attempt => (
               <RecentAttemptRow
                 key={`${attempt.contentId}-${attempt.createdAt}`}
                 attempt={attempt}

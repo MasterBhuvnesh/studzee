@@ -9,6 +9,8 @@ export default function ScreensLayout() {
         <Stack.Screen name="[id]" />
         <Stack.Screen name="achievements" />
         <Stack.Screen name="quests" />
+        <Stack.Screen name="recent-quizzes" />
+        <Stack.Screen name="notifications" />
         <Stack.Screen name="get-support" />
         <Stack.Screen name="send-feedback" />
         <Stack.Screen name="terms-of-use" />
