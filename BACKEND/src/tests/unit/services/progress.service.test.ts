@@ -20,6 +20,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     $transaction: vi.fn(),
+    // Backs the full score badge stat read; resolved per test in beforeEach.
+    $queryRaw: vi.fn(),
     quizAttempt: {
       create: vi.fn(),
       findFirst: vi.fn(),
@@ -96,6 +98,8 @@ beforeEach(() => {
   prismaMock.$transaction.mockImplementation(
     async (fn: (tx: Tx) => Promise<unknown>) => fn(prismaMock)
   )
+  // No full score attempts in history unless a test says otherwise.
+  prismaMock.$queryRaw.mockResolvedValue([{ count: 0 }])
   prismaMock.quizAttempt.findFirst.mockResolvedValue(null)
   prismaMock.quizAttempt.count.mockResolvedValue(1)
   prismaMock.quizAttempt.create.mockResolvedValue({})
@@ -287,8 +291,10 @@ describe('badges', () => {
   })
 
   it('keeps perfectionist earned by a prior attempt without re-inserting it', async () => {
-    // Prior best on this content was a full score, so perfectionist stays
-    // deserved even though this worse replay scores nothing.
+    // Stored history already holds a full-score attempt elsewhere, so the
+    // tally keeps tier one deserved even though this replay scores nothing;
+    // the badge itself is owned, so nothing is inserted again.
+    prismaMock.$queryRaw.mockResolvedValue([{ count: 1 }])
     prismaMock.quizAttempt.findFirst.mockResolvedValue({ score: 2, total: 2 })
     prismaMock.awardedBadge.findMany.mockResolvedValue([
       { badgeKey: 'first-steps' },
@@ -301,6 +307,57 @@ describe('badges', () => {
     expect(result.newBadges).toEqual([])
     expect(prismaMock.awardedBadge.createMany).not.toHaveBeenCalled()
   })
+
+  it.each([
+    [0, ['first-steps', 'perfectionist']],
+    [9, ['first-steps', 'perfectionist', 'perfectionist-x2']],
+    [
+      24,
+      ['first-steps', 'perfectionist', 'perfectionist-x2', 'perfectionist-x3'],
+    ],
+    [
+      99,
+      [
+        'first-steps',
+        'perfectionist',
+        'perfectionist-x2',
+        'perfectionist-x3',
+        'perfectionist-x4',
+      ],
+    ],
+  ])(
+    'awards every tier reached when full score %i stored plus this attempt',
+    async (stored, expected) => {
+      prismaMock.$queryRaw.mockResolvedValue([{ count: stored }])
+
+      const result = await grade({ q1: 0, q2: 0 })
+
+      expect(result.score).toBe(2)
+      expect(result.newBadges.map((badge) => badge.key)).toEqual(expected)
+    }
+  )
+
+  it.each([
+    [0, ['first-steps']],
+    [9, ['first-steps', 'perfectionist']],
+    [24, ['first-steps', 'perfectionist', 'perfectionist-x2']],
+    [
+      99,
+      ['first-steps', 'perfectionist', 'perfectionist-x2', 'perfectionist-x3'],
+    ],
+  ])(
+    'an imperfect attempt adds nothing to the tally at %i stored, so the next tier stays shut',
+    async (stored, expected) => {
+      prismaMock.$queryRaw.mockResolvedValue([{ count: stored }])
+
+      const result = await grade({ q1: 0 })
+
+      expect(result.score).toBe(1)
+      // Lower tiers already crossed by history still land; the rung above
+      // the stored count does not.
+      expect(result.newBadges.map((badge) => badge.key)).toEqual(expected)
+    }
+  )
 })
 
 describe('rejections', () => {
@@ -420,7 +477,7 @@ describe('getMyProgress', () => {
       key: 'first-steps',
       awardedAt: '2026-08-01T00:00:00.000Z',
     })
-    expect(result.allBadges).toHaveLength(6)
+    expect(result.allBadges).toHaveLength(9)
     expect(
       result.allBadges.filter((badge) => badge.awarded).map((b) => b.key)
     ).toEqual(['first-steps', 'century'])

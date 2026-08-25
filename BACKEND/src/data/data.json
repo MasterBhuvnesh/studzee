@@ -2,6 +2,7 @@
   {
     "title": "Text Preprocessing Pipeline for Deep Learning",
     "topic": "machine-learning",
+    "tags": ["fundamentals", "nlp"],
     "content": [
       {
         "title": "INTRODUCTION",
@@ -152,6 +153,7 @@
   {
     "title": "Text Classification with Deep Learning",
     "topic": "machine-learning",
+    "tags": ["nlp", "tutorial"],
     "content": [
       {
         "title": "INTRODUCTION",
@@ -302,6 +304,7 @@
   {
     "title": "Text Generation with Deep Learning Models",
     "topic": "machine-learning",
+    "tags": ["nlp", "tutorial"],
     "content": [
       {
         "title": "INTRODUCTION",
@@ -456,6 +459,7 @@
   {
     "title": "Transfer Learning and Advanced Techniques for Text Classification",
     "topic": "machine-learning",
+    "tags": ["fundamentals", "nlp", "tutorial"],
     "content": [
       {
         "title": "INTRODUCTION",
@@ -610,6 +614,7 @@
   {
     "title": "Load Balancers Explained",
     "topic": "system-design",
+    "tags": ["architecture", "scalability"],
     "content": [
       {
         "title": "INTRODUCTION",
@@ -734,6 +739,7 @@
   {
     "title": "CAP Theorem",
     "topic": "system-design",
+    "tags": ["architecture", "fundamentals"],
     "unlockPoints": 50,
     "content": [
       {
@@ -869,6 +875,7 @@
   {
     "title": "CI/CD Pipelines from Scratch",
     "topic": "devops",
+    "tags": ["automation", "ci-cd"],
     "content": [
       {
         "title": "INTRODUCTION",
@@ -993,6 +1000,7 @@
   {
     "title": "Backpropagation Intuition",
     "topic": "deep-learning",
+    "tags": ["neural-networks", "training"],
     "content": [
       {
         "title": "INTRODUCTION",

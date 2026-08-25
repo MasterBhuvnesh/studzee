@@ -2,6 +2,7 @@ import { Router } from 'express'
 import * as AdminController from '@/api/controllers/admin.controller'
 import * as EmailController from '@/api/controllers/email.controller'
 import * as NotificationController from '@/api/controllers/notification.controller'
+import * as QuestController from '@/api/controllers/quest.controller'
 import * as UploadController from '@/api/controllers/upload.controller'
 import * as UserController from '@/api/controllers/user.controller'
 import {
@@ -17,6 +18,7 @@ import {
   SendEmailSchema,
   SendNotificationSchema,
 } from '@/models/notification.validation'
+import { CreateQuestSchema } from '@/models/quest.validation'
 
 const router = Router()
 
@@ -132,6 +134,30 @@ router.get(
   '/users/emails',
   rateLimitMiddleware({ windowMs: 60_000, max: 30 }),
   UserController.listUserEmails
+)
+
+// --- Quests ---
+
+/**
+ * @route POST /admin/quests
+ * @description Create a limited time quest. Graded types carry their
+ *              questions in payload; read_blog carries a contentId.
+ */
+router.post(
+  '/quests',
+  rateLimitMiddleware({ windowMs: 60_000, max: 20 }),
+  validateBody(CreateQuestSchema),
+  QuestController.createQuestAdmin
+)
+
+/**
+ * @route GET /admin/quests
+ * @description Every quest, newest first, including expired and withdrawn ones.
+ */
+router.get(
+  '/quests',
+  rateLimitMiddleware({ windowMs: 60_000, max: 30 }),
+  QuestController.listAllQuestsAdmin
 )
 
 export default router

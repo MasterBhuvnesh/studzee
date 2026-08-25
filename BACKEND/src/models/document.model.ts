@@ -48,6 +48,10 @@ const DocumentMongooseSchema = new Schema<IDocument>(
       enum: [...TOPIC_KEYS],
       index: true,
     },
+    // Freeform labels for the tag filter. A simple field index covers both a
+    // standalone tag query and the topic-plus-tag combination, which reads one
+    // bounded candidate set either way.
+    tags: { type: [String], default: [], index: true },
     unlockPoints: { type: Number, default: 0 },
     key_notes: {
       type: Map,

@@ -5,6 +5,77 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 25-08-2026
 
+**Branch:** `feat/phase2-backend`
+
+### Quests backend
+
+The owner decided quests are limited time (start and end window), admins set
+the gem value, types are mcq, scq, fill_blank and read_blog, storage is
+Postgres beside the tracker tables, and three samples ship seeded.
+
+- `Quest` and `QuestCompletion` in the Prisma schema following the existing
+  conventions (cuid ids, no foreign keys), unique title, unique
+  (userId, questId) pair so completion is single shot, index on endsAt.
+  Migration `20260825072433_quests` applied to the Neon dev database on the
+  first attempt, no shadow database workaround needed.
+- `quest.validation.ts`: admin create schema with per type payload checks and
+  a submission union for the completion endpoint.
+- `quest.service.ts`: window filtered listing that keeps completed quests
+  flagged, per type grading (option text comparison for mcq and scq, trimmed
+  case insensitive text comparison for fill_blank), pass score gating, direct
+  award for read_blog, 409 QUEST_ENDED outside the window or when an admin
+  withdraws a quest.
+- `progress.service.ts`: extracted the shared award path into an exported
+  `recordActivityAndAward(userId, gems, options)` used by both quiz attempts
+  and quest completions. Reads stay ahead of the transaction; the quiz path
+  inserts its QuizAttempt through an options hook so the write stays atomic.
+- Wired the full score badge stat: created `badge-stats.ts` with
+  `getFullScoreAttemptCount` (raw count of QuizAttempt where score equals
+  total) because the second agent working on gamification had not committed
+  the file when this branch finished. Their tiered perfectionist predicates
+  consume the count through the shared context.
+- Routes: `/quests` mounted in `index.ts` with router level auth, GET list,
+  POST `/:id/complete` rate limited at 30 per minute; POST and GET
+  `/admin/quests` behind the admin guard.
+- Seeder `quests.seed.ts` plus `seed:quests`, idempotent by title, windows of
+  30 days from run time, read_blog contentId resolved against Mongo at seed
+  time.
+- Tests: quest service, quest routes and quest validation suites, 38 cases,
+  all passing. Prettier clean, `tsc --noEmit` clean across the whole project.
+
+### Blog tags and perfectionist tiers
+
+- Documents carry an optional `tags` array, two to five trimmed strings,
+  validated by the document schema and persisted by the admin service. The
+  content list accepts `?tag=` with its own cache key suffix, composing with
+  the topic filter; unknown tags simply match nothing rather than erroring,
+  since tags are freeform unlike the fixed topic registry.
+- `data.json` documents all carry two to three tags, and
+  `sample-topics.seed.ts` gained a backfill stage that updates existing
+  documents only where fields are missing. This fixed a live bug: the four
+  original Machine Learning documents predated the topic field, so the
+  server side topic filter matched nothing while the home screen's client
+  side fallback hid the problem. Running the seeder backfilled topic and
+  tags on all eight production documents.
+- Perfectionist is tiered: `perfectionist` at one full score attempt,
+  `-x2` at ten, `-x3` at twenty five, `-x4` at one hundred, each a catalog
+  entry so the unique badge storage needs no migration. `BadgeContext` now
+  carries `fullScoreCount`, computed from a raw count of stored full score
+  attempts plus the in-flight submission when it graded perfect. Badge and
+  level catalog entries carry an optional `imageUrl` for the owner's
+  upcoming artwork.
+- Live verification (`src/cli/tools/verify-phase2.ts`, 8 of 8 against real
+  Atlas, Neon and Upstash): quest list with three seeded samples, topic
+  filter now finding the backfilled ML documents, tag filter, read blog
+  completion awarding gems, duplicate completion short circuit, MCQ grading,
+  failing submission paying nothing, progress totals and the four tier
+  entries. One real gap surfaced and fixed during verification: the quest
+  list served no question payload, so clients could never render an MCQ
+  quest; the list now carries sanitized questions without answers while
+  grading stays server side.
+
+## 25-08-2026
+
 - **Branch:** current working branch
 - **Changed:** Added `ignoreDeprecations: "6.0"` to the backend TypeScript configuration and upgraded the backend TypeScript dev dependency to 6.0.3.
 - **Why:** The editor reported that `baseUrl` will stop functioning in TypeScript 7. The project typecheck now accepts the suppression value and passes.

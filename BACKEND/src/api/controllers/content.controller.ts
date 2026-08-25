@@ -8,12 +8,15 @@ import { AppError } from '@/types/errors'
 /**
  * Query contract for GET /content. The topic key must be one of the registry
  * entries; anything else is rejected by validateQuery with a 400 whose errors
- * name every allowed topic.
+ * name every allowed topic. The tag is freeform like the document field it
+ * filters: any well-sized string is accepted, and an unknown one simply
+ * matches no documents.
  */
 export const listContentQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   topic: TopicSchema.optional(),
+  tag: z.string().trim().min(1).max(30).optional(),
 })
 
 export type TListContentQuery = z.infer<typeof listContentQuerySchema>
@@ -29,8 +32,8 @@ export const getPaginatedContent = async (
   next: NextFunction
 ) => {
   try {
-    const { page, limit, topic } = res.locals.query as TListContentQuery
-    const result = await ContentService.listContent(page, limit, topic)
+    const { page, limit, topic, tag } = res.locals.query as TListContentQuery
+    const result = await ContentService.listContent(page, limit, topic, tag)
     res.json(result)
   } catch (error) {
     next(error)
