@@ -58,6 +58,8 @@ export interface ContentSummary {
   createdAt: string;
   /** Registry key of the subject area, present since the backend projects it */
   topic: string;
+  /** Freeform tags, two to five per document, projected on the list endpoint */
+  tags: string[];
 }
 
 /**
@@ -113,6 +115,18 @@ export interface QuestCompletionResult {
   total?: number;
   gemsAwarded?: number;
 }
+
+/**
+ * Active day map for one year, the data behind the streak heatmap
+ */
+export interface MyActivity {
+  year: number;
+  /** UTC day keys with activity, ascending, YYYY-MM-DD */
+  activeDays: string[];
+  totalActive: number;
+}
+
+export type MyActivityResponse = ApiSuccess<MyActivity>;
 
 /**
  * Response type for /content/topics endpoint
@@ -199,6 +213,8 @@ export interface ContentDetail {
   createdAt: string;
   updatedAt: string;
   __v: number;
+  /** Freeform tags, two to five per document */
+  tags: string[];
 }
 
 /**

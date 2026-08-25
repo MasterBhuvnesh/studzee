@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Central export point for all type definitions
  */
 
@@ -39,6 +39,7 @@ export type {
   ContentSummary,
   EarnedBadge,
   KeyNotes,
+  MyActivity,
   MyProgress,
   MyProgressResponse,
   NewBadge,

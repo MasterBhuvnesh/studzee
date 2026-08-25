@@ -59,10 +59,16 @@ const getMyProgressSummary = vi.fn(
   }
 )
 
+const getMyActivity = vi.fn((_req: express.Request, res: express.Response) => {
+  order.push('activityController')
+  res.status(200).json({ success: true, data: {} })
+})
+
 vi.mock('@/middleware/auth', () => ({ clerkAuthMiddleware, requireAuth }))
 vi.mock('@/api/controllers/progress.controller', () => ({
   recordAttempt,
   getMyProgressSummary,
+  getMyActivity,
 }))
 
 const buildApp = async () => {
@@ -148,6 +154,28 @@ describe('/progress routes', () => {
       expect(res.status).toBe(200)
       expect(getMyProgressSummary).toHaveBeenCalledTimes(1)
       expect(order).toEqual(['auth', 'requireAuth', 'summaryController'])
+    })
+  })
+
+  describe('GET /progress/activity', () => {
+    it('reaches the activity controller behind the same auth and defaults the year', async () => {
+      const res = await request(await buildApp()).get('/progress/activity')
+
+      expect(res.status).toBe(200)
+      expect(getMyActivity).toHaveBeenCalledTimes(1)
+      expect(order).toEqual(['auth', 'requireAuth', 'activityController'])
+    })
+
+    it.each([
+      ['a year before the floor', '?year=2019'],
+      ['a non numeric year', '?year=recent'],
+      ['a fractional year', '?year=2024.5'],
+    ])('answers 400 for %s', async (_label, qs) => {
+      const res = await request(await buildApp()).get(`/progress/activity${qs}`)
+
+      expect(res.status).toBe(400)
+      expect(res.body.message).toBe('Invalid query parameters')
+      expect(getMyActivity).not.toHaveBeenCalled()
     })
   })
 

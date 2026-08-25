@@ -1,8 +1,9 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { colors } from '@/constants/colors';
-import { getMyProgress } from '@/lib/api';
-import type { BadgeStatus, MyProgress } from '@/types';
+import { getMyActivity, getMyProgress } from '@/lib/api';
+import { StreakHeatmap } from '@/components/achievements/StreakHeatmap';
+import type { BadgeStatus, MyActivity, MyProgress } from '@/types';
 import logger from '@/utils/logger';
 import { useAuth } from '@clerk/clerk-expo';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -197,6 +198,7 @@ export default function AchievementsScreen() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('badges');
   const [progress, setProgress] = useState<MyProgress | null>(null);
+  const [activity, setActivity] = useState<MyActivity | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SheetTarget | null>(null);
@@ -223,7 +225,15 @@ export default function AchievementsScreen() {
         throw new Error('Authentication required. Please sign in.');
       }
 
-      setProgress(await getMyProgress(token));
+      // Progress and the activity map load together; a heatmap failure
+      // should not take the badges list down with it.
+      const [progressData] = await Promise.all([
+        getMyProgress(token),
+        getMyActivity(token)
+          .then(data => setActivity(data))
+          .catch(err => logger.warn(`Activity map unavailable: ${err}`)),
+      ]);
+      setProgress(progressData);
       logger.success('Achievements data loaded');
     } catch (err) {
       const message =
@@ -378,6 +388,11 @@ export default function AchievementsScreen() {
                       ))}
                     </View>
                   )}
+              {activity && (
+                <View className="mb-4">
+                  <StreakHeatmap activity={activity} />
+                </View>
+              )}
               <View className="h-8" />
             </ScrollView>
           )}

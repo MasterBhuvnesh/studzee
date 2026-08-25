@@ -452,3 +452,33 @@ export const getUserTotalPoints = async (userId: string): Promise<number> => {
   })
   return progress?.points ?? 0
 }
+
+export interface ActivityMap {
+  year: number
+  /** UTC day keys with activity, ascending, YYYY-MM-DD */
+  activeDays: string[]
+  totalActive: number
+}
+
+/**
+ * Active day map for one calendar year, the data behind the streak heatmap.
+ * DailyActivity holds one row per active day, so presence is the intensity:
+ * a day either has activity or it does not.
+ */
+export const getActivityMap = async (
+  userId: string,
+  year: number
+): Promise<ActivityMap> => {
+  const start = new Date(Date.UTC(year, 0, 1))
+  const end = new Date(Date.UTC(year + 1, 0, 1))
+
+  const rows = await prisma.dailyActivity.findMany({
+    where: { userId, date: { gte: start, lt: end } },
+    select: { date: true },
+    orderBy: { date: 'asc' },
+  })
+
+  const activeDays = rows.map((row) => row.date.toISOString().slice(0, 10))
+
+  return { year, activeDays, totalActive: activeDays.length }
+}

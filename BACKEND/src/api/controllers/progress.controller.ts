@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import {
+  getActivityMap,
   gradeAndRecordAttempt,
   getMyProgress,
 } from '@/services/progress.service'
@@ -22,6 +23,27 @@ export const recordAttempt = async (
     const { contentId, responses } = req.body as TRecordAttempt
 
     const result = await gradeAndRecordAttempt(userId!, contentId, responses)
+
+    return res.status(200).json({ success: true, data: result })
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * Active day map for one year, the data behind the streak heatmap. The year
+ * arrives validated in res.locals.query and defaults to the current year.
+ */
+export const getMyActivity = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.auth().userId
+    const { year } = res.locals.query as { year: number }
+
+    const result = await getActivityMap(userId!, year)
 
     return res.status(200).json({ success: true, data: result })
   } catch (error) {

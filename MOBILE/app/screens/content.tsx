@@ -1,4 +1,5 @@
 import { AppIcon } from '@/components/global/AppIcon';
+import { TagChips } from '@/components/content/TagChips';
 import { colors } from '@/constants/colors';
 import { getContent } from '@/lib/api';
 import { ContentSummary } from '@/types';
@@ -53,6 +54,7 @@ const ContentListItem = ({ item }: { item: ContentSummary }) => {
       <Text className="mt-2 font-sans text-sm text-zinc-500" numberOfLines={3}>
         {item.summary}
       </Text>
+      <TagChips tags={item.tags} />
       <Text
         className="mt-2 border-t border-zinc-200 pt-2 text-right font-sans text-sm text-zinc-600"
         numberOfLines={1}

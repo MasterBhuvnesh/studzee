@@ -1,5 +1,6 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { NotificationBell } from '@/components/global/NotificationBell';
+import { TagChips } from '@/components/content/TagChips';
 import { colors } from '@/constants/colors';
 import { getContent, getTodayContent, getTopics } from '@/lib/api';
 import { ContentSummary, Topic } from '@/types';
@@ -144,6 +145,7 @@ const ContentCard = ({
         >
           {item.summary}
         </Text>
+        <TagChips tags={item.tags} />
       </TouchableOpacity>
       {showDivider && <View className="mx-4 h-px bg-zinc-100" />}
     </View>

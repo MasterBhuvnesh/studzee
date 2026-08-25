@@ -65,7 +65,7 @@ describe('listContent with a tag filter', () => {
     // ASSERT: both the page and the total match on the freeform tag.
     expect(DocumentModel.find).toHaveBeenCalledWith(
       { tags: 'nlp' },
-      'title summary createdAt topic'
+      'title summary createdAt topic tags'
     )
     expect(DocumentModel.countDocuments).toHaveBeenCalledWith({ tags: 'nlp' })
     expect(result.meta).toEqual({ page: 1, limit: 20, total: 1 })
@@ -96,7 +96,7 @@ describe('listContent with a tag filter', () => {
     // ASSERT: both constraints ride in the same query document.
     expect(DocumentModel.find).toHaveBeenCalledWith(
       { topic: 'machine-learning', tags: 'tutorial' },
-      'title summary createdAt topic'
+      'title summary createdAt topic tags'
     )
     expect(DocumentModel.countDocuments).toHaveBeenCalledWith({
       topic: 'machine-learning',
@@ -147,7 +147,7 @@ describe('listContent with a tag filter', () => {
     expect(redisClient.get).toHaveBeenCalledWith('content:list:page:1:limit:20')
     expect(DocumentModel.find).toHaveBeenCalledWith(
       {},
-      'title summary createdAt topic'
+      'title summary createdAt topic tags'
     )
     expect(DocumentModel.countDocuments).toHaveBeenCalledWith({})
   })

@@ -391,9 +391,11 @@ already exists and what it needs so tomorrow's work can start anywhere.
 
 ### 6. STREAK HEATMAP
 
-- GitHub contribution graph style yearly grid of active days.
-- Data exists (`DailyActivity` rows); missing piece is an endpoint exposing
-  the day map, for example `GET /progress/me/activity?year=`.
+- DONE 25-08-2026 on `feat/streak-heatmap`. The endpoint is
+  `GET /progress/activity?year=` (note: `/activity` directly under
+  `/progress`, not under `/me` as sketched here earlier) and the client
+  renders it as a GitHub style grid on the achievements screen below both
+  tabs. Requires a backend release to reach production.
 
 ### 7. CONTENT READING POLISH
 
@@ -405,8 +407,10 @@ already exists and what it needs so tomorrow's work can start anywhere.
 
 ### 9. BLOG TAGS
 
-- Tags on blog content beyond the topic field; extends the topic model once
-  the blog exists.
+- DONE 25-08-2026 on `feat/streak-heatmap`: the list endpoint now projects
+  `tags`, the client fetches them and renders chips on content cards, and
+  `getContent` accepts a freeform `tag` filter. This section duplicated
+  entry 7 above; entry 7 is the authoritative one.
 
 ### 10. SUPPORT AGENT
 
@@ -467,6 +471,8 @@ needs, at minimum:
 - **Do not use the PowerShell `Get-Content -Raw` plus `Set-Content` pattern on files containing non-ASCII characters.** PowerShell 5.1 reads them as ANSI and writes UTF-8, which corrupts box drawing characters in the readme directory trees. Use the Edit tool, or `[System.IO.File]::ReadAllText` with an explicit UTF8 encoding.
 
 ### OPEN WORK
+
+- **Integration suite `content.route.test.ts` times out, open as of 25-08-2026.** Its `beforeAll` calls `setupTestDatabases()` under the default 10 second hook timeout while its own `afterAll` declares 20 seconds, and on this machine the Mongo and Redis connect exceeds 10 seconds even with both containers healthy. Confirmed pre-existing: it fails the same way with the service layer reverted to the merge base. Not caused by any heatmap or tags work; every other suite passes. Fix direction: raise the hook timeout to match `afterAll`, or make `setupTestDatabases` faster, then confirm in CI where Linux timings differ.
 
 - **Features the owner is planning, stated 18-08-2026, elaborated 21-08-2026.** A user tracker that saves a user's quiz results, and surprise or scheduled quizzes derived from that response history. See [PLANNED CONTENT AND GAMIFICATION FEATURES](#planned-content-and-gamification-features) above for the full breakdown: the gamified tracker, a generic topic tag content model plus a blog section, JSON toward Markdown content authoring, and profile section gamification. Do not build or design them yet, the data storage layer this depends on is still on hold.
 
