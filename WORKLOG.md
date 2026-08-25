@@ -41,6 +41,18 @@ Verification: `npx tsc --noEmit` clean and prettier clean on every touched
 file. Device behaviour (Lottie playback, bottom sheet gestures) is untested
 from this machine and needs a run on the Expo dev client.
 
+### Stop the progress fetch loop
+
+- The profile and achievements screens hammered `GET /progress/me` in an
+  infinite loop and tripped the global rate limiter. Root cause is the same
+  one fixed for notification registration on 20-08-2026: `fetchProgress` was
+  keyed on Clerk's `getToken`, which is not referentially stable, so every
+  fetch's own re-render rebuilt the callback and refired the effect. Fixed
+  with the established pattern: `getToken` read through a ref, empty
+  callback dependencies, and an in flight guard against overlapping manual
+  pulls. Recorded in FIXES with the general lesson, since this will bite
+  every future screen that keys an effect on a Clerk hook return value.
+
 ## 25-08-2026
 
 **Branch:** `main` (release)

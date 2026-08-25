@@ -201,12 +201,24 @@ export default function AchievementsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SheetTarget | null>(null);
 
+  // Clerk's getToken is not referentially stable, so it is read through a
+  // ref to keep this callback and the mount effect from rebuilding on every
+  // render, which would loop requests into the rate limiter.
+  const getTokenRef = useRef(getToken);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
+
+  const inFlight = useRef(false);
+
   const fetchProgress = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     try {
       setLoading(true);
       setError(null);
 
-      const token = await getToken();
+      const token = await getTokenRef.current();
       if (!token) {
         throw new Error('Authentication required. Please sign in.');
       }
@@ -219,9 +231,10 @@ export default function AchievementsScreen() {
       setError(message);
       logger.error(`Error loading achievements: ${message}`);
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
     void fetchProgress();
