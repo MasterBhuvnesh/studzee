@@ -8,7 +8,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { ArrowLeft, Check, Lock } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -190,12 +190,9 @@ const LoadingState = () => (
 export default function AchievementsScreen() {
   const router = useRouter();
   const { getToken } = useAuth();
-  const params = useLocalSearchParams<{ initialTab?: string }>();
   const sheetRef = useRef<BottomSheetModal>(null);
 
-  const [activeTab, setActiveTab] = useState<TabKey>(
-    params.initialTab === 'levels' ? 'levels' : 'badges'
-  );
+  const [activeTab, setActiveTab] = useState<TabKey>('badges');
   const [progress, setProgress] = useState<MyProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -288,23 +285,25 @@ export default function AchievementsScreen() {
             )}
           </View>
 
-          {/* Segmented tabs */}
+          {/* Segmented tabs. Class sets are static per state: toggling
+              shadow between renders trips NativeWind's late upgrade path,
+              whose warning printer crashes on context getters. */}
           <View className="mx-6 mb-4 flex-row rounded-full bg-zinc-200/70 p-1">
             {(['badges', 'levels'] as TabKey[]).map(tab => (
               <TouchableOpacity
                 key={tab}
                 onPress={() => setActiveTab(tab)}
-                className={`flex-1 rounded-full py-2 ${
-                  activeTab === tab ? 'bg-white shadow-sm' : ''
+                className={`flex-1 rounded-full py-2 shadow-sm ${
+                  activeTab === tab ? 'bg-white' : 'bg-transparent'
                 }`}
                 activeOpacity={0.8}
               >
                 <Text
-                  className={`text-center font-product text-sm capitalize ${
+                  className={`text-center font-product text-sm ${
                     activeTab === tab ? 'text-zinc-900' : 'text-zinc-500'
                   }`}
                 >
-                  {tab}
+                  {tab === 'badges' ? 'Badges' : 'Levels'}
                 </Text>
               </TouchableOpacity>
             ))}
