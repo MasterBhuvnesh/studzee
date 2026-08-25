@@ -1,5 +1,6 @@
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { AppIcon } from '@/components/global/AppIcon';
+import { BottomFade } from '@/components/global/BottomFade';
 import { Header } from '@/components/global/Header';
 import { colors } from '@/constants/colors';
 import { useNotification } from '@/contexts/NotificationContext';
@@ -191,6 +192,7 @@ export default function SettingsPage() {
             <SignOutButton />
           </View>
         </ScrollView>
+        <BottomFade />
       </SafeAreaView>
     </LinearGradient>
   );

@@ -1,5 +1,6 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { NotificationBell } from '@/components/global/NotificationBell';
+import { BottomFade } from '@/components/global/BottomFade';
 import { TagChips } from '@/components/content/TagChips';
 import { colors } from '@/constants/colors';
 import { getContent, getTodayContent, getTopics } from '@/lib/api';
@@ -490,6 +491,7 @@ export default function HomePage() {
               <LockedContentSection key={topic.key} title={topic.label} />
             ))}
         </ScrollView>
+        <BottomFade />
       </SafeAreaView>
     </LinearGradient>
   );
