@@ -418,16 +418,6 @@ export default function QuestsScreen() {
                     </Text>
                   </View>
                 </View>
-                <TouchableOpacity
-                  onPress={() => router.push('/screens/achievements')}
-                  className="flex-row items-center gap-1 rounded-full bg-zinc-900 px-4 py-2 active:bg-zinc-700"
-                  activeOpacity={0.8}
-                >
-                  <Text className="font-product text-xs text-white">
-                    See All Quests
-                  </Text>
-                  <ArrowUpRight size={13} color="#ffffff" />
-                </TouchableOpacity>
               </View>
 
               {loading ? (
@@ -441,7 +431,6 @@ export default function QuestsScreen() {
                         <View className="h-5 w-12 rounded bg-zinc-200" />
                       </View>
                     </View>
-                    <View className="h-8 w-32 rounded-full bg-zinc-200" />
                   </View>
 
                   {/* Quest row skeletons */}

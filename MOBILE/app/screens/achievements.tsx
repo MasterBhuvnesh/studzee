@@ -69,46 +69,61 @@ const AchievementArt = ({
   );
 };
 
-const BadgeCard = ({
+/**
+ * Two column grid card for the Badges tab, mirroring the Levels grid: art on
+ * top, name and description underneath, most recently earned highlighted.
+ */
+const BadgeGridCard = ({
   badge,
+  isLatest,
   onPress,
 }: {
   badge: BadgeStatus;
+  isLatest: boolean;
   onPress: () => void;
 }) => (
   <TouchableOpacity
     onPress={onPress}
-    className="mb-3 flex-row items-center rounded-2xl border border-zinc-200 bg-white p-4 active:bg-zinc-50"
+    className={`flex-1 items-center rounded-2xl border bg-white p-4 active:bg-zinc-50 ${
+      isLatest ? 'border-zinc-900' : 'border-zinc-200'
+    }`}
     activeOpacity={0.7}
   >
-    <AchievementArt size={52} dimmed={!badge.awarded} />
-    <View className="ml-4 flex-1">
-      <Text
-        className={`font-product text-base ${
-          badge.awarded ? 'text-zinc-800' : 'text-zinc-500'
-        }`}
-      >
-        {badge.label}
-      </Text>
-      <Text
-        className="mt-0.5 font-sans text-xs text-zinc-400"
-        numberOfLines={2}
-      >
-        {badge.description}
-      </Text>
-    </View>
-    <View
-      className={`ml-3 rounded-full p-1.5 ${
-        badge.awarded ? 'bg-green-100' : 'bg-zinc-100'
+    <AchievementArt size={64} dimmed={!badge.awarded} />
+    <Text
+      className={`mt-2 font-product text-sm ${
+        badge.awarded ? 'text-zinc-800' : 'text-zinc-500'
       }`}
+      numberOfLines={1}
     >
-      <AppIcon
-        Icon={badge.awarded ? Check : Lock}
-        size={14}
-        strokeWidth={2}
-        color={badge.awarded ? colors.green[600] : colors.zinc[400]}
-      />
-    </View>
+      {badge.label}
+    </Text>
+    <Text className="mt-0.5 font-sans text-xs text-zinc-400" numberOfLines={2}>
+      {badge.description}
+    </Text>
+    {badge.awarded && isLatest ? (
+      <View className="mt-2 rounded-full bg-zinc-900 px-2.5 py-0.5">
+        <Text className="font-sans text-[10px] text-white">Latest</Text>
+      </View>
+    ) : badge.awarded ? (
+      <View className="mt-2 rounded-full bg-green-100 p-1">
+        <AppIcon
+          Icon={Check}
+          size={12}
+          strokeWidth={2.5}
+          color={colors.green[600]}
+        />
+      </View>
+    ) : (
+      <View className="mt-2 rounded-full bg-zinc-100 p-1">
+        <AppIcon
+          Icon={Lock}
+          size={12}
+          strokeWidth={2.5}
+          color={colors.zinc[400]}
+        />
+      </View>
+    )}
   </TouchableOpacity>
 );
 
@@ -257,6 +272,11 @@ export default function AchievementsScreen() {
 
   const badges = progress?.allBadges ?? [];
   const points = progress?.points ?? 0;
+  // Most recently earned badge gets the Latest highlight in the grid,
+  // mirroring how the Levels grid marks its current rung.
+  const latestBadgeKey = [...(progress?.badges ?? [])].sort((a, b) =>
+    (b.awardedAt ?? '').localeCompare(a.awardedAt ?? '')
+  )[0]?.key;
 
   return (
     <>
@@ -350,23 +370,29 @@ export default function AchievementsScreen() {
               showsVerticalScrollIndicator={false}
             >
               {activeTab === 'badges'
-                ? badges.map(badge => (
-                    <BadgeCard
-                      key={badge.key}
-                      badge={badge}
-                      onPress={() =>
-                        openDetail({
-                          key: badge.key,
-                          label: badge.label,
-                          description: badge.description,
-                          awarded: badge.awarded,
-                          awardedAt: progress?.badges.find(
-                            earned => earned.key === badge.key
-                          )?.awardedAt,
-                        })
-                      }
-                    />
-                  ))
+                ? badges.length > 0 && (
+                    <View className="flex-row flex-wrap justify-between">
+                      {badges.map(badge => (
+                        <View key={badge.key} className="mb-1 w-[48%]">
+                          <BadgeGridCard
+                            badge={badge}
+                            isLatest={badge.key === latestBadgeKey}
+                            onPress={() =>
+                              openDetail({
+                                key: badge.key,
+                                label: badge.label,
+                                description: badge.description,
+                                awarded: badge.awarded,
+                                awardedAt: progress?.badges.find(
+                                  earned => earned.key === badge.key
+                                )?.awardedAt,
+                              })
+                            }
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  )
                 : LEVELS.length > 0 && (
                     <View className="flex-row flex-wrap justify-between">
                       {LEVELS.map(level => (
