@@ -58,6 +58,8 @@ export interface ContentSummary {
   createdAt: string;
   /** Registry key of the subject area, present since the backend projects it */
   topic: string;
+  /** Freeform tags, two to five per document, projected on the list endpoint */
+  tags: string[];
 }
 
 /**
@@ -211,6 +213,8 @@ export interface ContentDetail {
   createdAt: string;
   updatedAt: string;
   __v: number;
+  /** Freeform tags, two to five per document */
+  tags: string[];
 }
 
 /**

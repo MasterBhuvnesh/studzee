@@ -87,24 +87,26 @@ export async function getPdfs(
 
 /**
  * Fetches the list of content summaries with pagination support
- * @param params - Optional pagination parameters (page, limit) and a topic key
+ * @param params - Optional pagination parameters (page, limit), a topic key
+ *                 and a freeform tag to filter by
  * @returns Promise with paginated content list response
  */
 export async function getContent(
-  params: PaginationParams & { topic?: string } = {}
+  params: PaginationParams & { topic?: string; tag?: string } = {}
 ): Promise<ContentListResponse> {
   try {
-    const { page = 1, limit = 20, topic } = params;
+    const { page = 1, limit = 20, topic, tag } = params;
     logger.info(
-      `Fetching content list - page: ${page}, limit: ${limit}${topic ? `, topic: ${topic}` : ''}`
+      `Fetching content list - page: ${page}, limit: ${limit}${topic ? `, topic: ${topic}` : ''}${tag ? `, tag: ${tag}` : ''}`
     );
 
     const response = await axios.get<ContentListResponse>(
       `${API_BASE_URL}/content`,
       {
         // The backend rejects unknown topic keys with a 400, so only send
-        // the parameter when the caller actually has one.
-        params: topic ? { page, limit, topic } : { page, limit },
+        // the parameter when the caller actually has one. Tags are freeform,
+        // so an unknown one just matches nothing.
+        params: { page, limit, ...(topic && { topic }), ...(tag && { tag }) },
         timeout: 10000, // 10 second timeout
       }
     );
