@@ -7,6 +7,8 @@ export default function ScreensLayout() {
         <Stack.Screen name="pdfs" />
         <Stack.Screen name="content" />
         <Stack.Screen name="[id]" />
+        <Stack.Screen name="achievements" />
+        <Stack.Screen name="quests" />
         <Stack.Screen name="get-support" />
         <Stack.Screen name="send-feedback" />
         <Stack.Screen name="terms-of-use" />
