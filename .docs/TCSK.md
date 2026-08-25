@@ -399,7 +399,11 @@ already exists and what it needs so tomorrow's work can start anywhere.
 
 ### 7. CONTENT READING POLISH
 
-- A transparent gradient scrim above the tab bar area while reading content.
+- DONE 25-08-2026, widened in scope: the owner asked for the fade on the
+  four tab pages rather than only while reading. A shared `BottomFade`
+  component, transparent zinc into the page background, sits above the tab
+  bar on home, resources, profile and settings. Gradient only, no blur
+  dependency by owner choice.
 
 ### 8. IN APP NOTIFICATIONS
 
@@ -447,7 +451,6 @@ already exists and what it needs so tomorrow's work can start anywhere.
 The owner moved these out of the near term list. Recorded so the shape is not
 lost; none are designed or built.
 
-- Reading gradient polish above the tab bar.
 - In app notifications for quizzes and events.
 - In app support agent (small model).
 - Newsletter agent. The standing house rule holds: it ships with a draft and

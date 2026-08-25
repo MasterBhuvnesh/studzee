@@ -69,7 +69,7 @@ Date is the date the status last changed.
 | Blog tags on documents, two to five per document, with filtering                                 | BHUVNESH  | DONE        | 25-08-2026 |
 | Perfectionist badge tiers x1 to x4 with per tier images                                          | BHUVNESH  | DONE        | 25-08-2026 |
 | Yearly streak heatmap from daily activity                                                        | BHUVNESH  | DONE        | 25-08-2026 |
-| Content reading gradient polish                                                                  | BHUVNESH  | PLANNED     | 25-08-2026 |
+| Gradient fade above the tab bar on home, resources, profile, settings                            | BHUVNESH  | DONE        | 25-08-2026 |
 | In app notification centre with bell, fed by badge unlocks and perfect scores                    | BHUVNESH  | DONE        | 25-08-2026 |
 | Recent quizzes screen, profile card shows three                                                  | BHUVNESH  | DONE        | 25-08-2026 |
 | Blog content tags, backend and client rendering                                                 | BHUVNESH  | DONE        | 25-08-2026 |
