@@ -132,7 +132,7 @@ const LevelCard = ({
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`mb-3 flex-1 items-center rounded-2xl border bg-white p-4 active:bg-zinc-50 ${
+      className={`flex-1 items-center rounded-2xl border bg-white p-4 active:bg-zinc-50 ${
         isCurrent ? 'border-zinc-900' : 'border-zinc-200'
       }`}
       activeOpacity={0.7}
@@ -360,20 +360,21 @@ export default function AchievementsScreen() {
                 : LEVELS.length > 0 && (
                     <View className="flex-row flex-wrap justify-between">
                       {LEVELS.map(level => (
-                        <LevelCard
-                          key={level.key}
-                          level={level}
-                          points={points}
-                          onPress={() =>
-                            openDetail({
-                              key: level.key,
-                              label: level.label,
-                              description: `Reach ${level.minPoints} gems to hold the ${level.label} level.`,
-                              minPoints: level.minPoints,
-                              awarded: points >= level.minPoints,
-                            })
-                          }
-                        />
+                        <View key={level.key} className="mb-1 w-[48%]">
+                          <LevelCard
+                            level={level}
+                            points={points}
+                            onPress={() =>
+                              openDetail({
+                                key: level.key,
+                                label: level.label,
+                                description: `Reach ${level.minPoints} gems to hold the ${level.label} level.`,
+                                minPoints: level.minPoints,
+                                awarded: points >= level.minPoints,
+                              })
+                            }
+                          />
+                        </View>
                       ))}
                     </View>
                   )}

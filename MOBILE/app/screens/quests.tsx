@@ -441,9 +441,34 @@ export default function QuestsScreen() {
               </View>
 
               {loading ? (
-                <View className="items-center justify-center py-12">
-                  <ActivityIndicator size="small" color={colors.zinc[500]} />
-                </View>
+                <>
+                  {/* Gems summary skeleton */}
+                  <View className="mb-6 flex-row items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg">
+                    <View className="flex-row items-center gap-3">
+                      <View className="h-9 w-9 rounded-lg bg-zinc-100" />
+                      <View>
+                        <View className="mb-1.5 h-3 w-16 rounded bg-zinc-100" />
+                        <View className="h-5 w-12 rounded bg-zinc-200" />
+                      </View>
+                    </View>
+                    <View className="h-8 w-32 rounded-full bg-zinc-200" />
+                  </View>
+
+                  {/* Quest row skeletons */}
+                  {[1, 2, 3].map(index => (
+                    <View
+                      key={index}
+                      className="mb-2.5 flex-row items-center rounded-xl border border-zinc-200 bg-white px-4 py-3.5"
+                    >
+                      <View className="mr-3 h-10 w-10 rounded-xl bg-zinc-100" />
+                      <View className="flex-1">
+                        <View className="mb-2 h-4 w-2/3 rounded bg-zinc-100" />
+                        <View className="h-3 w-1/2 rounded bg-zinc-100" />
+                      </View>
+                      <View className="h-6 w-14 rounded-full bg-zinc-100" />
+                    </View>
+                  ))}
+                </>
               ) : error ? (
                 <View className="rounded-2xl border border-red-200 bg-red-50 p-6">
                   <Text className="font-product text-base text-red-800">
