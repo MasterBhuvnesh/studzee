@@ -36,6 +36,7 @@ export class AdminService {
         imageUrl: parsed.imageUrl ?? null,
         pdfUrl: parsed.pdfUrl ?? [],
         topic: parsed.topic,
+        tags: parsed.tags ?? [],
         unlockPoints: parsed.unlockPoints,
       })
 

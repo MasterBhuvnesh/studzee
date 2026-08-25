@@ -1,4 +1,4 @@
-# RECORDS
+﻿# RECORDS
 
 Implementation record for Studzee. Each row is a feature, so any person or agent can see what is done and what is not. Update this table whenever a feature changes state and commit it with the change.
 
@@ -65,9 +65,9 @@ Date is the date the status last changed.
 | Points presented as gems                                                                         | BHUVNESH  | DONE        | 25-08-2026 |
 | Achievement and full score celebration animation (Lottie)                                        | BHUVNESH  | DONE        | 25-08-2026 |
 | Quests placeholder screen                                                                        | BHUVNESH  | DONE        | 25-08-2026 |
-| Quests backend: limited time windows, Postgres storage, blog and MCQ samples                     | BHUVNESH  | PLANNED     | 25-08-2026 |
-| Blog tags on documents, two to five per document, with filtering                                 | BHUVNESH  | PLANNED     | 25-08-2026 |
-| Perfectionist badge tiers x1 to x4 with per tier images                                          | BHUVNESH  | PLANNED     | 25-08-2026 |
+| Quests backend: limited time windows, Postgres storage, blog and MCQ samples                     | BHUVNESH  | DONE        | 25-08-2026 |
+| Blog tags on documents, two to five per document, with filtering                                 | BHUVNESH  | DONE        | 25-08-2026 |
+| Perfectionist badge tiers x1 to x4 with per tier images                                          | BHUVNESH  | DONE        | 25-08-2026 |
 | Yearly streak heatmap from daily activity                                                        | BHUVNESH  | PLANNED     | 25-08-2026 |
 | Content reading gradient polish                                                                  | BHUVNESH  | PLANNED     | 25-08-2026 |
 | In app notifications for quizzes and events                                                      | BHUVNESH  | PLANNED     | 25-08-2026 |

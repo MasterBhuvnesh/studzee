@@ -104,3 +104,38 @@ model UserProgress {
   longestStreak Int      @default(0)
   updatedAt     DateTime @updatedAt
 }
+
+/// A limited time challenge a user can complete once for gems. type is one of
+/// mcq, scq, fill_blank or read_blog. payload holds the graded questions for
+/// the graded types and is left out for read_blog. contentId is the Mongo
+/// document id a read_blog quest asks the caller to open. active lets an
+/// admin withdraw a quest before its window runs out.
+model Quest {
+  id          String   @id @default(cuid())
+  title       String   @unique
+  description String
+  type        String
+  gems        Int
+  contentId   String?
+  payload     Json?
+  active      Boolean  @default(true)
+  startsAt    DateTime
+  endsAt      DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([endsAt])
+}
+
+/// One row per user per quest, written when the quest pays out. The unique
+/// (userId, questId) pair makes completion single shot even when submissions
+/// race each other.
+model QuestCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  questId     String
+  gemsAwarded Int
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, questId])
+  @@index([userId])
+}

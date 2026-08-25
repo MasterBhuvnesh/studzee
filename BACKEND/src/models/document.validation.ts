@@ -34,6 +34,14 @@ export const DocumentSchema = z.object({
   summary: z.string().optional(),
   key_notes: z.record(z.string(), z.string()).optional(),
   imageUrl: z.string().url().nullable().optional(),
+  // Freeform labels, unlike the fixed topic registry. Each tag is trimmed
+  // before the length checks run, so padded input cannot smuggle in an empty
+  // or oversized value. Two to five tags keep the filter vocabulary useful.
+  tags: z
+    .array(z.string().trim().min(1, 'A tag cannot be empty').max(30))
+    .min(2, 'At least two tags are required')
+    .max(5, 'At most five tags are allowed')
+    .optional(),
   pdfUrl: z.array(PdfFileSchema).optional(),
   // Topic is optional on input so existing payloads keep validating, but the
   // parsed output always carries a topic: the default fills in when absent.

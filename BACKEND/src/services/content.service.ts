@@ -6,15 +6,21 @@ import logger from '@/utils/logger'
 
 /**
  * Query MongoDB for paginated documents (parallel fetch + count)
- * When a topic is given, both the page and the total are scoped to it.
+ * When a topic or tag is given, both the page and the total are scoped to it.
+ * Tags are freeform, so an unknown tag simply matches nothing rather than
+ * being rejected upstream.
  */
 const getPaginatedContentFromDB = async (
   page: number,
   limit: number,
-  topic?: TopicKey
+  topic?: TopicKey,
+  tag?: string
 ) => {
   const skip = (page - 1) * limit
-  const filter = topic ? { topic } : {}
+  const filter = {
+    ...(topic && { topic }),
+    ...(tag && { tags: tag }),
+  }
   const [documents, total] = await Promise.all([
     // topic rides along in the projection so a client can group one page
     // locally instead of issuing one request per topic.
@@ -30,17 +36,19 @@ const getPaginatedContentFromDB = async (
 
 /**
  * Fetch paginated documents with Redis caching (cache-aside pattern)
- * The topic suffix is added only when filtering, so unfiltered pages keep
- * their original cache key and existing entries stay warm.
+ * The topic and tag suffixes are added only when filtering, so unfiltered
+ * pages keep their original cache key and existing entries stay warm.
  */
 export const listContent = async (
   page: number,
   limit: number,
-  topic?: TopicKey
+  topic?: TopicKey,
+  tag?: string
 ) => {
-  const cacheKey = topic
-    ? `content:list:page:${page}:limit:${limit}:topic:${topic}`
-    : `content:list:page:${page}:limit:${limit}`
+  const cacheKey =
+    `content:list:page:${page}:limit:${limit}` +
+    (topic ? `:topic:${topic}` : '') +
+    (tag ? `:tag:${tag}` : '')
 
   try {
     const cachedData = await redisClient.get(cacheKey)
@@ -56,7 +64,8 @@ export const listContent = async (
   const { documents, total } = await getPaginatedContentFromDB(
     page,
     limit,
-    topic
+    topic,
+    tag
   )
   const response = {
     data: documents.map((doc) => ({ ...doc, id: doc._id })),
