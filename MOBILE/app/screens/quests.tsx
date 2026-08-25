@@ -49,8 +49,9 @@ const GemsPill = ({ gems }: { gems: number }) => (
 );
 
 /**
- * Hero card at the top of the quests screen: gems earned in this window,
- * how much of the window is done, and what is still on the table.
+ * Summary card at the top of the quests screen: gems earned in this window,
+ * how much of the window is done, and what is still on the table. Same white
+ * bordered surface as every other card on the screen.
  */
 const GemsSummaryCard = ({
   earned,
@@ -66,15 +67,10 @@ const GemsSummaryCard = ({
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return (
-    <LinearGradient
-      colors={[colors.amber[50], '#ffffff']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      className="mb-6 rounded-2xl border border-amber-200 p-5 shadow-lg"
-    >
+    <View className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
-          <View className="rounded-2xl bg-white p-2.5">
+          <View className="rounded-2xl bg-zinc-100 p-2.5">
             <Image
               source={GEM}
               style={{ width: 26, height: 26 }}
@@ -82,9 +78,7 @@ const GemsSummaryCard = ({
             />
           </View>
           <View>
-            <Text className="font-sans text-xs text-amber-600">
-              Gems Earned
-            </Text>
+            <Text className="font-sans text-xs text-zinc-400">Your Gems</Text>
             <Text className="font-product text-3xl text-zinc-900">
               {earned}
             </Text>
@@ -92,9 +86,9 @@ const GemsSummaryCard = ({
         </View>
 
         <View className="items-end gap-1.5">
-          <View className="flex-row items-center gap-1 rounded-full border border-amber-200 bg-white px-2.5 py-1">
+          <View className="flex-row items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1">
             <Check size={12} color={colors.green[500]} strokeWidth={2.5} />
-            <Text className="font-sans text-[11px] text-amber-800">
+            <Text className="font-sans text-[11px] text-zinc-600">
               {done} of {total}
             </Text>
           </View>
@@ -113,13 +107,13 @@ const GemsSummaryCard = ({
         </View>
       </View>
 
-      <View className="mt-4 h-1.5 rounded-full bg-amber-100">
+      <View className="mt-4 h-1.5 rounded-full bg-zinc-100">
         <View
           className="h-full rounded-full bg-amber-400"
           style={{ width: `${pct}%` }}
         />
       </View>
-    </LinearGradient>
+    </View>
   );
 };
 
