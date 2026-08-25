@@ -111,6 +111,10 @@ const BadgeCard = ({
   </TouchableOpacity>
 );
 
+/**
+ * Two column grid card for the Levels tab: art on top, name and progress
+ * underneath, current level highlighted.
+ */
 const LevelCard = ({
   level,
   points,
@@ -120,50 +124,49 @@ const LevelCard = ({
   points: number;
   onPress: () => void;
 }) => {
-  const isCurrent =
-    points >= level.minPoints &&
-    (LEVELS.find(l => l.minPoints > points)?.minPoints ?? Infinity) >
-      level.minPoints;
+  const nextBoundary =
+    LEVELS.find(l => l.minPoints > points)?.minPoints ?? Infinity;
+  const isCurrent = points >= level.minPoints && nextBoundary > level.minPoints;
   const reached = points >= level.minPoints;
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`mb-3 flex-row items-center rounded-2xl border bg-white p-4 active:bg-zinc-50 ${
+      className={`flex-1 items-center rounded-2xl border bg-white p-4 active:bg-zinc-50 ${
         isCurrent ? 'border-zinc-900' : 'border-zinc-200'
       }`}
       activeOpacity={0.7}
     >
-      <AchievementArt size={52} dimmed={!reached} />
-      <View className="ml-4 flex-1">
-        <View className="flex-row items-center gap-2">
-          <Text className="font-product text-base text-zinc-800">
-            {level.label}
-          </Text>
-          {isCurrent && (
-            <View className="rounded-full bg-zinc-900 px-2 py-0.5">
-              <Text className="font-sans text-[10px] text-white">Current</Text>
-            </View>
-          )}
+      <AchievementArt size={64} dimmed={!reached} />
+      <Text className="mt-2 font-product text-sm text-zinc-800">
+        {level.label}
+      </Text>
+      <Text className="mt-0.5 font-sans text-xs text-zinc-400">
+        {level.minPoints} gems
+      </Text>
+      {isCurrent ? (
+        <View className="mt-2 rounded-full bg-zinc-900 px-2.5 py-0.5">
+          <Text className="font-sans text-[10px] text-white">Current</Text>
         </View>
-        <Text className="mt-0.5 font-sans text-xs text-zinc-400">
-          {reached
-            ? `Unlocked at ${level.minPoints} gems`
-            : `${level.minPoints - points} gems to go`}
-        </Text>
-      </View>
-      <View
-        className={`ml-3 rounded-full p-1.5 ${
-          reached ? 'bg-green-100' : 'bg-zinc-100'
-        }`}
-      >
-        <AppIcon
-          Icon={reached ? Check : Lock}
-          size={14}
-          strokeWidth={2}
-          color={reached ? colors.green[600] : colors.zinc[400]}
-        />
-      </View>
+      ) : reached ? (
+        <View className="mt-2 rounded-full bg-green-100 p-1">
+          <AppIcon
+            Icon={Check}
+            size={12}
+            strokeWidth={2.5}
+            color={colors.green[600]}
+          />
+        </View>
+      ) : (
+        <View className="mt-2 rounded-full bg-zinc-100 p-1">
+          <AppIcon
+            Icon={Lock}
+            size={12}
+            strokeWidth={2.5}
+            color={colors.zinc[400]}
+          />
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
@@ -285,15 +288,15 @@ export default function AchievementsScreen() {
             )}
           </View>
 
-          {/* Segmented tabs. Class sets are static per state: toggling
+          {/* Segmented tabs. Class sets stay static per state: toggling
               shadow between renders trips NativeWind's late upgrade path,
               whose warning printer crashes on context getters. */}
-          <View className="mx-6 mb-4 flex-row rounded-full bg-zinc-200/70 p-1">
+          <View className="mx-6 mb-4 flex-row rounded-2xl bg-zinc-200/70 p-1">
             {(['badges', 'levels'] as TabKey[]).map(tab => (
               <TouchableOpacity
                 key={tab}
                 onPress={() => setActiveTab(tab)}
-                className={`flex-1 rounded-full py-2 shadow-sm ${
+                className={`flex-1 rounded-xl py-2.5 ${
                   activeTab === tab ? 'bg-white' : 'bg-transparent'
                 }`}
                 activeOpacity={0.8}
@@ -354,22 +357,27 @@ export default function AchievementsScreen() {
                       }
                     />
                   ))
-                : LEVELS.map(level => (
-                    <LevelCard
-                      key={level.key}
-                      level={level}
-                      points={points}
-                      onPress={() =>
-                        openDetail({
-                          key: level.key,
-                          label: level.label,
-                          description: `Reach ${level.minPoints} gems to hold the ${level.label} level.`,
-                          minPoints: level.minPoints,
-                          awarded: points >= level.minPoints,
-                        })
-                      }
-                    />
-                  ))}
+                : LEVELS.length > 0 && (
+                    <View className="flex-row flex-wrap justify-between">
+                      {LEVELS.map(level => (
+                        <View key={level.key} className="mb-1 w-[48%]">
+                          <LevelCard
+                            level={level}
+                            points={points}
+                            onPress={() =>
+                              openDetail({
+                                key: level.key,
+                                label: level.label,
+                                description: `Reach ${level.minPoints} gems to hold the ${level.label} level.`,
+                                minPoints: level.minPoints,
+                                awarded: points >= level.minPoints,
+                              })
+                            }
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  )}
               <View className="h-8" />
             </ScrollView>
           )}
@@ -377,7 +385,7 @@ export default function AchievementsScreen() {
       </LinearGradient>
 
       {/* Detail bottom sheet */}
-      <CustomBottomSheetModal ref={sheetRef}>
+      <CustomBottomSheetModal ref={sheetRef} snapPoints={['55%']}>
         {selected && (
           <View className="items-center p-6 pb-10">
             <AchievementArt

@@ -9,7 +9,7 @@ import {
 import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Bell, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Trash2 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -98,23 +98,11 @@ export default function NotificationsScreen() {
             ))}
           </View>
         ) : events.length === 0 ? (
-          <View className="flex-1 items-center justify-center px-6">
-            <View className="w-full items-center rounded-2xl border border-zinc-200 bg-white p-8">
-              <View className="mb-4 rounded-full bg-zinc-100 p-3">
-                <AppIcon
-                  Icon={Bell}
-                  color={colors.zinc[400]}
-                  size={22}
-                  strokeWidth={1.5}
-                />
-              </View>
-              <Text className="font-product text-lg text-zinc-800">
-                Nothing Yet
-              </Text>
-              <Text className="mt-2 text-center font-sans text-sm leading-5 text-zinc-500">
-                Badge unlocks and perfect scores will land here as they happen.
-              </Text>
-            </View>
+          <View className="flex-1 items-center justify-center px-8">
+            <Text className="text-center font-sans text-base text-zinc-400">
+              Nothing yet. Badge unlocks and perfect scores will land here as
+              they happen.
+            </Text>
           </View>
         ) : (
           <ScrollView

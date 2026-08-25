@@ -5,6 +5,30 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 25-08-2026
 
+**Branch:** `feat/mobile-quest-ui`
+
+### Quests screen on the live API, and a UI polish pass
+
+- The quests placeholder became a real screen on the live endpoints: a gems
+  summary header, Available and Completed sections with gem reward pills,
+  read a blog quests that open their linked document with a Mark as Read
+  claim, and an inline runner for MCQ, single choice and fill blank quests
+  that submits responses for server side grading and shows the pass or fail
+  outcome. A What's a Quest row explains the system through the shared alert.
+- Achievements: the segmented tabs moved to a rounded rectangle style with
+  static class sets, the Levels tab renders as a two column grid of art
+  first cards with the current level highlighted, and the detail bottom
+  sheet now takes per instance snap points, raised to 55 percent for
+  achievements.
+- Recent quiz rows adopted the content card look: white, bordered, soft
+  shadow, with a green check on perfect runs. The notification centre's
+  empty state is plain centred text instead of a card.
+- `CustomBottomSheetModal` gained an optional snapPoints prop defaulting to
+  the previous 30 percent, so existing sheets are unchanged.
+- Verified with `npx tsc --noEmit` and prettier on every touched file.
+
+## 25-08-2026
+
 **Branch:** `main` (release)
 
 ### Release backend v4.2.0

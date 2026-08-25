@@ -6,7 +6,7 @@ import { ContentSummary, Topic } from '@/types';
 import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Lock } from 'lucide-react-native';
+import { ChevronRight, Lock, Target } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   RefreshControl,
@@ -422,10 +422,24 @@ export default function HomePage() {
       className="flex-1"
     >
       <SafeAreaView className="flex-1">
-        {/* Top row with the notification bell on the right */}
+        {/* Top row with quests and notifications on the right */}
         <View className="flex-row items-center justify-between px-6 pt-2">
           <Text className="font-product text-2xl text-zinc-900">Studzee</Text>
-          <NotificationBell />
+          <View className="flex-row items-center gap-1">
+            <TouchableOpacity
+              onPress={() => router.push('/screens/quests')}
+              className="rounded-full p-2 active:bg-zinc-200"
+              activeOpacity={0.7}
+            >
+              <AppIcon
+                Icon={Target}
+                color={colors.zinc[700]}
+                size={22}
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
+            <NotificationBell />
+          </View>
         </View>
         <ScrollView
           className="flex-1 px-6 pt-4"

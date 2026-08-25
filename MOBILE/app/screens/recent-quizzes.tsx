@@ -128,6 +128,7 @@ export default function RecentQuizzesScreen() {
           >
             {progress.recentAttempts.map(attempt => (
               <RecentAttemptRow
+                variant="card"
                 key={`${attempt.contentId}-${attempt.createdAt}`}
                 attempt={attempt}
               />

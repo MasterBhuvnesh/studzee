@@ -7,6 +7,9 @@ import type {
   MyProgressResponse,
   PaginationParams,
   PdfsResponse,
+  QuestCompletionResult,
+  QuestSummary,
+  QuestsResponse,
   QuizAttemptResponse,
   QuizAttemptResult,
   TodayContentResponse,
@@ -296,6 +299,109 @@ export async function getMyProgress(authToken: string): Promise<MyProgress> {
     }
 
     logger.error(`Unexpected error fetching user progress: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Fetches the caller's in window quests with their completion flags
+ * (requires authentication)
+ * @param authToken - Bearer authentication token from Clerk
+ * @returns Promise with every live quest for the caller
+ */
+export async function getQuests(authToken: string): Promise<QuestSummary[]> {
+  try {
+    logger.info('Fetching quests');
+
+    const response = await axios.get<QuestsResponse>(`${API_BASE_URL}/quests`, {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+      timeout: 10000, // 10 second timeout
+    });
+
+    logger.success(
+      `Quests fetched successfully - ${response.data.data.length} quests`
+    );
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.message;
+
+      logger.error(`Failed to fetch quests - Message: ${errorMessage}`);
+
+      if (axiosError.response?.status === 401) {
+        throw new ApiError('Authentication required. Please sign in.', 401);
+      }
+
+      throw new ApiError(
+        errorMessage || 'Failed to fetch quests',
+        axiosError.response?.status
+      );
+    }
+
+    logger.error(`Unexpected error fetching quests: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Completes a quest: read_blog claims the read, question types submit
+ * responses for server side grading (requires authentication)
+ * @param authToken - Bearer authentication token from Clerk
+ * @param questId - Quest to complete
+ * @param body - { read: true } for read_blog, { responses } for question types
+ * @returns Promise with the completion outcome
+ */
+export async function completeQuest(
+  authToken: string,
+  questId: string,
+  body: { read?: boolean; responses?: Record<string, number | string> }
+): Promise<QuestCompletionResult> {
+  try {
+    logger.info(`Completing quest ${questId}`);
+
+    const response = await axios.post<{ data: QuestCompletionResult }>(
+      `${API_BASE_URL}/quests/${questId}/complete`,
+      body,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        timeout: 10000, // 10 second timeout
+      }
+    );
+
+    logger.success('Quest completion submitted');
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.message;
+
+      logger.error(
+        `Failed to complete quest - Status: ${axiosError.response?.status}, Message: ${errorMessage}`
+      );
+
+      if (axiosError.response?.status === 401) {
+        throw new ApiError('Authentication required. Please sign in.', 401);
+      } else if (axiosError.response?.status === 404) {
+        throw new ApiError('Quest not found', 404);
+      } else if (axiosError.response?.status === 409) {
+        throw new ApiError('This quest has ended', 409, 'QUEST_ENDED');
+      }
+
+      throw new ApiError(
+        errorMessage || 'Failed to complete quest',
+        axiosError.response?.status
+      );
+    }
+
+    logger.error(`Unexpected error completing quest: ${error}`);
     throw error;
   }
 }

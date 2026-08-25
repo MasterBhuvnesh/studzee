@@ -56,6 +56,10 @@ export type {
   QuizQuestion,
   RecentAttempt,
   Topic,
+  QuestQuestion,
+  QuestSummary,
+  QuestsResponse,
+  QuestCompletionResult,
   TopicsResponse,
 } from './api';
 
