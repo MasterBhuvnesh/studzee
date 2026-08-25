@@ -157,6 +157,8 @@ export default function ProfilePage() {
         <Header title="Profile" />
         <ScrollView
           className="flex-1 px-6 pt-6"
+          // Room for the progress card to scroll clear of the bottom fade
+          contentContainerStyle={{ paddingBottom: 32 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
