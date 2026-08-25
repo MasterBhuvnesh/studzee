@@ -5,6 +5,33 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 25-08-2026
 
+**Branch:** `feat/streak-heatmap`
+
+### Yearly streak heatmap, tags projected and rendered, and the activity endpoint
+
+- New `GET /progress/activity?year=` returns the caller's active days for one
+  calendar year as ascending YYYY-MM-DD keys plus a total, read from the
+  `DailyActivity` rows the attempt and quest flows already write. The year is
+  coerced, bounded to 2020 through next year and defaults to the current one.
+  `GET /progress/me` gained a 60 per minute rate limit of its own.
+- The achievements screen renders the map as a GitHub style grid below both
+  tabs: week columns starting Sunday, active days filled green, future days
+  lighter so the current year stays a full rectangle. A heatmap failure logs
+  a warning and leaves the rest of the screen up.
+- `GET /content` now projects `tags` alongside topic so list clients can
+  render them without a detail request per item; API.md documents the `tag`
+  query parameter that had shipped undocumented. Mobile gains a shared
+  TagChips component used on home cards and the content list, plus an
+  optional freeform `tag` filter on `getContent`.
+- Route tests cover the activity route (auth order, default year, three
+  invalid year shapes) and the controller mock gained `getMyActivity`. The
+  service test for the activity map initially shipped with a fixture too
+  narrow for tsc while green under Vitest, caught by the typecheck gate as
+  documented in FIXES.
+- Open issue logged in TCSK: the integration suite `content.route.test.ts`
+  times out in its 10 second `beforeAll` hook connecting Mongo and Redis,
+  pre-existing at the merge base and unrelated to this branch.
+
 **Branch:** `feat/mobile-quest-ui`
 
 ### Quests screen on the live API, and a UI polish pass
