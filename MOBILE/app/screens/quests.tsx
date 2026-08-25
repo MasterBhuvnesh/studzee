@@ -8,12 +8,12 @@ import logger from '@/utils/logger';
 import { useAuth } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
+  ArrowLeft,
   ArrowUpRight,
   BookOpen,
   Check,
-  ChevronRight,
   ListChecks,
   PenLine,
 } from 'lucide-react-native';
@@ -292,7 +292,6 @@ export default function QuestsScreen() {
     if (inFlight.current) return;
     inFlight.current = true;
     try {
-      setLoading(true);
       setError(null);
 
       const token = await getTokenRef.current();
@@ -313,9 +312,14 @@ export default function QuestsScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchQuests();
-  }, [fetchQuests]);
+  // Refetch on every focus: returning from a read_blog document means the
+  // quest may have been completed while the user was reading.
+  useFocusEffect(
+    useCallback(() => {
+      void fetchQuests();
+      return undefined;
+    }, [fetchQuests])
+  );
 
   const available = quests.filter(quest => !quest.completed);
   const completed = quests.filter(quest => quest.completed);
@@ -328,44 +332,16 @@ export default function QuestsScreen() {
       return;
     }
     if (quest.type === 'read_blog' && quest.contentId) {
-      // Reading the linked document is the quest; the claim button appears
-      // back on the list once the user returns.
+      // Reading the linked document IS the quest: the detail screen claims
+      // it once the reader reaches the end, via the questId param.
       router.push({
         pathname: '/screens/[id]',
-        params: { id: quest.contentId },
+        params: { id: quest.contentId, questId: quest.id },
       });
       return;
     }
     setActiveQuest(quest);
   };
-
-  const claimReadQuest = async (quest: QuestSummary) => {
-    try {
-      const token = await getTokenRef.current();
-      if (!token) throw new Error('Authentication required. Please sign in.');
-      const result = await completeQuest(token, quest.id, { read: true });
-      if (result.passed) {
-        showAlert(
-          'Quest Complete',
-          `You earned ${result.gemsAwarded ?? quest.gems} gems.`,
-          [{ text: 'OK', style: 'default' }]
-        );
-        await fetchQuests();
-      }
-    } catch (err) {
-      logger.warn(`Quest claim failed: ${err}`);
-      showAlert('Not Claimed', 'Something went wrong. Try again.', [
-        { text: 'OK', style: 'cancel' },
-      ]);
-    }
-  };
-
-  const showQuestInfo = () =>
-    showAlert(
-      "What's a Quest?",
-      'Quests are limited time challenges: read a document or answer questions before the window closes to earn gems.',
-      [{ text: 'Got it', style: 'default' }]
-    );
 
   const headerRight = (
     <TouchableOpacity
@@ -388,8 +364,22 @@ export default function QuestsScreen() {
       >
         <SafeAreaView className="flex-1">
           {/* Header */}
-          <View className="flex-row items-center justify-between px-6 pb-4 pt-2">
-            <Text className="font-product text-xl text-zinc-800">Quests</Text>
+          <View className="flex-row items-center gap-3 px-6 pb-4 pt-2">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="rounded-full p-2 active:bg-zinc-200"
+              activeOpacity={0.7}
+            >
+              <AppIcon
+                Icon={ArrowLeft}
+                color={colors.zinc[700]}
+                size={24}
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
+            <Text className="flex-1 font-product text-xl text-zinc-800">
+              Quests
+            </Text>
             {headerRight}
           </View>
 
@@ -495,23 +485,11 @@ export default function QuestsScreen() {
                   </Text>
                   {available.length > 0 ? (
                     available.map(quest => (
-                      <View key={quest.id}>
-                        <QuestRow
-                          quest={quest}
-                          onPress={() => openQuest(quest)}
-                        />
-                        {quest.type === 'read_blog' && quest.contentId && (
-                          <TouchableOpacity
-                            onPress={() => void claimReadQuest(quest)}
-                            className="mb-2.5 ml-12 self-start rounded-lg bg-zinc-900 px-4 py-2 active:bg-zinc-700"
-                            activeOpacity={0.8}
-                          >
-                            <Text className="font-sans text-xs text-white">
-                              Mark as Read
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
+                      <QuestRow
+                        key={quest.id}
+                        quest={quest}
+                        onPress={() => openQuest(quest)}
+                      />
                     ))
                   ) : (
                     <Text className="mb-4 font-sans text-sm text-zinc-400">
@@ -534,23 +512,7 @@ export default function QuestsScreen() {
                       ))}
                     </>
                   )}
-
-                  {/* What's a quest */}
-                  <TouchableOpacity
-                    onPress={showQuestInfo}
-                    className="mb-8 mt-4 flex-row items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg"
-                    activeOpacity={0.7}
-                  >
-                    <View className="flex-1 pr-3">
-                      <Text className="font-product text-sm uppercase text-zinc-800">
-                        What's a Quest?
-                      </Text>
-                      <Text className="mt-1 font-sans text-xs text-zinc-400">
-                        Learn about quests and new badges.
-                      </Text>
-                    </View>
-                    <ChevronRight size={18} color={colors.zinc[400]} />
-                  </TouchableOpacity>
+                  <View className="h-8" />
                 </>
               )}
             </ScrollView>
