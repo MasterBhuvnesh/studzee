@@ -337,6 +337,7 @@ export default function ResourcesPage() {
           <ScrollView
             className="flex-1"
             showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 32 }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

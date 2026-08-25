@@ -446,6 +446,8 @@ export default function HomePage() {
         </View>
         <ScrollView
           className="flex-1 px-6 pt-4"
+          // Room for the last card to scroll clear of the bottom fade
+          contentContainerStyle={{ paddingBottom: 32 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

@@ -7,7 +7,7 @@ import React from 'react';
  * just above the tab bar. Content scrolls underneath it so long lists end
  * softly instead of being cut by the bar. Never intercepts touches.
  */
-export const BottomFade = ({ height = 56 }: { height?: number }) => (
+export const BottomFade = ({ height = 64 }: { height?: number }) => (
   <LinearGradient
     pointerEvents="none"
     // rgba twin of colors.zinc[100], the bottom stop of every tab background
