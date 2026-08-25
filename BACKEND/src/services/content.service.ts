@@ -22,9 +22,9 @@ const getPaginatedContentFromDB = async (
     ...(tag && { tags: tag }),
   }
   const [documents, total] = await Promise.all([
-    // topic rides along in the projection so a client can group one page
-    // locally instead of issuing one request per topic.
-    DocumentModel.find(filter, 'title summary createdAt topic')
+    // topic and tags ride along in the projection so a client can group one
+    // page locally and render tag chips without a detail request per item.
+    DocumentModel.find(filter, 'title summary createdAt topic tags')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

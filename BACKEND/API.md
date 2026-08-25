@@ -193,6 +193,7 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
   - `page` (number, optional, default 1, min 1)
   - `limit` (number, optional, default 20, min 1, max 100)
   - `topic` (string, optional) - a registry key from `GET /content/topics`; unknown keys answer `400`
+  - `tag` (string, optional) - freeform tag matched whole against document tags; composes with `topic`; an unknown tag simply matches nothing rather than answering `400`
 - **Response:**
   - `200 OK`
     ```json
@@ -204,7 +205,8 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
           "title": "Introduction to TypeScript",
           "summary": "A comprehensive guide to TypeScript basics",
           "createdAt": "2026-08-10T10:30:00.000Z",
-          "topic": "machine-learning"
+          "topic": "machine-learning",
+          "tags": ["fundamentals", "tutorial"]
         }
       ],
       "meta": { "page": 1, "limit": 20, "total": 50 }
@@ -213,11 +215,12 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
   - `400 Bad Request` - Invalid query parameters
   - `400 Bad Request` - Unknown topic key; `errors.topic` names every allowed key
 
-> **Note:** the list projection returns only `title`, `summary`, `createdAt` and `topic` alongside the identifiers. Fetch a document by ID for its full body.
+> **Note:** the list projection returns only `title`, `summary`, `createdAt`, `topic` and `tags` alongside the identifiers. Fetch a document by ID for its full body.
 
 - **Example:**
   ```bash
   curl "http://localhost:4000/content?page=1&limit=10&topic=devops"
+  curl "http://localhost:4000/content?tag=architecture"
   ```
 
 ### Get Document by ID

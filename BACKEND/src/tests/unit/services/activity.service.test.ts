@@ -14,6 +14,8 @@ vi.mock('@/config', () => ({
 const USER = 'user-1'
 
 const dayAt = (isoDate: string) => ({
+  id: `${isoDate}-id`,
+  userId: USER,
   date: new Date(`${isoDate}T00:00:00.000Z`),
 })
 
