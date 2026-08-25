@@ -1,31 +1,43 @@
 import { colors } from '@/constants/colors';
 import { MyActivity } from '@/types';
-import React, { useMemo } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 const CELL = 11;
 const GAP = 2;
 
 interface WeekColumn {
-  /** null cells pad the week before Jan 1 and after Dec 31 */
+  /** null cells pad the week before the range start and after its end */
   cells: ({ date: string; active: boolean; future: boolean } | null)[];
 }
 
+const HALVES: { label: string; startMonth: number; endMonth: number }[] = [
+  { label: 'Jan-Jun', startMonth: 0, endMonth: 5 },
+  { label: 'Jul-Dec', startMonth: 6, endMonth: 11 },
+];
+
 /**
- * GitHub style yearly contribution grid: one column per week, seven cells
- * per column, active days filled. Intensity is binary because the backend
- * records presence per day, not counts. Future days in the current year
- * render lighter so the year still forms a full rectangle.
+ * GitHub style contribution grid, six months at a time so it never becomes a
+ * long horizontal scroll on a phone. One column per week starting Sunday,
+ * active days filled. Intensity is binary because the backend records
+ * presence per day, not counts. Future days render lighter so each half
+ * still forms a full rectangle.
  */
 export const StreakHeatmap = ({ activity }: { activity: MyActivity }) => {
+  // Open on the half containing today.
+  const [half, setHalf] = useState(() =>
+    new Date().getUTCMonth() < 6 ? 0 : 1
+  );
+
   const activeSet = useMemo(
     () => new Set(activity.activeDays),
     [activity.activeDays]
   );
 
   const weeks = useMemo<WeekColumn[]>(() => {
-    const start = new Date(Date.UTC(activity.year, 0, 1));
-    const end = new Date(Date.UTC(activity.year + 1, 0, 1));
+    const { startMonth, endMonth } = HALVES[half];
+    const start = new Date(Date.UTC(activity.year, startMonth, 1));
+    const end = new Date(Date.UTC(activity.year, endMonth + 1, 1));
     // Back up to the first Sunday so every column has seven cells
     const cursor = new Date(start);
     cursor.setUTCDate(cursor.getUTCDate() - cursor.getUTCDay());
@@ -34,8 +46,8 @@ export const StreakHeatmap = ({ activity }: { activity: MyActivity }) => {
     let column: WeekColumn = { cells: [] };
 
     while (cursor < end || column.cells.length > 0) {
-      const inYear = cursor >= start && cursor < end;
-      if (inYear) {
+      const inRange = cursor >= start && cursor < end;
+      if (inRange) {
         const key = cursor.toISOString().slice(0, 10);
         column.cells.push({
           date: key,
@@ -55,7 +67,7 @@ export const StreakHeatmap = ({ activity }: { activity: MyActivity }) => {
     }
 
     return columns;
-  }, [activity.year, activeSet]);
+  }, [activity.year, activity.activeDays.length, half, activeSet]);
 
   return (
     <View className="rounded-2xl border border-zinc-200 bg-white p-4">
@@ -92,25 +104,49 @@ export const StreakHeatmap = ({ activity }: { activity: MyActivity }) => {
         </View>
       </ScrollView>
 
-      <View className="mt-3 flex-row items-center justify-end gap-1.5">
-        <Text className="font-sans text-[10px] text-zinc-400">Less</Text>
-        <View
-          style={{
-            width: CELL,
-            height: CELL,
-            borderRadius: 3,
-            backgroundColor: colors.zinc[200],
-          }}
-        />
-        <View
-          style={{
-            width: CELL,
-            height: CELL,
-            borderRadius: 3,
-            backgroundColor: colors.green[500],
-          }}
-        />
-        <Text className="font-sans text-[10px] text-zinc-400">More</Text>
+      <View className="mt-3 flex-row items-center justify-between">
+        {/* Half selector, bottom left of the card */}
+        <View className="flex-row gap-1.5">
+          {HALVES.map((option, index) => (
+            <TouchableOpacity
+              key={option.label}
+              onPress={() => setHalf(index)}
+              className={`rounded-full px-2.5 py-1 ${
+                half === index ? 'bg-zinc-900' : 'bg-zinc-100'
+              }`}
+              activeOpacity={0.8}
+            >
+              <Text
+                className={`font-sans text-[10px] ${
+                  half === index ? 'text-white' : 'text-zinc-500'
+                }`}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View className="flex-row items-center gap-1.5">
+          <Text className="font-sans text-[10px] text-zinc-400">Less</Text>
+          <View
+            style={{
+              width: CELL,
+              height: CELL,
+              borderRadius: 3,
+              backgroundColor: colors.zinc[200],
+            }}
+          />
+          <View
+            style={{
+              width: CELL,
+              height: CELL,
+              borderRadius: 3,
+              backgroundColor: colors.green[500],
+            }}
+          />
+          <Text className="font-sans text-[10px] text-zinc-400">More</Text>
+        </View>
       </View>
     </View>
   );
