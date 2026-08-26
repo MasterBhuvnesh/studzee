@@ -9,6 +9,7 @@ import { SettingCardProps } from '@/types';
 import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import {
   Bell,
   BellOff,
@@ -18,7 +19,9 @@ import {
   Mail,
   Menu,
   MessageCircle,
+  PartyPopper,
 } from 'lucide-react-native';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -30,6 +33,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const CELEBRATE = require('@/assets/lottie/celebrate.json');
 
 const SettingCard = ({ title, items }: SettingCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
@@ -88,6 +93,7 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
 export default function SettingsPage() {
   const router = useRouter();
   const { expoPushToken, isLoading } = useNotification();
+  const [lottieVisible, setLottieVisible] = useState(false);
   const {
     granted,
     status,
@@ -188,11 +194,46 @@ export default function SettingsPage() {
               ]}
             /> */}
 
+            {/* Diagnostics: proves whether the celebration animation renders
+                on this build, isolated from any quiz or badge logic. */}
+            <SettingCard
+              title="Diagnostics"
+              items={[
+                {
+                  label: 'Test Celebration Animation',
+                  onPress: () => {
+                    logger.info('Diagnostics: playing celebrate.json');
+                    setLottieVisible(true);
+                  },
+                  icon: PartyPopper,
+                },
+              ]}
+            />
+
             {/* Sign Out Button */}
             <SignOutButton />
           </View>
         </ScrollView>
         <BottomFade />
+
+        {/* Same overlay the perfect score path uses on the quiz screen */}
+        {lottieVisible && (
+          <View
+            pointerEvents="none"
+            className="absolute inset-0 items-center justify-center"
+          >
+            <LottieView
+              source={CELEBRATE}
+              autoPlay
+              loop={false}
+              style={{ width: '100%', height: '100%' }}
+              onAnimationFinish={() => {
+                logger.info('Diagnostics: celebration finished');
+                setLottieVisible(false);
+              }}
+            />
+          </View>
+        )}
       </SafeAreaView>
     </LinearGradient>
   );
