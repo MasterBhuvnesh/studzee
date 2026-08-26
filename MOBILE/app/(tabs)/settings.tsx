@@ -9,10 +9,11 @@ import { SettingCardProps } from '@/types';
 import logger from '@/utils/logger';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import LottieView from 'lottie-react-native';
+import LottieView, { AnimationObject } from 'lottie-react-native';
 import {
   Bell,
   BellOff,
+  Box,
   ChevronRight,
   FileText,
   HelpCircle,
@@ -35,6 +36,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CELEBRATE = require('@/assets/lottie/celebrate.json');
+// Hand written known-good animation: a pulsing square. If this plays while
+// celebrate.json does not, the player is fine and the bundled asset is at
+// fault. If neither plays, the Lottie native module is not in this build.
+const MINIMAL = require('@/assets/lottie/minimal-test.json');
 
 const SettingCard = ({ title, items }: SettingCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
@@ -93,13 +98,25 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
 export default function SettingsPage() {
   const router = useRouter();
   const { expoPushToken, isLoading } = useNotification();
-  const [lottieVisible, setLottieVisible] = useState(false);
+  const [lottieSource, setLottieSource] = useState<
+    'celebrate' | 'minimal' | null
+  >(null);
   const {
     granted,
     status,
     loading: checkingPermissions,
     requestNotificationPermission,
   } = useNotificationPermissions();
+
+  const playLottie = (source: 'celebrate' | 'minimal', label: string) => {
+    logger.info(`Diagnostics: overlay mounting (${label})`);
+    setLottieSource(source);
+    // Fixed window so a broken animation cannot hide itself
+    setTimeout(() => {
+      logger.info('Diagnostics: overlay closing');
+      setLottieSource(null);
+    }, 5000);
+  };
 
   const handleOpenSettings = () => {
     if (Platform.OS === 'ios') {
@@ -201,11 +218,13 @@ export default function SettingsPage() {
               items={[
                 {
                   label: 'Test Celebration Animation',
-                  onPress: () => {
-                    logger.info('Diagnostics: playing celebrate.json');
-                    setLottieVisible(true);
-                  },
+                  onPress: () => playLottie(CELEBRATE, 'celebrate.json'),
                   icon: PartyPopper,
+                },
+                {
+                  label: 'Test Minimal Animation',
+                  onPress: () => playLottie(MINIMAL, 'minimal-test.json'),
+                  icon: Box,
                 },
               ]}
             />
@@ -216,21 +235,22 @@ export default function SettingsPage() {
         </ScrollView>
         <BottomFade />
 
-        {/* Same overlay the perfect score path uses on the quiz screen */}
-        {lottieVisible && (
-          <View
-            pointerEvents="none"
-            className="absolute inset-0 items-center justify-center"
-          >
+        {/* Diagnostics overlay: the dimming plus caption prove the overlay
+            mounts, the confetti proves the Lottie draws. Hidden on a timer
+            because an instant onFinish would otherwise hide it silently. */}
+        {lottieSource !== null && (
+          <View className="absolute inset-0 bg-black/60">
+            <Text className="pt-24 text-center font-sans text-sm text-white">
+              Animation test: overlay is mounted
+            </Text>
             <LottieView
-              source={CELEBRATE}
+              source={lottieSource === 'celebrate' ? CELEBRATE : MINIMAL}
               autoPlay
               loop={false}
               style={{ width: '100%', height: '100%' }}
-              onAnimationFinish={() => {
-                logger.info('Diagnostics: celebration finished');
-                setLottieVisible(false);
-              }}
+              onAnimationFinish={() =>
+                logger.info('Diagnostics: onAnimationFinish fired')
+              }
             />
           </View>
         )}
