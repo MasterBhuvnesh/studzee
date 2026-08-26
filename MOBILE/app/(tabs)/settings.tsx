@@ -36,11 +36,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const CELEBRATE = require('@/assets/lottie/celebrate.json');
+// const CELEBRATE = require('@/assets/lottie/celebrate.json');
 // Hand written known-good animation: a pulsing square. If this plays while
 // celebrate.json does not, the player is fine and the bundled asset is at
 // fault. If neither plays, the Lottie native module is not in this build.
-const MINIMAL = require('@/assets/lottie/minimal-test.json');
+// const MINIMAL = require('@/assets/lottie/minimal-test.json');
 
 const SettingCard = ({ title, items }: SettingCardProps) => (
   <View className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
@@ -217,7 +217,7 @@ export default function SettingsPage() {
 
             {/* Diagnostics: proves whether the celebration animation renders
                 on this build, isolated from any quiz or badge logic. */}
-            <SettingCard
+            {/* <SettingCard
               title="Diagnostics"
               items={[
                 {
@@ -231,7 +231,7 @@ export default function SettingsPage() {
                   icon: Box,
                 },
               ]}
-            />
+            /> */}
 
             {/* Sign Out Button */}
             <SignOutButton />
