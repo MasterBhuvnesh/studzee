@@ -6,6 +6,7 @@ import {
   Badge,
   evaluateBadges,
   findBadge,
+  LEVELS,
   LevelSummary,
   resolveLevel,
   resolveNextLevel,
@@ -354,7 +355,14 @@ export interface MyProgress {
     description: string
     threshold: number
     awarded: boolean
+    imageUrl?: string
   }[]
+  /**
+   * The whole level ladder, so the client renders it from one source of truth
+   * instead of mirroring the catalog in its own constant. Which rung is
+   * current is `level` above, never recomputed client side.
+   */
+  allLevels: LevelSummary[]
   recentAttempts: {
     contentId: string
     title: string
@@ -430,6 +438,13 @@ export const getMyProgress = async (userId: string): Promise<MyProgress> => {
       description: badge.description,
       threshold: badge.threshold,
       awarded: ownedKeys.has(badge.key),
+      imageUrl: badge.imageUrl,
+    })),
+    allLevels: LEVELS.map((entry) => ({
+      key: entry.key,
+      label: entry.label,
+      minPoints: entry.minPoints,
+      imageUrl: entry.imageUrl,
     })),
     recentAttempts: attempts.map((attempt) => ({
       contentId: attempt.contentId,

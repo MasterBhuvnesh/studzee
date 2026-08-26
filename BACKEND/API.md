@@ -449,9 +449,15 @@ The gamified user tracker lives in Postgres. Points come from server graded quiz
         "level": {
           "key": "apprentice",
           "label": "Apprentice",
-          "minPoints": 100
+          "minPoints": 100,
+          "imageUrl": "https://.../images/levels/apprentice.png"
         },
-        "nextLevel": { "key": "scholar", "label": "Scholar", "minPoints": 250 },
+        "nextLevel": {
+          "key": "scholar",
+          "label": "Scholar",
+          "minPoints": 250,
+          "imageUrl": "https://.../images/levels/scholar.png"
+        },
         "streak": { "current": 2, "longest": 5 },
         "activeDays": 4,
         "badges": [
@@ -468,7 +474,16 @@ The gamified user tracker lives in Postgres. Points come from server graded quiz
             "label": "First Steps",
             "description": "Complete your first quiz",
             "threshold": 1,
-            "awarded": true
+            "awarded": true,
+            "imageUrl": null
+          }
+        ],
+        "allLevels": [
+          {
+            "key": "novice",
+            "label": "Novice",
+            "minPoints": 0,
+            "imageUrl": "https://.../images/levels/novice.png"
           }
         ],
         "recentAttempts": [
@@ -485,7 +500,9 @@ The gamified user tracker lives in Postgres. Points come from server graded quiz
     ```
   - `401 Unauthorized`
 
-> **Note:** `level` is null only before the first point arrives; the novice level starts at 0. `nextLevel` is null once the caller holds the highest level. Levels are novice (0), apprentice (100), scholar (250) and master (500).
+> **Note:** `level` is null only before the first point arrives; the novice level starts at 0. `nextLevel` is null once the caller holds the highest level. The ladder is novice (0), apprentice (100), scholar (250), expert (500), master (1000), grandmaster (2000) and legend (5000).
+>
+> `allLevels` carries the whole ladder so a client renders it without mirroring the catalog, and `level` is the authority on which rung is current: deriving it client side from thresholds alone marks every rung at or below the caller's points as current. `imageUrl` is served from the public images bucket under `levels/`, so new artwork ships without a client release; it is absent on every badge until badge art exists, and clients fall back to a bundled placeholder.
 
 ---
 

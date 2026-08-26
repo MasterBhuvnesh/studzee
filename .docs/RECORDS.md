@@ -61,7 +61,10 @@ Date is the date the status last changed.
 | Gamified user tracker on Postgres: quiz attempts, points, streaks, badges, levels, unlock gate   | BHUVNESH  | DONE        | 25-08-2026 |
 | MOBILE profile gamification card and server graded quiz submission                               | BHUVNESH  | DONE        | 25-08-2026 |
 | Achievements screen (levels, badge states)                                                       | BHUVNESH  | DONE        | 25-08-2026 |
-| Badge and level artwork assets                                                                   | BHUVNESH  | IN PROGRESS | 25-08-2026 |
+| Level artwork assets, seven rungs served from object storage                                     | BHUVNESH  | DONE        | 26-08-2026 |
+| Badge artwork assets                                                                             | BHUVNESH  | IN PROGRESS | 25-08-2026 |
+| Seven rung level ladder, ladder returned by the progress endpoint                                | BHUVNESH  | DONE        | 26-08-2026 |
+| Streak heatmap split into three four month segments                                              | BHUVNESH  | DONE        | 26-08-2026 |
 | Points presented as gems                                                                         | BHUVNESH  | DONE        | 25-08-2026 |
 | Achievement and full score celebration animation (Lottie)                                        | BHUVNESH  | DONE        | 25-08-2026 |
 | Quests placeholder screen                                                                        | BHUVNESH  | DONE        | 25-08-2026 |

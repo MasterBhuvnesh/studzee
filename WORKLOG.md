@@ -5,6 +5,54 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 26-08-2026
 
+**Branch:** `feat/level-ladder-artwork`
+
+### Seven level ladder with real artwork, and two achievements screen bugs
+
+- The level ladder went from four rungs to seven: novice (0), apprentice
+  (100), scholar (250), expert (500), master (1000), grandmaster (2000),
+  legend (5000). The first four thresholds are untouched, so no existing user
+  drops a rung; master moved from 500 to 1000 to make room for expert.
+- The owner's seven level images were resized to 512px on the longest side,
+  down from 1244px and roughly 1.4 MB each, and uploaded to the public
+  `images` bucket as `levels/<key>.png` with a one year immutable cache
+  header. Total payload for the tab fell from about 9 MB to 2.4 MB. Each
+  catalog entry now carries its `imageUrl`, so replacing art later is an
+  object overwrite rather than an app release. The file names in the owner's
+  set descend by prestige, `1.png` being the gold crowned top rung, so they
+  map to the ladder in reverse.
+- `GET /progress/me` grew `allLevels`, the whole ladder, and `allBadges`
+  entries grew `imageUrl`. The mobile client deleted its own copy of the level
+  catalog, which had been a hand maintained mirror of the backend constant.
+- **Bug: Current appeared on two levels at once.** `LevelCard` derived the
+  current rung from thresholds rather than reading the one the server already
+  resolves. The condition it used was true for every reached rung, so a user
+  on 150 points saw Current on both Novice and Apprentice. The card now takes
+  `isCurrent` from `level.key === progress.level.key`.
+- **Bug: the badge sheet showed Week instead of Week Warrior.** The sheet
+  title was the only `Text` in that view without `text-center`, so it was
+  measured shrink to fit inside a centred column and Android dropped the
+  trailing word. It is now `w-full text-center`.
+- The sheet was also passing `uri={undefined}` to its artwork component, so it
+  always rendered the placeholder even once the catalog carried a URL. It now
+  passes the selected entry's image.
+- The streak heatmap moved from two six month halves to three four month
+  segments: Jan-Apr, May-Aug, Sep-Dec. The opening segment is still the one
+  containing today.
+- Verification: `npm run fmt:check`, `npm run lint` (0 errors), `npx tsc
+  --noEmit -p tsconfig.json` and `npm test` (388 tests across 40 files) all
+  pass in BACKEND, and `npx tsc --noEmit` plus Prettier pass in MOBILE.
+  `npm run lint` in MOBILE fails to load `eslint.config.js` with
+  `Plugin "" not found`, which predates this branch and is untouched by it.
+- The suite was run against the deployed Atlas, Upstash and Neon instances
+  from `.env` rather than the compose stack, by owner instruction. Exporting
+  `MONGO_URI_TEST` and `REDIS_URL_TEST` from `.env` is enough; `globalSetup`
+  prefers those over everything else and still forces
+  `DB_NAME=Studzee_Database_Test`, so the one integration suite reads an empty
+  database on the real cluster and every assertion in it is guarded for that.
+
+## 26-08-2026
+
 **Branch:** `fix/lottie-autoplay-and-probe`
 
 ### Celebration animation plays, and the settings probe tests what it claims

@@ -241,6 +241,8 @@ export interface ProgressLevel {
   key: string;
   label: string;
   minPoints: number;
+  /** Remote artwork; absent entries fall back to the bundled placeholder */
+  imageUrl?: string;
 }
 
 /**
@@ -270,6 +272,8 @@ export interface BadgeStatus {
   description: string;
   threshold: number;
   awarded: boolean;
+  /** Remote artwork; absent entries fall back to the bundled placeholder */
+  imageUrl?: string;
 }
 
 /**
@@ -294,6 +298,8 @@ export interface MyProgress {
   activeDays: number;
   badges: EarnedBadge[];
   allBadges: BadgeStatus[];
+  /** The whole level ladder, ascending. The current rung is `level`. */
+  allLevels: ProgressLevel[];
   recentAttempts: RecentAttempt[];
 }
 
