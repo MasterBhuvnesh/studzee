@@ -202,8 +202,13 @@ export default function SettingsPage() {
                 {
                   label: 'Test Celebration Animation',
                   onPress: () => {
-                    logger.info('Diagnostics: playing celebrate.json');
+                    logger.info('Diagnostics: overlay mounting');
                     setLottieVisible(true);
+                    // Fixed window so a broken animation cannot hide itself
+                    setTimeout(() => {
+                      logger.info('Diagnostics: overlay closing');
+                      setLottieVisible(false);
+                    }, 5000);
                   },
                   icon: PartyPopper,
                 },
@@ -216,21 +221,22 @@ export default function SettingsPage() {
         </ScrollView>
         <BottomFade />
 
-        {/* Same overlay the perfect score path uses on the quiz screen */}
+        {/* Diagnostics overlay: the dimming plus caption prove the overlay
+            mounts, the confetti proves the Lottie draws. Hidden on a timer
+            because an instant onFinish would otherwise hide it silently. */}
         {lottieVisible && (
-          <View
-            pointerEvents="none"
-            className="absolute inset-0 items-center justify-center"
-          >
+          <View className="absolute inset-0 bg-black/60">
+            <Text className="pt-24 text-center font-sans text-sm text-white">
+              Celebration test: overlay is mounted
+            </Text>
             <LottieView
               source={CELEBRATE}
               autoPlay
               loop={false}
               style={{ width: '100%', height: '100%' }}
-              onAnimationFinish={() => {
-                logger.info('Diagnostics: celebration finished');
-                setLottieVisible(false);
-              }}
+              onAnimationFinish={() =>
+                logger.info('Diagnostics: onAnimationFinish fired')
+              }
             />
           </View>
         )}
