@@ -41,7 +41,7 @@ export default function HomeScreen(): React.JSX.Element {
     <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Studzee Admin</h1>
       <p className="text-muted-foreground mt-1 text-sm">
-        Console for the live API at api.studzee.in.
+        Console for the live API at studzee-api-latest.onrender.com.
       </p>
 
       <div className="mt-6 rounded-xl border bg-white p-6">
