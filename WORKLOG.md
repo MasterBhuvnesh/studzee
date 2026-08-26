@@ -346,6 +346,36 @@ pre-existing and untouched here.
 
 ## 26-08-2026
 
+**Branch:** `fix/levels-tab-empty-fallback`
+
+### The Levels tab was empty against the deployed backend
+
+- Earlier today the tab was changed to render `progress.allLevels`, which only
+  exists from backend 4.3.0. The app points at
+  `studzee-api-latest.onrender.com`, still serving the 4.2.1 image, so the
+  array was absent, `levels.length > 0 &&` was false and the grid rendered
+  nothing. Releasing 4.3.0 would have hidden it, but a client that blanks a
+  whole view because one new optional field is missing breaks again on every
+  rollback, restart or staged rollout.
+- The screen now falls back to a local seven rung ladder when the API does not
+  send one, and the length guard is gone. The API's copy still wins whenever it
+  arrives, so the fallback never becomes the source of truth. The artwork is
+  the same public object the backend catalog points at, so the tab looks right
+  today rather than after the release.
+- Picking the current rung had a second version skew problem. The server key
+  is still preferred, but only when the caller has actually reached that rung
+  here: on 4.2.1 master sits at 500 rather than 1000, so trusting the key alone
+  would have marked a rung Current and Locked at once. The highest reached rung
+  is the backstop. It resolves to a single key either way, which is what keeps
+  two rungs from both reading as Current.
+- Verification: `npx tsc --noEmit` and Prettier pass. The rung selection was
+  exercised over both ladders, at every boundary and either side of it, and in
+  all 32 cases exactly one rung is current and it is one the caller has
+  reached. MOBILE carries no test runner, so that check was run as a one off
+  rather than committed as a suite.
+
+## 26-08-2026
+
 **Branch:** `feat/level-ladder-artwork`
 
 ### Seven level ladder with real artwork, and two achievements screen bugs

@@ -20,6 +20,61 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+/**
+ * Used only when the API does not return `allLevels`, which is any backend
+ * older than 4.3.0. Without it the Levels tab renders an empty grid against a
+ * deployment that has not caught up yet. The server's copy wins whenever it
+ * sends one, so this never has to be the source of truth, and the artwork is
+ * the same public object the catalog points at.
+ */
+const LEVEL_ART =
+  'https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/levels';
+
+const FALLBACK_LEVELS: ProgressLevel[] = [
+  {
+    key: 'novice',
+    label: 'Novice',
+    minPoints: 0,
+    imageUrl: `${LEVEL_ART}/novice.png`,
+  },
+  {
+    key: 'apprentice',
+    label: 'Apprentice',
+    minPoints: 100,
+    imageUrl: `${LEVEL_ART}/apprentice.png`,
+  },
+  {
+    key: 'scholar',
+    label: 'Scholar',
+    minPoints: 250,
+    imageUrl: `${LEVEL_ART}/scholar.png`,
+  },
+  {
+    key: 'expert',
+    label: 'Expert',
+    minPoints: 500,
+    imageUrl: `${LEVEL_ART}/expert.png`,
+  },
+  {
+    key: 'master',
+    label: 'Master',
+    minPoints: 1000,
+    imageUrl: `${LEVEL_ART}/master.png`,
+  },
+  {
+    key: 'grandmaster',
+    label: 'Grandmaster',
+    minPoints: 2000,
+    imageUrl: `${LEVEL_ART}/grandmaster.png`,
+  },
+  {
+    key: 'legend',
+    label: 'Legend',
+    minPoints: 5000,
+    imageUrl: `${LEVEL_ART}/legend.png`,
+  },
+];
+
 type TabKey = 'badges' | 'levels';
 
 interface SheetTarget {
@@ -264,10 +319,21 @@ export default function AchievementsScreen() {
   }, []);
 
   const badges = progress?.allBadges ?? [];
-  const levels = progress?.allLevels ?? [];
+  const levels = progress?.allLevels?.length
+    ? progress.allLevels
+    : FALLBACK_LEVELS;
   const points = progress?.points ?? 0;
-  // Exactly one rung is current, and the server already resolved which.
-  const currentLevelKey = progress?.level?.key;
+  // The server resolves the current rung, so its key wins, but only if the
+  // caller has actually reached it here. An older backend resolves against its
+  // own shorter ladder, where master sat at 500 rather than 1000, so trusting
+  // the key alone would mark a rung Current and Locked at the same time. The
+  // highest reached rung is the backstop. Either way this is a single key,
+  // which is what stops two rungs reading as Current.
+  const currentLevelKey =
+    levels.find(
+      entry => entry.key === progress?.level?.key && points >= entry.minPoints
+    )?.key ??
+    [...levels].reverse().find(entry => points >= entry.minPoints)?.key;
   // Most recently earned badge gets the Latest highlight in the grid,
   // mirroring how the Levels grid marks its current rung.
   const latestBadgeKey = [...(progress?.badges ?? [])].sort((a, b) =>
@@ -365,54 +431,57 @@ export default function AchievementsScreen() {
               className="flex-1 px-6"
               showsVerticalScrollIndicator={false}
             >
-              {activeTab === 'badges'
-                ? badges.length > 0 && (
-                    <View className="flex-row flex-wrap justify-between">
-                      {badges.map(badge => (
-                        <View key={badge.key} className="mb-1 w-[48%]">
-                          <BadgeGridCard
-                            badge={badge}
-                            isLatest={badge.key === latestBadgeKey}
-                            onPress={() =>
-                              openDetail({
-                                key: badge.key,
-                                label: badge.label,
-                                description: badge.description,
-                                imageUrl: badge.imageUrl,
-                                awarded: badge.awarded,
-                                awardedAt: progress?.badges.find(
-                                  earned => earned.key === badge.key
-                                )?.awardedAt,
-                              })
-                            }
-                          />
-                        </View>
-                      ))}
+              {activeTab === 'badges' ? (
+                badges.length > 0 && (
+                  <View className="flex-row flex-wrap justify-between">
+                    {badges.map(badge => (
+                      <View key={badge.key} className="mb-1 w-[48%]">
+                        <BadgeGridCard
+                          badge={badge}
+                          isLatest={badge.key === latestBadgeKey}
+                          onPress={() =>
+                            openDetail({
+                              key: badge.key,
+                              label: badge.label,
+                              description: badge.description,
+                              imageUrl: badge.imageUrl,
+                              awarded: badge.awarded,
+                              awardedAt: progress?.badges.find(
+                                earned => earned.key === badge.key
+                              )?.awardedAt,
+                            })
+                          }
+                        />
+                      </View>
+                    ))}
+                  </View>
+                )
+              ) : (
+                // No length guard: the ladder always has entries, from the
+                // API when it sends them and from the fallback when it
+                // does not. A guard here is what blanked the tab.
+                <View className="flex-row flex-wrap justify-between">
+                  {levels.map(level => (
+                    <View key={level.key} className="mb-1 w-[48%]">
+                      <LevelCard
+                        level={level}
+                        points={points}
+                        isCurrent={level.key === currentLevelKey}
+                        onPress={() =>
+                          openDetail({
+                            key: level.key,
+                            label: level.label,
+                            description: `Reach ${level.minPoints} gems to hold the ${level.label} level.`,
+                            minPoints: level.minPoints,
+                            imageUrl: level.imageUrl,
+                            awarded: points >= level.minPoints,
+                          })
+                        }
+                      />
                     </View>
-                  )
-                : levels.length > 0 && (
-                    <View className="flex-row flex-wrap justify-between">
-                      {levels.map(level => (
-                        <View key={level.key} className="mb-1 w-[48%]">
-                          <LevelCard
-                            level={level}
-                            points={points}
-                            isCurrent={level.key === currentLevelKey}
-                            onPress={() =>
-                              openDetail({
-                                key: level.key,
-                                label: level.label,
-                                description: `Reach ${level.minPoints} gems to hold the ${level.label} level.`,
-                                minPoints: level.minPoints,
-                                imageUrl: level.imageUrl,
-                                awarded: points >= level.minPoints,
-                              })
-                            }
-                          />
-                        </View>
-                      ))}
-                    </View>
-                  )}
+                  ))}
+                </View>
+              )}
               {activity && (
                 <View className="mb-4">
                   <StreakHeatmap activity={activity} />
