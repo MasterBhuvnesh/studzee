@@ -3,6 +3,35 @@
 Running record of work done on this repository. Newest entry first.
 One entry per unit of work, with the branch, what changed, and why.
 
+## 26-08-2026
+
+**Branch:** `fix/lottie-autoplay-and-probe`
+
+### Celebration animation plays, and the settings probe tests what it claims
+
+- The settings diagnostics passed the required animation module into
+  `playLottie`, whose parameter was typed `'celebrate' | 'minimal'`. Neither
+  button ever matched the discriminator, so both rendered the minimal probe.
+  `require` returns `any`, so the typecheck could not catch it. State now
+  holds the `AnimationObject` itself and the ternary is gone, which means
+  the day of probing had never once exercised `celebrate.json`.
+- Both overlays are back on `autoPlay` and the imperative
+  `reset()` plus `play()` pair is removed. Read against
+  `LottieAnimationViewManagerImpl.kt`, a ref `play()` with no frame arguments
+  takes the `withCustomFrames == false` branch and calls
+  `LottieDrawable.resumeAnimation()`, while `autoPlay` reaches
+  `playAnimation()`. Resuming a composition that has never started is the
+  weaker of the two calls, so the previous fix moved away from the working
+  path.
+- `onAnimationFailure` and `onAnimationLoaded` are wired to the logger.
+  Neither had a handler anywhere in the app, which is why a day of work
+  produced no signal: a JSON parse failure on the native side was being
+  dropped silently.
+- Overlay sizing moved from `className="absolute inset-0"` plus a percentage
+  sized child to `StyleSheet.absoluteFill` plus `flex: 1`, so the player has
+  a definite box rather than a percentage resolved against an absolutely
+  positioned parent.
+
 ## 25-08-2026
 
 **Branch:** `feat/streak-heatmap`
