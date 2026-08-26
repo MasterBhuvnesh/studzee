@@ -25,7 +25,19 @@ export default defineConfig(
     },
     rules: {
       ...eslintPluginReactHooks.configs.recommended.rules,
-      ...eslintPluginReactRefresh.configs.vite.rules
+      ...eslintPluginReactRefresh.configs.vite.rules,
+      // Callback prefixes like _req are a deliberate signal, and demanding
+      // return types on every generated ui primitive is noise for a console.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+      ],
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      // The shadcn primitives export variants next to components and the
+      // compiler powered hooks rules flag long standing patterns in them.
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off'
     }
   },
   eslintConfigPrettier

@@ -1,5 +1,11 @@
 export interface AppIconProps {
-  Icon: React.ComponentType<any>
+  Icon: React.ComponentType<{
+    size?: number
+    color?: string
+    fill?: string
+    strokeWidth?: number
+    style?: React.CSSProperties
+  }>
   size?: number
   color?: string
   fill?: string

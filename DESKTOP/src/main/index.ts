@@ -8,11 +8,7 @@ let mainWindow: BrowserWindow | null = null
 // Deep link protocol registration
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient(
-      'studzee',
-      process.execPath,
-      [path.resolve(process.argv[1])]
-    )
+    app.setAsDefaultProtocolClient('studzee', process.execPath, [path.resolve(process.argv[1])])
   }
 } else {
   if (!app.isDefaultProtocolClient('studzee')) {
@@ -27,7 +23,7 @@ if (!gotTheLock) {
   app.quit()
   process.exit(0)
 } else {
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
+  app.on('second-instance', (_event, commandLine, _workingDirectory) => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.focus()
