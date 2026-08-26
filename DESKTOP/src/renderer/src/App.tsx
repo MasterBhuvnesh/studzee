@@ -1,7 +1,10 @@
-import { ClerkProvider, SignIn, useAuth } from '@clerk/react'
+import { ClerkProvider, useAuth } from '@clerk/react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { useState } from 'react'
 
 import { ClerkTokenBridge } from './components/auth/ClerkTokenBridge'
+import { SignInForm } from './components/auth/SignInForm'
+import { SignUpForm } from './components/auth/SignUpForm'
 import Loading from './components/Loading'
 import { TitleBar } from './components/TitleBar'
 import { Updates } from './components/Updates'
@@ -21,6 +24,7 @@ import ImagesPage from './pages/ImagesPage'
 import PDFsPage from './pages/PDFsPage'
 import PushNotificationPage from './pages/PushNotificationPage'
 import QuestsPage from './pages/QuestsPage'
+import SsoCallbackPage from './pages/SsoCallbackPage'
 import UploadImagePage from './pages/UploadImagePage'
 import UploadPDFPage from './pages/UploadPDFPage'
 import UsersPage from './pages/UsersPage'
@@ -44,6 +48,7 @@ function ConsoleRoutes(): React.JSX.Element {
               <Routes>
                 <Route path="/" element={<Navigate to="/home-screen" replace />} />
                 <Route path="/home-screen" element={<HomeScreen />} />
+                <Route path="/sso-callback" element={<SsoCallbackPage />} />
                 <Route path="/content/documents" element={<DocumentsPage />} />
                 <Route path="/content/documents/new" element={<DocumentEditorPage />} />
                 <Route path="/content/documents/:id/edit" element={<DocumentEditorPage />} />
@@ -78,16 +83,17 @@ function ConsoleRoutes(): React.JSX.Element {
  */
 function Gate(): React.JSX.Element {
   const { isLoaded, isSignedIn } = useAuth()
+  const [authMode, setAuthMode] = useState<'sign-in' | 'sign-up'>('sign-in')
 
   if (!CLERK_KEY) return <ConsoleRoutes />
 
   if (!isLoaded) return <Loading />
 
   if (!isSignedIn) {
-    return (
-      <div className="flex h-full items-center justify-center bg-zinc-50">
-        <SignIn signUpUrl="/sign-up" fallbackRedirectUrl="/" />
-      </div>
+    return authMode === 'sign-in' ? (
+      <SignInForm onSwitchToSignUp={() => setAuthMode('sign-up')} />
+    ) : (
+      <SignUpForm onSwitchToSignIn={() => setAuthMode('sign-in')} />
     )
   }
 
