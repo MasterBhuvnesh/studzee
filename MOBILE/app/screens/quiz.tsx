@@ -142,6 +142,15 @@ export default function QuizScreen() {
     QuizAttemptResult['newBadges'][number] | null
   >(null);
   const [lottieVisible, setLottieVisible] = useState(false);
+  const lottieRef = useRef<LottieView>(null);
+  // autoPlay can race the native view attach on Android, so playback is
+  // driven explicitly once the overlay mounts.
+  useEffect(() => {
+    if (lottieVisible) {
+      lottieRef.current?.reset();
+      lottieRef.current?.play();
+    }
+  }, [lottieVisible]);
 
   // The Lottie overlay is reserved for a perfect score; badge unlocks use
   // the celebration modal instead, so the two moments stay distinct.
@@ -478,8 +487,8 @@ export default function QuizScreen() {
             className="absolute inset-0 items-center justify-center"
           >
             <LottieView
+              ref={lottieRef}
               source={CELEBRATE}
-              autoPlay
               loop={false}
               style={{ width: '100%', height: '100%' }}
               onAnimationFinish={() => setLottieVisible(false)}
