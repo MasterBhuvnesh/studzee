@@ -22,7 +22,7 @@ import {
   MessageCircle,
   PartyPopper,
 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -101,6 +101,16 @@ export default function SettingsPage() {
   const [lottieSource, setLottieSource] = useState<
     'celebrate' | 'minimal' | null
   >(null);
+  const lottieRef = useRef<LottieView>(null);
+  // autoPlay can race the native view attach on Android, so playback is
+  // driven explicitly once mounted, the way the RN Space tutorial does it.
+  useEffect(() => {
+    if (lottieSource) {
+      logger.info('Diagnostics: explicit play()');
+      lottieRef.current?.reset();
+      lottieRef.current?.play();
+    }
+  }, [lottieSource]);
   const {
     granted,
     status,
@@ -244,8 +254,8 @@ export default function SettingsPage() {
               Animation test: overlay is mounted
             </Text>
             <LottieView
+              ref={lottieRef}
               source={lottieSource === 'celebrate' ? CELEBRATE : MINIMAL}
-              autoPlay
               loop={false}
               style={{ width: '100%', height: '100%' }}
               onAnimationFinish={() =>
