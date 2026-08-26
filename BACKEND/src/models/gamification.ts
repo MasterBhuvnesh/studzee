@@ -12,21 +12,74 @@ export interface Level {
   label: string
   minPoints: number
   /**
-   * Optional artwork. Left undefined for every entry for now; the client
-   * falls back to a bundled placeholder when it is absent.
+   * Artwork URL. Optional so the type survives a rung added before its art
+   * exists; the client falls back to a bundled placeholder when it is absent.
    */
   imageUrl?: string
 }
 
 /**
+ * Where the level artwork lives. The objects sit in the public images bucket
+ * under levels/, uploaded once rather than bundled into the clients, so new
+ * art ships without an app release. The host is written out rather than
+ * derived from S3_PUBLIC_URL on purpose: the local MinIO bucket holds no
+ * artwork, and a derived URL would break the art in development while the
+ * deployed one worked.
+ */
+const LEVEL_ART =
+  'https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/levels'
+
+/**
  * Ascending by minPoints. The first entry must start at 0 so every user has a
  * level; the read side relies on that when picking the highest qualifying one.
+ *
+ * The first four thresholds are unchanged from the original ladder, so no
+ * existing user drops a rung. Expert, Grandmaster and Legend extend the top
+ * end, which moves Master from 500 to 1000.
  */
 export const LEVELS: Level[] = [
-  { key: 'novice', label: 'Novice', minPoints: 0 },
-  { key: 'apprentice', label: 'Apprentice', minPoints: 100 },
-  { key: 'scholar', label: 'Scholar', minPoints: 250 },
-  { key: 'master', label: 'Master', minPoints: 500 },
+  {
+    key: 'novice',
+    label: 'Novice',
+    minPoints: 0,
+    imageUrl: `${LEVEL_ART}/novice.png`,
+  },
+  {
+    key: 'apprentice',
+    label: 'Apprentice',
+    minPoints: 100,
+    imageUrl: `${LEVEL_ART}/apprentice.png`,
+  },
+  {
+    key: 'scholar',
+    label: 'Scholar',
+    minPoints: 250,
+    imageUrl: `${LEVEL_ART}/scholar.png`,
+  },
+  {
+    key: 'expert',
+    label: 'Expert',
+    minPoints: 500,
+    imageUrl: `${LEVEL_ART}/expert.png`,
+  },
+  {
+    key: 'master',
+    label: 'Master',
+    minPoints: 1000,
+    imageUrl: `${LEVEL_ART}/master.png`,
+  },
+  {
+    key: 'grandmaster',
+    label: 'Grandmaster',
+    minPoints: 2000,
+    imageUrl: `${LEVEL_ART}/grandmaster.png`,
+  },
+  {
+    key: 'legend',
+    label: 'Legend',
+    minPoints: 5000,
+    imageUrl: `${LEVEL_ART}/legend.png`,
+  },
 ]
 
 /**
@@ -181,4 +234,7 @@ export const findBadge = (key: string): Badge | undefined =>
  * Level display shape without the ladder position, matching what the API
  * returns for level and nextLevel.
  */
-export type LevelSummary = Pick<Level, 'key' | 'label' | 'minPoints'>
+export type LevelSummary = Pick<
+  Level,
+  'key' | 'label' | 'minPoints' | 'imageUrl'
+>

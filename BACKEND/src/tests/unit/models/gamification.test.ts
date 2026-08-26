@@ -6,8 +6,9 @@
  * 1. The four perfectionist tiers ascend 1, 10, 25, 100 and share one
  *    predicate over fullScoreCount.
  * 2. Tier boundaries are inclusive at the threshold and exclusive below it.
- * 3. The optional imageUrl field is present on the interfaces but undefined on
- *    every entry, so clients keep falling back to their bundled placeholder.
+ * 3. Badge imageUrl is still undefined, so clients fall back to their bundled
+ *    placeholder there, while every level rung now carries real artwork.
+ * 4. The level ladder is seven rungs, ascending, starting at 0.
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -16,6 +17,8 @@ import {
   evaluateBadges,
   findBadge,
   LEVELS,
+  resolveLevel,
+  resolveNextLevel,
 } from '@/models/gamification'
 
 const baseContext: BadgeContext = {
@@ -114,10 +117,44 @@ describe('imageUrl placeholder contract', () => {
     }
   })
 
-  it('is undefined on every level entry for now', () => {
+  it('carries artwork on every level entry', () => {
     for (const level of LEVELS) {
-      expect(level.imageUrl).toBeUndefined()
+      expect(level.imageUrl).toMatch(new RegExp(`/levels/${level.key}\.png$`))
     }
+  })
+})
+
+describe('the level ladder', () => {
+  it('is seven rungs, ascending, opening at zero', () => {
+    expect(LEVELS.map((level) => level.key)).toEqual([
+      'novice',
+      'apprentice',
+      'scholar',
+      'expert',
+      'master',
+      'grandmaster',
+      'legend',
+    ])
+    expect(LEVELS.map((level) => level.minPoints)).toEqual([
+      0, 100, 250, 500, 1000, 2000, 5000,
+    ])
+  })
+
+  it('marks exactly one rung current for any point total', () => {
+    // The client used to compare each rung against the next boundary, which
+    // was true for every rung at or below the total: novice and apprentice
+    // both showed as current at 150 points.
+    for (const points of [0, 99, 100, 150, 499, 500, 1500, 9999]) {
+      const current = resolveLevel(points)
+      const qualifying = LEVELS.filter((level) => points >= level.minPoints)
+
+      expect(current).toBe(qualifying[qualifying.length - 1])
+    }
+  })
+
+  it('runs out of next level at the top of the ladder', () => {
+    expect(resolveNextLevel(0)?.key).toBe('apprentice')
+    expect(resolveNextLevel(5000)).toBeNull()
   })
 })
 

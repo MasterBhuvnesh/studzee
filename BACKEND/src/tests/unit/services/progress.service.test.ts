@@ -460,16 +460,27 @@ describe('getMyProgress', () => {
     const result = await getMyProgress(USER)
 
     expect(result.points).toBe(150)
-    expect(result.level).toEqual({
+    expect(result.level).toMatchObject({
       key: 'apprentice',
       label: 'Apprentice',
       minPoints: 100,
     })
-    expect(result.nextLevel).toEqual({
+    expect(result.nextLevel).toMatchObject({
       key: 'scholar',
       label: 'Scholar',
       minPoints: 250,
     })
+    // The whole ladder ships with the payload so the client renders it
+    // without mirroring the catalog, and exactly one rung is current.
+    expect(result.allLevels.map((entry) => entry.key)).toEqual([
+      'novice',
+      'apprentice',
+      'scholar',
+      'expert',
+      'master',
+      'grandmaster',
+      'legend',
+    ])
     expect(result.streak).toEqual({ current: 2, longest: 5 })
     expect(result.activeDays).toBe(7)
     expect(result.badges).toHaveLength(2)
@@ -503,12 +514,12 @@ describe('getMyProgress', () => {
     const result = await getMyProgress(USER)
 
     expect(result.points).toBe(0)
-    expect(result.level).toEqual({
+    expect(result.level).toMatchObject({
       key: 'novice',
       label: 'Novice',
       minPoints: 0,
     })
-    expect(result.nextLevel).toEqual({
+    expect(result.nextLevel).toMatchObject({
       key: 'apprentice',
       label: 'Apprentice',
       minPoints: 100,
