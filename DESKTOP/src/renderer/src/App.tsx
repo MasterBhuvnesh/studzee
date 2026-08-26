@@ -7,14 +7,19 @@ import { SidebarInset, SidebarProvider } from './components/ui/sidebar'
 
 // Pages
 import ApplicationsPage from './pages/ApplicationsPage'
+import DocumentEditorPage from './pages/DocumentEditorPage'
+import DocumentsPage from './pages/DocumentsPage'
 import EmailLogsPage from './pages/EmailLogsPage'
 import EmailPage from './pages/EmailPage'
 import EmailTemplatesPage from './pages/EmailTemplatesPage'
 import HomeScreen from './pages/HomeScreen'
 import ImagesPage from './pages/ImagesPage'
 import PDFsPage from './pages/PDFsPage'
+import PushNotificationPage from './pages/PushNotificationPage'
+import QuestsPage from './pages/QuestsPage'
 import UploadImagePage from './pages/UploadImagePage'
 import UploadPDFPage from './pages/UploadPDFPage'
+import UsersPage from './pages/UsersPage'
 
 function App(): React.JSX.Element {
   const update = false
@@ -36,6 +41,12 @@ function App(): React.JSX.Element {
                 <Routes>
                   <Route path="/" element={<Navigate to="/home-screen" replace />} />
                   <Route path="/home-screen" element={<HomeScreen />} />
+                  <Route path="/content/documents" element={<DocumentsPage />} />
+                  <Route path="/content/documents/new" element={<DocumentEditorPage />} />
+                  <Route path="/content/documents/:id/edit" element={<DocumentEditorPage />} />
+                  <Route path="/quests" element={<QuestsPage />} />
+                  <Route path="/users" element={<UsersPage />} />
+                  <Route path="/notifications/push" element={<PushNotificationPage />} />
                   <Route path="/notifications/applications" element={<ApplicationsPage />} />
                   <Route path="/notifications/email" element={<EmailPage />} />
                   <Route
