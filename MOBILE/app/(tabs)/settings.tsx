@@ -22,12 +22,13 @@ import {
   MessageCircle,
   PartyPopper,
 } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
   Platform,
   ScrollView,
+  StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
@@ -98,19 +99,12 @@ const SettingCard = ({ title, items }: SettingCardProps) => (
 export default function SettingsPage() {
   const router = useRouter();
   const { expoPushToken, isLoading } = useNotification();
-  const [lottieSource, setLottieSource] = useState<
-    'celebrate' | 'minimal' | null
-  >(null);
-  const lottieRef = useRef<LottieView>(null);
-  // autoPlay can race the native view attach on Android, so playback is
-  // driven explicitly once mounted, the way the RN Space tutorial does it.
-  useEffect(() => {
-    if (lottieSource) {
-      logger.info('Diagnostics: explicit play()');
-      lottieRef.current?.reset();
-      lottieRef.current?.play();
-    }
-  }, [lottieSource]);
+  // Holds the parsed animation itself, so the button that was pressed is the
+  // animation that renders. It previously held a discriminator string that the
+  // press handlers never actually passed, so both buttons played the probe.
+  const [lottieSource, setLottieSource] = useState<AnimationObject | null>(
+    null
+  );
   const {
     granted,
     status,
@@ -118,7 +112,7 @@ export default function SettingsPage() {
     requestNotificationPermission,
   } = useNotificationPermissions();
 
-  const playLottie = (source: 'celebrate' | 'minimal', label: string) => {
+  const playLottie = (source: AnimationObject, label: string) => {
     logger.info(`Diagnostics: overlay mounting (${label})`);
     setLottieSource(source);
     // Fixed window so a broken animation cannot hide itself
@@ -249,15 +243,24 @@ export default function SettingsPage() {
             mounts, the confetti proves the Lottie draws. Hidden on a timer
             because an instant onFinish would otherwise hide it silently. */}
         {lottieSource !== null && (
-          <View className="absolute inset-0 bg-black/60">
+          <View style={StyleSheet.absoluteFill} className="bg-black/60">
             <Text className="pt-24 text-center font-sans text-sm text-white">
               Animation test: overlay is mounted
             </Text>
+            {/* autoPlay reaches LottieDrawable.playAnimation on Android, while
+                the ref command reaches resumeAnimation, which is a no-op on a
+                composition that has never started. */}
             <LottieView
-              ref={lottieRef}
-              source={lottieSource === 'celebrate' ? CELEBRATE : MINIMAL}
+              source={lottieSource}
+              autoPlay
               loop={false}
-              style={{ width: '100%', height: '100%' }}
+              style={{ flex: 1 }}
+              onAnimationLoaded={() =>
+                logger.success('Diagnostics: composition parsed and loaded')
+              }
+              onAnimationFailure={error =>
+                logger.error(`Diagnostics: lottie failed: ${error}`)
+              }
               onAnimationFinish={() =>
                 logger.info('Diagnostics: onAnimationFinish fired')
               }

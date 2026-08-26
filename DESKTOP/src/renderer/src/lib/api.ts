@@ -21,6 +21,27 @@ export function hasApiToken(): boolean {
   return getApiToken().length > 0
 }
 
+/**
+ * When Clerk is active the bridge installs a provider that mints a fresh
+ * session token per request, because those tokens expire in about a minute.
+ * Without it the stored manual token is the single source.
+ */
+let tokenProvider: (() => Promise<string | null>) | null = null
+
+export function setTokenProvider(provider: (() => Promise<string | null>) | null): void {
+  tokenProvider = provider
+}
+
+async function currentToken(): Promise<string> {
+  try {
+    const provided = await tokenProvider?.()
+    if (provided) return provided
+  } catch {
+    // Fall through to whatever manual token exists
+  }
+  return getApiToken()
+}
+
 export class ApiError extends Error {
   status: number
   details?: unknown
@@ -39,7 +60,7 @@ async function request<T>(
   extraHeaders?: Record<string, string>
 ): Promise<T> {
   const headers: Record<string, string> = { ...extraHeaders }
-  const token = getApiToken()
+  const token = await currentToken()
   if (token) headers.Authorization = `Bearer ${token}`
   if (body !== undefined) headers['Content-Type'] = 'application/json'
 

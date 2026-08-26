@@ -13,7 +13,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { Check, Flame, X as XIcon } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const GEM = require('@/assets/images/gem.png');
@@ -142,15 +148,6 @@ export default function QuizScreen() {
     QuizAttemptResult['newBadges'][number] | null
   >(null);
   const [lottieVisible, setLottieVisible] = useState(false);
-  const lottieRef = useRef<LottieView>(null);
-  // autoPlay can race the native view attach on Android, so playback is
-  // driven explicitly once the overlay mounts.
-  useEffect(() => {
-    if (lottieVisible) {
-      lottieRef.current?.reset();
-      lottieRef.current?.play();
-    }
-  }, [lottieVisible]);
 
   // The Lottie overlay is reserved for a perfect score; badge unlocks use
   // the celebration modal instead, so the two moments stay distinct.
@@ -484,13 +481,20 @@ export default function QuizScreen() {
         {lottieVisible && (
           <View
             pointerEvents="none"
-            className="absolute inset-0 items-center justify-center"
+            style={StyleSheet.absoluteFill}
+            className="items-center justify-center"
           >
+            {/* autoPlay reaches LottieDrawable.playAnimation on Android, while
+                the ref command reaches resumeAnimation, which is a no-op on a
+                composition that has never started. */}
             <LottieView
-              ref={lottieRef}
               source={CELEBRATE}
+              autoPlay
               loop={false}
-              style={{ width: '100%', height: '100%' }}
+              style={{ flex: 1, width: '100%' }}
+              onAnimationFailure={error =>
+                logger.error(`Celebration lottie failed: ${error}`)
+              }
               onAnimationFinish={() => setLottieVisible(false)}
             />
           </View>
