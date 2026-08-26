@@ -11,22 +11,25 @@ interface WeekColumn {
   cells: ({ date: string; active: boolean; future: boolean } | null)[];
 }
 
-const HALVES: { label: string; startMonth: number; endMonth: number }[] = [
-  { label: 'Jan-Jun', startMonth: 0, endMonth: 5 },
-  { label: 'Jul-Dec', startMonth: 6, endMonth: 11 },
+const MONTHS_PER_SEGMENT = 4;
+
+const SEGMENTS: { label: string; startMonth: number; endMonth: number }[] = [
+  { label: 'Jan-Apr', startMonth: 0, endMonth: 3 },
+  { label: 'May-Aug', startMonth: 4, endMonth: 7 },
+  { label: 'Sep-Dec', startMonth: 8, endMonth: 11 },
 ];
 
 /**
- * GitHub style contribution grid, six months at a time so it never becomes a
+ * GitHub style contribution grid, four months at a time so it never becomes a
  * long horizontal scroll on a phone. One column per week starting Sunday,
  * active days filled. Intensity is binary because the backend records
- * presence per day, not counts. Future days render lighter so each half
+ * presence per day, not counts. Future days render lighter so each segment
  * still forms a full rectangle.
  */
 export const StreakHeatmap = ({ activity }: { activity: MyActivity }) => {
-  // Open on the half containing today.
-  const [half, setHalf] = useState(() =>
-    new Date().getUTCMonth() < 6 ? 0 : 1
+  // Open on the segment containing today.
+  const [segment, setSegment] = useState(() =>
+    Math.floor(new Date().getUTCMonth() / MONTHS_PER_SEGMENT)
   );
 
   const activeSet = useMemo(
@@ -35,7 +38,7 @@ export const StreakHeatmap = ({ activity }: { activity: MyActivity }) => {
   );
 
   const weeks = useMemo<WeekColumn[]>(() => {
-    const { startMonth, endMonth } = HALVES[half];
+    const { startMonth, endMonth } = SEGMENTS[segment];
     const start = new Date(Date.UTC(activity.year, startMonth, 1));
     const end = new Date(Date.UTC(activity.year, endMonth + 1, 1));
     // Back up to the first Sunday so every column has seven cells
@@ -67,7 +70,7 @@ export const StreakHeatmap = ({ activity }: { activity: MyActivity }) => {
     }
 
     return columns;
-  }, [activity.year, activity.activeDays.length, half, activeSet]);
+  }, [activity.year, activity.activeDays.length, segment, activeSet]);
 
   return (
     <View className="rounded-2xl border border-zinc-200 bg-white p-4">
@@ -105,20 +108,20 @@ export const StreakHeatmap = ({ activity }: { activity: MyActivity }) => {
       </ScrollView>
 
       <View className="mt-3 flex-row items-center justify-between">
-        {/* Half selector, bottom left of the card */}
+        {/* Segment selector, bottom left of the card */}
         <View className="flex-row gap-1.5">
-          {HALVES.map((option, index) => (
+          {SEGMENTS.map((option, index) => (
             <TouchableOpacity
               key={option.label}
-              onPress={() => setHalf(index)}
+              onPress={() => setSegment(index)}
               className={`rounded-full px-2.5 py-1 ${
-                half === index ? 'bg-zinc-900' : 'bg-zinc-100'
+                segment === index ? 'bg-zinc-900' : 'bg-zinc-100'
               }`}
               activeOpacity={0.8}
             >
               <Text
                 className={`font-sans text-[10px] ${
-                  half === index ? 'text-white' : 'text-zinc-500'
+                  segment === index ? 'text-white' : 'text-zinc-500'
                 }`}
               >
                 {option.label}

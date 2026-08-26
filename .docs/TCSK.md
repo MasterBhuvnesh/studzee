@@ -320,6 +320,17 @@ already exists and what it needs so tomorrow's work can start anywhere.
   owner supplies per badge and level art.
 - The badge catalog will grow `imageUrl` fields; the client falls back to the
   placeholder for any entry without one.
+- Done for levels on 26-08-2026. Seven rungs of art sit in the public `images`
+  bucket at `levels/<key>.png`, uploaded at 512px on the longest side from the
+  1244px originals the owner supplied. `GET /progress/me` now also returns
+  `allLevels`, the whole ladder, so the client stopped mirroring the catalog in
+  its own constant. Badge art is still outstanding; `allBadges` already carries
+  the `imageUrl` field so dropping the objects in and filling the catalog needs
+  no client release.
+- The ladder became seven rungs the same day: novice (0), apprentice (100),
+  scholar (250), expert (500), master (1000), grandmaster (2000), legend
+  (5000). The first four thresholds are unchanged, so nobody dropped a rung.
+  Master moved from 500 to 1000 to make room for expert.
 - Perfectionist becomes tiered, decided 25-08-2026: x1 at one full score
   attempt, x2 at ten, x3 at twenty five, x4 at one hundred. Each tier carries
   its own image. Cleanest shape is one catalog entry per tier
@@ -514,6 +525,17 @@ needs, at minimum:
 ### CLERK
 
 - **Auth was verified end to end against a real Clerk token on 14-08-2026** using the local `clerk-auth-demo` probe at `D:\Projects\clerk-auth-demo`, which vends a real RS256 session JWT on `http://127.0.0.1:9889/token`. `BACKEND/.env` already holds real keys for the same instance, `ultimate-redfish-38.clerk.accounts.dev`, so the host process verifies those tokens without any reconfiguration. Results: 401 without a token and on a garbage bearer, 200 with a real JWT, 403 on the admin surface for a token whose user has no role, 200 for one with `publicMetadata.role = "admin"`.
+- **The test suite does not need the compose stack.** Only
+  `src/tests/integration/content.route.test.ts` touches a real database; the
+  other 39 files mock everything. Export `MONGO_URI_TEST` and `REDIS_URL_TEST`
+  from `.env` and the whole suite runs against the deployed Atlas, Upstash and
+  Neon instances. `globalSetup` forces `DB_NAME=Studzee_Database_Test`, so the
+  reads land on an empty database inside the real cluster and write nothing;
+  the assertions are already guarded for an empty result. Redis is the one
+  real side effect: the cached content keys the suite writes are the same keys
+  the live API writes, with the same TTLs. Against the compose Redis the
+  suite's `beforeAll` exceeds the default 10s `hookTimeout`; against Upstash
+  it connects in well under a second.
 - **The container cannot verify any real token today.** `.env.container` carries 18 character placeholder Clerk keys, so every authenticated request against the containerized API fails. That file is tracked in git, so real keys must come from the deploy environment and must never be written into it.
 - **Admin is granted by hand in the Clerk dashboard.** `requireAdmin` reads `publicMetadata.role === 'admin'` and no code path sets it. Provisioning an admin is a deploy runbook step that does not exist yet.
 - **`requireAdmin` calls `clerkClient.users.getUser` on every admin request**, uncached. That is a network round trip per request, adding latency and exposure to Clerk rate limits in production. Carrying the role on the session token through a Clerk JWT Template would remove it; the dev instance has zero templates configured.

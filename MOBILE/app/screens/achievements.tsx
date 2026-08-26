@@ -3,7 +3,12 @@ import CustomBottomSheetModal from '@/components/global/CustomBottomSheetModal';
 import { colors } from '@/constants/colors';
 import { getMyActivity, getMyProgress } from '@/lib/api';
 import { StreakHeatmap } from '@/components/achievements/StreakHeatmap';
-import type { BadgeStatus, MyActivity, MyProgress } from '@/types';
+import type {
+  BadgeStatus,
+  MyActivity,
+  MyProgress,
+  ProgressLevel,
+} from '@/types';
 import logger from '@/utils/logger';
 import { useAuth } from '@clerk/clerk-expo';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -15,18 +20,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-/**
- * Mirror of the level catalog in the backend's gamification module. The
- * progress endpoint returns only the current and next level, so the full
- * ladder for the Levels tab lives here. Keep the two lists in sync.
- */
-const LEVELS = [
-  { key: 'novice', label: 'Novice', minPoints: 0 },
-  { key: 'apprentice', label: 'Apprentice', minPoints: 100 },
-  { key: 'scholar', label: 'Scholar', minPoints: 250 },
-  { key: 'master', label: 'Master', minPoints: 500 },
-] as const;
-
 type TabKey = 'badges' | 'levels';
 
 interface SheetTarget {
@@ -35,6 +28,7 @@ interface SheetTarget {
   description: string;
   /** Points cost for levels, undefined for badges */
   minPoints?: number;
+  imageUrl?: string;
   awarded: boolean;
   awardedAt?: string;
 }
@@ -89,7 +83,7 @@ const BadgeGridCard = ({
     }`}
     activeOpacity={0.7}
   >
-    <AchievementArt size={64} dimmed={!badge.awarded} />
+    <AchievementArt uri={badge.imageUrl} size={64} dimmed={!badge.awarded} />
     <Text
       className={`mt-2 font-product text-sm ${
         badge.awarded ? 'text-zinc-800' : 'text-zinc-500'
@@ -134,15 +128,14 @@ const BadgeGridCard = ({
 const LevelCard = ({
   level,
   points,
+  isCurrent,
   onPress,
 }: {
-  level: { key: string; label: string; minPoints: number };
+  level: ProgressLevel;
   points: number;
+  isCurrent: boolean;
   onPress: () => void;
 }) => {
-  const nextBoundary =
-    LEVELS.find(l => l.minPoints > points)?.minPoints ?? Infinity;
-  const isCurrent = points >= level.minPoints && nextBoundary > level.minPoints;
   const reached = points >= level.minPoints;
 
   return (
@@ -153,7 +146,7 @@ const LevelCard = ({
       }`}
       activeOpacity={0.7}
     >
-      <AchievementArt size={64} dimmed={!reached} />
+      <AchievementArt uri={level.imageUrl} size={64} dimmed={!reached} />
       <Text className="mt-2 font-product text-sm text-zinc-800">
         {level.label}
       </Text>
@@ -271,7 +264,10 @@ export default function AchievementsScreen() {
   }, []);
 
   const badges = progress?.allBadges ?? [];
+  const levels = progress?.allLevels ?? [];
   const points = progress?.points ?? 0;
+  // Exactly one rung is current, and the server already resolved which.
+  const currentLevelKey = progress?.level?.key;
   // Most recently earned badge gets the Latest highlight in the grid,
   // mirroring how the Levels grid marks its current rung.
   const latestBadgeKey = [...(progress?.badges ?? [])].sort((a, b) =>
@@ -382,6 +378,7 @@ export default function AchievementsScreen() {
                                 key: badge.key,
                                 label: badge.label,
                                 description: badge.description,
+                                imageUrl: badge.imageUrl,
                                 awarded: badge.awarded,
                                 awardedAt: progress?.badges.find(
                                   earned => earned.key === badge.key
@@ -393,19 +390,21 @@ export default function AchievementsScreen() {
                       ))}
                     </View>
                   )
-                : LEVELS.length > 0 && (
+                : levels.length > 0 && (
                     <View className="flex-row flex-wrap justify-between">
-                      {LEVELS.map(level => (
+                      {levels.map(level => (
                         <View key={level.key} className="mb-1 w-[48%]">
                           <LevelCard
                             level={level}
                             points={points}
+                            isCurrent={level.key === currentLevelKey}
                             onPress={() =>
                               openDetail({
                                 key: level.key,
                                 label: level.label,
                                 description: `Reach ${level.minPoints} gems to hold the ${level.label} level.`,
                                 minPoints: level.minPoints,
+                                imageUrl: level.imageUrl,
                                 awarded: points >= level.minPoints,
                               })
                             }
@@ -430,11 +429,11 @@ export default function AchievementsScreen() {
         {selected && (
           <View className="items-center p-6 pb-10">
             <AchievementArt
-              uri={undefined}
+              uri={selected.imageUrl}
               size={128}
               dimmed={!selected.awarded}
             />
-            <Text className="mt-4 font-product text-xl text-zinc-900">
+            <Text className="mt-4 w-full text-center font-product text-xl text-zinc-900">
               {selected.label}
             </Text>
             <Text className="mt-2 text-center font-sans text-sm leading-5 text-zinc-500">
