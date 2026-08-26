@@ -105,7 +105,7 @@ Date is the date the status last changed.
 | Extract the shared alert and PDF download logic into `useCustomAlert` and `usePdfDownloads` | BHUVNESH  | DONE    | 25-08-2026 |
 | Wire `useNotificationPermissions` into Settings with foreground re-registration             | BHUVNESH  | DONE    | 25-08-2026 |
 | MOBILE rewrite, after the backend is settled                                                | BHUVNESH  | PLANNED | 10-08-2026 |
-| DESKTOP rewrite, after the backend is settled                                               | BHUVNESH  | PLANNED | 10-08-2026 |
+| DESKTOP admin console: content CRUD, quests, users, push composer                                | BHUVNESH  | IN PROGRESS | 26-08-2026 |
 
 ## DEPLOYMENT
 
