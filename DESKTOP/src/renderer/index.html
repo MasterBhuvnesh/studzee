@@ -4,9 +4,12 @@
     <meta charset="UTF-8" />
     <title>studzee</title>
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!-- Clerk loads its clerk-js runtime from the jsdelivr CDN and talks to
+         the instance domain on *.clerk.accounts.dev, so both are allowed.
+         Production keys on a custom domain answer on *.clerk.app instead. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.studzee.in https://*.clerk.accounts.dev https://*.clerk.app https://clerk.telemetry.com"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
