@@ -3,6 +3,131 @@
 Running record of work done on this repository. Newest entry first.
 One entry per unit of work, with the branch, what changed, and why.
 
+## 29-08-2026
+
+**Branch:** `feat/ai-layer`
+
+### AI layer: generation into a review queue, and a support agent
+
+The backend had no AI code of any kind before this. Every document, quiz item
+and quest was hand authored or seeded from `src/data/data.json`, and support
+was a `mailto:` link.
+
+- **One model client, no SDK.** `src/services/ai/client.ts` is about 280 lines
+  over the global `fetch` Node 22 ships. Chat completions and embeddings are
+  two POST bodies each; an SDK would have added a dependency to save forty
+  lines while pinning us to one provider. `AI_BASE_URL` is the whole of
+  provider portability. It strips the `<think>` block reasoning models emit and
+  the code fences chat models add even when told not to, so neither reaches a
+  draft or a user.
+- **Documents are written from a title, not only derived from one.**
+  `POST /admin/ai/generate/content` takes a title, a topic and an optional free
+  text brief, and produces a complete document: sections, facts, tags, quiz,
+  summary and key notes. Three model calls rather than one, because asking for
+  all of it together runs past any sane token ceiling, and because the quiz and
+  notes prompts already existed and read better against a finished body than
+  against a one line brief. The body is generated first; the quiz and the notes
+  are independent of each other and run together.
+- **The operator owns everything with a consequence.** The title and the topic
+  come from the request, never the model, because topic drives list filtering
+  and unlock gating. The model writes prose, tags and questions. Same rule as
+  quests, where the type, gems, window and pass mark are all operator supplied.
+- **Content blocks are validated even though `DocumentSchema` does not.**
+  `content` is typed `z.any()`, which is fine for material an operator can see
+  rendered before shipping. A generated body is written by something that has
+  never seen the app, so an invented block type would validate and then render
+  as a blank gap. Generation is checked against the five types
+  `components/content/contentmd.tsx` actually switches on.
+- **Generation writes drafts, never content.** Document, quiz, key notes, quest
+  and notification generators all end at an `AiDraft` row. `draft.service.ts`
+  is the only thing that applies one, and each kind dispatches to the service
+  the matching admin route already uses: `adminService.createDocument` and
+  `updateDocument`, `createQuest`, and the `sendExpoNotification` plus
+  `saveNotification` pair. No new write path, so generated content cannot skip
+  a rule the manual route enforces. Every one of these routes sits on the
+  `/admin` router, which is behind `requireAdmin`, so generation is admin only
+  by construction rather than by a check that could be forgotten.
+- **The safety story is the existing zod schemas.** `chatJson` parses model
+  output against the schema the caller supplies, retries **once** with the zod
+  errors fed back, then gives up. Generators pass the real schemas, so a quiz
+  item inherits the two option minimum from `QuizItemSchema` and an assembled
+  quest is parsed by `CreateQuestSchema` before the draft is stored. A draft
+  that reaches the queue cannot fail on shape at approval time. It can still be
+  wrong on facts, which is the reason the queue exists: a generated document
+  has no source text to be held to, so the reviewer is the only accuracy check.
+- **Support agent, closed by construction.** `POST /support/ask` embeds the
+  question, retrieves the five nearest passages from pgvector, and answers only
+  from those. Retrieval below a similarity floor returns the email referral
+  **without a model call**, which is both cheaper and a hard floor on
+  invention. It has no access to the caller's account and says so.
+- **Knowledge base has three sources.** The curated markdown in
+  `src/services/ai/kb/support.md`, the levels, badges and topics rendered
+  straight out of the code constants, and one chunk per study document. The
+  registry chunks are generated rather than written into the markdown so a
+  changed badge threshold cannot leave the assistant quoting the old one.
+  `npm run ai:reindex` rebuilds all three.
+- **Two new Prisma models and a hand written migration.** `AiDraft` and
+  `KbChunk`. The migration runs `CREATE EXTENSION IF NOT EXISTS vector` before
+  the tables. `KbChunk.embedding` is `Unsupported("vector(2048)")`, which
+  Prisma cannot select or insert, so every read and write of that model goes
+  through raw SQL confined to `kb.service.ts`.
+- **No vector index, and that is deliberate.** The configured embedding model,
+  `nemotron-3-embed-1b`, returns 2048 dimensions. pgvector caps an HNSW index
+  at 2000, so `hnsw (embedding vector_cosine_ops)` is rejected outright. The
+  knowledge base is a few dozen chunks, where an exact scan is already sub
+  millisecond, so the index would have been ceremony even if the dimension
+  allowed it. The upgrade path, a `halfvec(2048)` column which HNSW supports up
+  to 4000 dimensions, is recorded in the migration.
+- **Push stays owner approved.** The nightly job at 01:00 UTC drafts copy for
+  material published and quests opened in the last day. It sends nothing.
+  Approving the draft is the send. That is the house rule, and it is also the
+  only off switch that exists: there are no per user notification preferences,
+  no opt out, no quiet hours and no timezone on `User`. The existing draft
+  check is the dedupe record the system otherwise lacks, so a restart cannot
+  redraft the same day twice.
+- **Cost control is a Redis day counter, not the rate limiter.** The HTTP
+  limiter is per address and resets in a minute, so it is not a spend ceiling.
+  `AI_SUPPORT_DAILY_LIMIT` is counted per account against the UTC day, matching
+  how streaks are counted. Unlike the read caches, this **fails closed** when
+  Redis is down: a cache miss is cheap, a missing spend ceiling is not.
+- **Nine new env vars, all inert until `AI_ENABLED=true`,** which is enforced
+  with a `superRefine` so enabling without a key fails at boot rather than on
+  the first model call. CI, the suite and any existing deployment are
+  unaffected until a key is provisioned.
+- **Mobile:** a support chat screen wired into the Live Chat option in
+  `get-support.tsx`, which had been an empty `onPress` labelled "Coming soon".
+  Sources that came from study material are tappable through to the document.
+  The thread lives in screen state only; nothing is stored on the device or the
+  server.
+
+**Also fixed:** the offline FAQ in `get-support.tsx` said content was online
+only and offline support was coming. PDF downloads have existed since
+`usePdfDownloads` landed, with a Downloaded tab that lists them. The answer now
+describes what the app actually does.
+
+**Deliberately not done.** Streaming support answers, so there is no ALB idle
+timeout question in this round. Notification deep links, because
+`sendExpoNotification` has no `data` parameter and `MOBILE` registers no
+notification response listener at all, so a payload would have no consumer.
+Conversation transcripts, which are blocked on the storage design hold. An
+admin UI for the draft queue, which belongs with the DESKTOP console rewrite.
+
+**Verification.** `fmt:check`, `lint` (0 errors) and
+`tsc --noEmit -p tsconfig.json` all clean on both modules. 429 tests pass
+across 44 files, 51 of them new across five AI test files. `npm run build`
+succeeds and the copy step puts `support.md` into `dist`.
+
+The embeddings endpoint was called live once, which is how the 2048 dimension
+was established rather than assumed; the migration had been written against a
+guessed 1024. The chat completions endpoint was **not** called: the sandbox
+blocked the outbound request both through Bash and through PowerShell, so
+`AI_MODEL` is configured but unproven.
+`src/tests/integration/content.route.test.ts` fails on a hook timeout because
+Docker Desktop was not running, so there was no Mongo behind it; the migration
+has correspondingly never been applied to a real Postgres. `expo lint` fails in
+MOBILE with `Plugin "" not found` from `eslint.config.js`, which is
+pre-existing and untouched here.
+
 ## 26-08-2026
 
 **Branch:** `feat/level-ladder-artwork`

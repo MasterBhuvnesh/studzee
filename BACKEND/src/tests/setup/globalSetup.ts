@@ -68,6 +68,12 @@ const testDefaults: Record<string, string> = {
   SMTP_USER: 'test-user',
   SMTP_PASSWORD: 'test-password',
   EMAIL_FROM: 'Studzee <no-reply@studzee.in>',
+  // The AI layer is off by default, which would make every generation and
+  // support call throw AI_DISABLED before reaching the logic under test. It is
+  // switched on here with a placeholder key; no test ever reaches a real
+  // endpoint, because fetch and the client module are always mocked.
+  AI_ENABLED: 'true',
+  AI_API_KEY: 'test-ai-key',
 }
 
 for (const [key, value] of Object.entries(testDefaults)) {

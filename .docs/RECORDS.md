@@ -96,6 +96,22 @@ Date is the date the status last changed.
 | Rewrite the readme prerequisites, quickstart and testing sections   | BHUVNESH  | DONE   | 14-08-2026 |
 | Add a root `CLAUDE.md` orientation file for contributors and agents | BHUVNESH  | DONE   | 14-08-2026 |
 
+## AI LAYER
+
+| FEATURE                                                                           | DEVELOPER | STATUS  | DATE       |
+| --------------------------------------------------------------------------------- | --------- | ------- | ---------- |
+| OpenAI compatible model client on native fetch, no SDK dependency                 | BHUVNESH  | DONE    | 29-08-2026 |
+| Whole document generation from a title, a topic and an optional brief             | BHUVNESH  | DONE    | 29-08-2026 |
+| Quiz generation from an existing document, into a review queue                    | BHUVNESH  | DONE    | 29-08-2026 |
+| Summary and key notes generation, into a review queue                             | BHUVNESH  | DONE    | 29-08-2026 |
+| Quest generation from a document, assembled and parsed by `CreateQuestSchema`     | BHUVNESH  | DONE    | 29-08-2026 |
+| `AiDraft` queue with approve, reject and per kind apply through existing services | BHUVNESH  | DONE    | 29-08-2026 |
+| pgvector knowledge base with a reindex route and CLI                              | BHUVNESH  | DONE    | 29-08-2026 |
+| Support agent answering only from retrieved passages, with a daily per user cap   | BHUVNESH  | DONE    | 29-08-2026 |
+| Nightly notification drafting for new content and newly opened quests             | BHUVNESH  | DONE    | 29-08-2026 |
+| Notification deep links, backend payload plus a client tap handler                | BHUVNESH  | PLANNED | 29-08-2026 |
+| Streaming support answers                                                         | BHUVNESH  | PLANNED | 29-08-2026 |
+
 ## CLIENTS
 
 | FEATURE                                                                                     | DEVELOPER | STATUS  | DATE       |
@@ -109,6 +125,7 @@ Date is the date the status last changed.
 | Wire `useNotificationPermissions` into Settings with foreground re-registration             | BHUVNESH  | DONE    | 25-08-2026 |
 | MOBILE rewrite, after the backend is settled                                                | BHUVNESH  | PLANNED | 10-08-2026 |
 | DESKTOP admin console: content CRUD, quests, users, push composer                                | BHUVNESH  | IN PROGRESS | 26-08-2026 |
+| Support assistant chat screen wired into Get Support                                        | BHUVNESH  | DONE    | 29-08-2026 |
 
 ## DEPLOYMENT
 

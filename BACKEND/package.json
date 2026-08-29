@@ -4,7 +4,8 @@
   "description": "Backend service for content delivery and notifications, with MongoDB, Postgres, Redis, S3 and Clerk auth.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "prisma generate && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "prisma generate && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && npm run copy:kb",
+    "copy:kb": "node scripts/copy-kb.js",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -21,6 +22,8 @@
     "seed:topics": "ts-node -r tsconfig-paths/register src/cli/seeds/sample-topics.seed.ts",
     "seed:quests": "ts-node -r tsconfig-paths/register src/cli/seeds/quests.seed.ts",
     "job:refresh-cache": "ts-node -r tsconfig-paths/register src/cli/tools/run-job.ts",
+    "job:ai-notify": "ts-node -r tsconfig-paths/register src/cli/tools/run-ai-notify.ts",
+    "ai:reindex": "ts-node -r tsconfig-paths/register src/cli/tools/reindex-kb.ts",
     "do-release": "bash ../release.sh backend patch",
     "do-release:minor": "bash ../release.sh backend minor",
     "do-release:major": "bash ../release.sh backend major"

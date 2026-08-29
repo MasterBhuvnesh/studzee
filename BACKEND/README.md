@@ -281,6 +281,15 @@ Configuration is parsed and validated by Zod at import time. A missing or malfor
 | `EMAIL_ATTACHMENT_HOSTS`       | Comma separated hosts an email attachment may be fetched from            | No       | the S3 asset bucket   |
 | `DEV_TOKEN`                    | Development auth bypass token (bypasses Clerk authentication)            | No       | -                     |
 | `HEALTHCHECK_URL`              | URL for the heartbeat job to ping. The job is skipped when unset         | No       | -                     |
+| `AI_ENABLED`                   | Turns the whole AI layer on. Everything below is ignored while false     | No       | `false`               |
+| `AI_BASE_URL`                  | OpenAI compatible endpoint for chat completions and embeddings           | No       | NVIDIA build          |
+| `AI_API_KEY`                   | Provider key. **Required** once `AI_ENABLED` is true                     | No       | -                     |
+| `AI_MODEL`                     | Chat model for generation and support answers                            | No       | Nemotron 3 Ultra      |
+| `AI_EMBED_MODEL`               | Embedding model for the knowledge base                                   | No       | `nemotron-3-embed-1b` |
+| `AI_EMBED_DIM`                 | Embedding dimension. Must match the `vector(n)` column in the migration  | No       | `2048`                |
+| `AI_TIMEOUT_MS`                | Deadline for one model call                                              | No       | `120000`              |
+| `AI_MAX_TOKENS`                | Completion ceiling                                                       | No       | `8192`                |
+| `AI_SUPPORT_DAILY_LIMIT`       | Support questions one user may ask per UTC day                           | No       | `30`                  |
 
 ### Clerk Setup
 
@@ -291,6 +300,46 @@ Configuration is parsed and validated by Zod at import time. A missing or malfor
 5. Add a webhook endpoint pointing at `<your-host>/webhooks/clerk`, subscribe it to `user.created`, and copy the signing secret into `CLERK_WEBHOOK_SIGNING_SECRET`. This is what triggers the welcome email.
 
 > **Note**: `CLERK_WEBHOOK_SIGNING_SECRET` is optional in config, but the webhook route refuses every delivery with a 500 while it is unset, because the signature is that endpoint's only authentication. Leave it unset only if you are not using the webhook at all.
+
+### AI Setup
+
+The AI layer is off by default. `AI_ENABLED=false` means no key is needed, no
+job runs, and every AI route answers `503 AI_DISABLED`, so an existing
+deployment is unaffected until you turn it on.
+
+To enable it:
+
+1. Create an API key at [build.nvidia.com](https://build.nvidia.com/) and put
+   it in `AI_API_KEY`. Any OpenAI compatible host works by changing
+   `AI_BASE_URL`.
+2. Set `AI_ENABLED=true`. The service now refuses to boot without a key, the
+   same way it does for every other credential.
+3. Run the migration, then `npm run ai:reindex` to build the knowledge base.
+
+Two things are easy to get wrong.
+
+> **`AI_EMBED_DIM` is not a free choice.** It has to equal the dimension of
+> whatever `AI_EMBED_MODEL` returns, and the `KbChunk.embedding` column is
+> declared `vector(2048)` in the migration because `nemotron-3-embed-1b`
+> returns 2048. Changing the embedding model means writing a migration for the
+> new dimension, not editing an environment variable. The client checks the two
+> against each other on every embed call and refuses, rather than letting it
+> surface as an opaque Postgres error later.
+
+> **There is no vector index, deliberately.** pgvector caps an HNSW index at
+> 2000 dimensions and the embeddings are 2048, so the usual
+> `hnsw (embedding vector_cosine_ops)` is rejected outright. The knowledge base
+> is a few dozen chunks, where an exact scan is already sub millisecond. If the
+> corpus ever reaches the thousands, store the column as `halfvec(2048)` and
+> index that instead, which HNSW supports up to 4000 dimensions.
+
+> **Postgres needs the `vector` extension.** `docker-compose.yml` runs
+> `pgvector/pgvector:pg16` for this reason, and the migration runs
+> `CREATE EXTENSION IF NOT EXISTS vector`. If you are upgrading an existing
+> local stack from `postgres:16-alpine`, the `studzee-postgres-data` volume may
+> need recreating; the migrations and seeders restore local state. RDS, Neon
+> and Supabase all offer pgvector, so this does not narrow the deployment
+> options.
 
 ### MongoDB Setup
 

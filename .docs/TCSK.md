@@ -7,7 +7,7 @@ Things Claude Should Know. This is what the user wants Claude to know about the 
 - Studzee is a full-stack SaaS educational platform for creating, structuring, delivering, and consuming educational content across mobile, web, and desktop.
 - Stakeholders are students and learners, educators and content creators, administrators, and contributing developers.
 - The architecture is distributed and service oriented. Each service is independently deployable for fault isolation, horizontal scaling, and controlled rollouts.
-- Content is currently uploaded and structured manually by administrators. An agentic AI layer for validation, structuring, quiz generation, and summaries is on the roadmap and will live in the `AGENTS` folder.
+- Content was uploaded and structured manually by administrators until 29-08-2026, when the agentic AI layer landed. It generates documents, quizzes, summaries, quests and push copy, all into an owner reviewed draft queue. It lives in `BACKEND/src/services/ai/`, **not** in an `AGENTS` folder as this line previously said. See [AI LAYER SHIPPED 29-08-2026](#ai-layer-shipped-29-08-2026-on-featai-layer).
 - Official website is `https://studzee.in`, with DNS handled through AWS Route 53 for production.
 
 ## REPOSITORY LAYOUT
@@ -464,6 +464,57 @@ and the future AI agent screen are part of this track's client surface.
 | AI agent with subscription or bring your own key | 12 above | planned |
 | AI generated application content | this table | planned |
 | Quest and AI agent screens as the track's app surface | this table | planned |
+
+### AI LAYER SHIPPED 29-08-2026, ON `feat/ai-layer`
+
+Most of this track is no longer planned. What landed, and the three decisions
+that contradict what is written elsewhere in this file:
+
+- **It does not live in an `AGENTS` folder.** The line in PROJECT above says
+  the agentic layer will, and it does not. It is
+  `BACKEND/src/services/ai/`, seven files, decided by the owner on
+  29-08-2026. A top level module would have needed its own build, its own
+  lockfile and its own deployment for code whose whole job is calling the
+  services that already sit in `BACKEND`. `AGENTS` is not coming back.
+- **The storage hold was partially reopened, narrowly.** Two Prisma models
+  were added, `AiDraft` and `KbChunk`. Neither touches the user, quiz or
+  tracker shapes that the hold exists to protect: `AiDraft` is a review queue
+  keyed by nothing, and `KbChunk` is a rebuildable index that
+  `npm run ai:reindex` recreates from scratch. The hold still stands for
+  everything else, and conversation transcripts were deliberately left out
+  because storing them would be a real schema decision.
+- **Postgres now requires the `vector` extension.** `docker-compose.yml` runs
+  `pgvector/pgvector:pg16` instead of `postgres:16-alpine`, and the migration
+  runs `CREATE EXTENSION IF NOT EXISTS vector` before its tables. Upgrading an
+  existing local stack may need the `studzee-postgres-data` volume recreated.
+  RDS, Neon and Supabase all offer pgvector, so the portability rule in
+  PLANNED INFRASTRUCTURE still holds. Atlas vector search would have broken
+  it, which is why retrieval is in Postgres rather than Mongo.
+
+Two smaller things worth not rediscovering:
+
+- **The embeddings are 2048 dimensions**, from `nvidia/nemotron-3-embed-1b`,
+  established by calling the endpoint rather than reading a datasheet. pgvector
+  caps an HNSW index at 2000 dimensions, so there is no vector index at all;
+  an exact scan over a few dozen chunks is sub millisecond. If the corpus grows
+  into the thousands, move the column to `halfvec(2048)` and index that.
+- **`AI_ENABLED` defaults to false and is the only off switch.** Nothing in the
+  layer runs without it: no routes, no nightly job. Enabling it without
+  `AI_API_KEY` fails at boot rather than on the first call.
+
+| Piece | State after this branch |
+| ----- | ----------------------- |
+| AI generated application content | done, from a title and a brief, into a review queue |
+| In app support agent, small model | done, retrieval only, no account access |
+| Newsletter agent with draft and approval gate | done as push copy drafting, not email |
+| Quest generation | done, from an existing document |
+| Quest recurrence, daily and weekly templates | still planned |
+| AI agent with subscription or bring your own key | still planned |
+| Notification deep links | still planned, no client tap handler exists yet |
+
+The draft queue has no admin UI. Approving a draft is a `POST` to
+`/admin/ai/drafts/:id/approve` today, which belongs on the DESKTOP console
+list below.
 
 ### FUTURE PLANS, DEMOTED 25-08-2026
 

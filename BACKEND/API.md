@@ -13,6 +13,7 @@ Every response body below is what the handler actually returns. Import [postman.
 - [PDF Endpoints](#pdf-endpoints)
 - [Notification Endpoints](#notification-endpoints)
 - [Progress Endpoints](#progress-endpoints)
+- [Support Endpoints](#support-endpoints)
 - [Webhook Endpoints](#webhook-endpoints)
 - [Admin Endpoints](#admin-endpoints)
 - [Migrated Endpoints](#migrated-endpoints)
@@ -506,6 +507,84 @@ The gamified user tracker lives in Postgres. Points come from server graded quiz
 
 ---
 
+## Support Endpoints
+
+The in app support assistant. It answers from a knowledge base built out of the
+help material, the level and badge registries, and the study material
+catalogue. It has no access to the caller's account: it cannot read progress,
+history, downloads or email, and it is instructed to say so rather than guess.
+
+Every route requires an authenticated Clerk user. The whole section returns
+`503 AI_DISABLED` while `AI_ENABLED` is false.
+
+### Ask Support
+
+Answers one question. The reply is not streamed, so the request blocks for as
+long as the model takes; clients should allow a much longer timeout than for
+any other endpoint.
+
+- **Method:** `POST`
+- **Path:** `/support/ask`
+- **Auth:** Clerk user
+- **Rate limit:** 10 per minute, on top of a per account daily allowance
+
+**Request body**
+
+| Field      | Type   | Required | Notes                                                 |
+| ---------- | ------ | -------- | ----------------------------------------------------- |
+| `question` | string | yes      | 1 to 1000 characters                                  |
+| `history`  | array  | no       | Up to 12 prior turns. Only the last 6 reach the model |
+
+Each history entry is `{ "role": "user" | "assistant", "content": string }`.
+History is held by the client. No transcript is stored on the server.
+
+```json
+{
+  "question": "why did my streak reset",
+  "history": [{ "role": "user", "content": "how do streaks work" }]
+}
+```
+
+**Response `200 OK`**
+
+```json
+{
+  "data": {
+    "answer": "A streak resets when a day passes with no recorded activity...",
+    "sources": [
+      { "heading": "STREAKS", "contentId": null },
+      {
+        "heading": "Load Balancers Explained",
+        "contentId": "507f1f77bcf86cd799439011"
+      }
+    ],
+    "remaining": 27
+  }
+}
+```
+
+`sources` carries the passages the answer drew on. `contentId` is set only when
+the passage came from study material, which is what makes a source linkable;
+help text passages have nowhere to navigate to.
+
+`remaining` is how many questions the caller has left today.
+
+**Errors**
+
+| Status | Code                   | Meaning                                                        |
+| ------ | ---------------------- | -------------------------------------------------------------- |
+| `429`  | `AI_QUOTA_EXCEEDED`    | The caller used their `AI_SUPPORT_DAILY_LIMIT` for the UTC day |
+| `503`  | `AI_QUOTA_UNAVAILABLE` | Redis is unreachable, so the spend ceiling cannot be enforced  |
+| `503`  | `AI_DISABLED`          | `AI_ENABLED` is false                                          |
+| `502`  | `AI_UPSTREAM`          | The model endpoint returned an error                           |
+| `504`  | `AI_TIMEOUT`           | The model did not answer within `AI_TIMEOUT_MS`                |
+
+When nothing in the knowledge base matches, the endpoint still returns `200`
+with an answer referring the caller to email and an empty `sources` array. No
+model call is made in that case.
+
+---
+
 ## Webhook Endpoints
 
 ### Clerk Webhook
@@ -890,6 +969,243 @@ Common failures on all admin routes:
 
 ---
 
+### AI Generation and Drafts
+
+Generation turns existing material into a **pending draft**. Nothing in this
+section publishes: a draft becomes visible to students only when it is
+approved, and approving a notification draft is what sends the push. That is
+the house rule that no outreach leaves the service without review, and it is
+also the only off switch there is, since the service holds no per user
+notification preferences.
+
+Every route below is admin only and returns `503 AI_DISABLED` while
+`AI_ENABLED` is false.
+
+#### Generate a Document
+
+Writes a whole study document from a title and an optional brief. This is the
+only generator with no `contentId`: nothing existing is being derived from, so
+the model is drawing on its own knowledge and the reviewer is the only accuracy
+check there is.
+
+Three model calls deep, the body first and then the quiz and the notes against
+that body, so it is slow even by the standards of this section. Budget on the
+order of a minute.
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/generate/content`
+- **Rate limit:** 10 per minute
+
+| Field       | Type   | Required | Notes                                             |
+| ----------- | ------ | -------- | ------------------------------------------------- |
+| `title`     | string | yes      | 3 to 200 characters. Becomes the document title   |
+| `topic`     | string | yes      | One of the six fixed topic keys                   |
+| `brief`     | string | no       | Up to 2000 characters of free text steering scope |
+| `sections`  | number | no       | 2 to 10, defaults to 5                            |
+| `quizCount` | number | no       | 1 to 15, defaults to 5                            |
+
+`title` and `topic` stay with the operator because topic drives list filtering
+and unlock gating. The model writes the section prose, the facts paragraph, the
+tags, the quiz and the key notes.
+
+```json
+{
+  "title": "Consistent Hashing",
+  "topic": "system-design",
+  "brief": "Cover the hash ring, virtual nodes and what happens when a node leaves. Assume the reader already knows what a hash function is.",
+  "sections": 5,
+  "quizCount": 6
+}
+```
+
+Returns `201` with a draft whose payload is a complete document: `title`,
+`topic`, `content`, `facts`, `tags`, `quiz`, `summary` and `key_notes`.
+Approving it creates the document through `POST /admin/documents`.
+
+Content blocks are validated against the five types the client renders, which
+are `text`, `list`, `table`, `formula` and `code`. `DocumentSchema` types
+`content` as `any`, which is fine for material an operator can preview before
+shipping, but an invented block type from a model would validate and then
+render as a gap on the screen, so it is rejected here with `AI_INVALID_OUTPUT`.
+
+#### Generate a Quiz
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/generate/quiz`
+- **Rate limit:** 10 per minute
+
+| Field       | Type   | Required | Notes                          |
+| ----------- | ------ | -------- | ------------------------------ |
+| `contentId` | string | yes      | 24 character Mongo document id |
+| `count`     | number | no       | 1 to 15, defaults to 5         |
+
+Returns `201` with the created draft. The generated quiz is validated against
+the same `QuizItemSchema` the document schema uses, so every item already has
+at least two options and an `ans` matching one of them.
+
+#### Generate a Summary and Key Notes
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/generate/notes`
+- **Rate limit:** 10 per minute
+
+| Field       | Type   | Required | Notes                          |
+| ----------- | ------ | -------- | ------------------------------ |
+| `contentId` | string | yes      | 24 character Mongo document id |
+
+#### Generate a Quest
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/generate/quest`
+- **Rate limit:** 10 per minute
+
+| Field           | Type   | Required | Notes                                               |
+| --------------- | ------ | -------- | --------------------------------------------------- |
+| `contentId`     | string | yes      | 24 character Mongo document id                      |
+| `type`          | string | yes      | `mcq`, `scq`, `fill_blank` or `read_blog`           |
+| `gems`          | number | yes      | Positive integer                                    |
+| `questionCount` | number | no       | 1 to 10, defaults to 3. Ignored for `read_blog`     |
+| `passScore`     | number | no       | Defaults to 60 percent of the questions, rounded up |
+| `startsAt`      | date   | yes      | ISO 8601                                            |
+| `endsAt`        | date   | yes      | ISO 8601, after `startsAt`                          |
+
+The model writes the title, description and questions only. The type, gems,
+window and pass mark come from this request, and the assembled quest is parsed
+by `CreateQuestSchema` before the draft is stored, so approval cannot fail on
+shape. `passScore` is clamped to the number of questions the model actually
+returned.
+
+#### Generate Notification Copy
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/generate/notification`
+- **Rate limit:** 10 per minute
+
+| Field  | Type   | Required | Notes                              |
+| ------ | ------ | -------- | ---------------------------------- |
+| `kind` | string | yes      | `content` or `quest`               |
+| `id`   | string | yes      | Mongo document id, or a quest cuid |
+
+A nightly job at 01:00 UTC drafts these automatically for material published
+and quests opened in the previous day, skipping any subject that already has a
+notification draft in any state.
+
+#### List Drafts
+
+- **Method:** `GET`
+- **Path:** `/admin/ai/drafts`
+- **Rate limit:** 30 per minute
+
+| Query    | Type   | Notes                                                      |
+| -------- | ------ | ---------------------------------------------------------- |
+| `page`   | number | Defaults to 1                                              |
+| `limit`  | number | 1 to 100, defaults to 20                                   |
+| `status` | string | `pending`, `approved` or `rejected`                        |
+| `kind`   | string | `document`, `quiz`, `key_notes`, `quest` or `notification` |
+
+```json
+{
+  "drafts": [
+    {
+      "id": "clx...",
+      "kind": "quiz",
+      "status": "pending",
+      "sourceId": "507f1f77bcf86cd799439011",
+      "payload": {
+        "quiz": {
+          "q1": { "que": "...", "ans": "...", "options": ["...", "..."] }
+        }
+      },
+      "model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "createdBy": "user_...",
+      "reviewedBy": null,
+      "reviewedAt": null,
+      "appliedId": null,
+      "error": null,
+      "createdAt": "2026-08-29T01:00:00.000Z"
+    }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 1, "totalPages": 1 }
+}
+```
+
+#### Get One Draft
+
+- **Method:** `GET`
+- **Path:** `/admin/ai/drafts/:id`
+- **Rate limit:** 30 per minute
+
+#### Approve a Draft
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/drafts/:id/approve`
+- **Rate limit:** 20 per minute
+
+| Field       | Type   | Required | Notes                                     |
+| ----------- | ------ | -------- | ----------------------------------------- |
+| `overrides` | object | no       | Merged over the payload before it applies |
+
+Overrides are how a title or a bad question is fixed without a separate edit
+endpoint. The merged payload is re-validated against the schema the draft was
+generated under, so an override cannot introduce a shape the generator would
+have rejected.
+
+What approval does, by kind:
+
+| Kind           | Applied through                                                         |
+| -------------- | ----------------------------------------------------------------------- |
+| `document`     | `POST /admin/documents`, creating a new document                        |
+| `quiz`         | `PUT /admin/documents/:id`, appending under fresh keys                  |
+| `key_notes`    | `PUT /admin/documents/:id`, replacing the summary and merging the notes |
+| `quest`        | The same service `POST /admin/quests` uses                              |
+| `notification` | The same send and audit pair `POST /admin/notifications/send` uses      |
+
+**Errors**
+
+| Status | Code                | Meaning                                                     |
+| ------ | ------------------- | ----------------------------------------------------------- |
+| `409`  | `DRAFT_NOT_PENDING` | The draft was already approved or rejected                  |
+| `409`  | `QUEST_TITLE_TAKEN` | A quest with that title exists. Re-approve with an override |
+| `400`  | `DRAFT_INVALID`     | The payload failed validation after overrides were merged   |
+| `404`  |                     | The draft, or the document it came from, is gone            |
+
+A failed apply leaves the draft **pending** with the reason in `error`, so it
+can be retried once the cause is fixed rather than lost.
+
+#### Reject a Draft
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/drafts/:id/reject`
+- **Rate limit:** 20 per minute
+
+| Field    | Type   | Required | Notes                |
+| -------- | ------ | -------- | -------------------- |
+| `reason` | string | no       | Up to 500 characters |
+
+#### Reindex the Knowledge Base
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/kb/reindex`
+- **Rate limit:** 2 per minute
+
+Rebuilds every knowledge base chunk and re-embeds it. Run after editing
+`src/services/ai/kb/support.md`, after changing a level or badge, and after a
+content import. Nothing reindexes on its own.
+
+```json
+{
+  "message": "Knowledge base reindexed",
+  "data": {
+    "chunks": 34,
+    "bySource": { "support-md": 12, "registry": 3, "content": 19 }
+  }
+}
+```
+
+The command line equivalent is `npm run ai:reindex`.
+
+---
+
 ## Migrated Endpoints
 
 The notification service was merged into this backend. Its endpoints moved as follows and the old paths no longer exist.
@@ -973,7 +1289,16 @@ A global limiter applies to every request, and the expensive admin endpoints car
 | `POST /progress/attempts`        | 30 per minute      |
 | `POST /admin/notifications/send` | 20 per minute      |
 | `POST /admin/emails/send`        | 10 per minute      |
+| `POST /support/ask`              | 10 per minute      |
+| `POST /admin/ai/generate/*`      | 10 per minute      |
+| `POST /admin/ai/drafts/*`        | 20 per minute      |
+| `POST /admin/ai/kb/reindex`      | 2 per minute       |
 | Admin listing endpoints          | 30 per minute      |
+
+`POST /support/ask` carries a second ceiling the table cannot express: a per
+account daily allowance of `AI_SUPPORT_DAILY_LIMIT` questions, counted in Redis
+against the UTC day. The HTTP limiter is per address and resets in a minute, so
+it is not a spend limit.
 
 Exceeding a limit returns `429 Too Many Requests`. Limits are reported in the standard `RateLimit-*` response headers. The service sets `trust proxy`, so limits are applied per client address rather than per proxy.
 
