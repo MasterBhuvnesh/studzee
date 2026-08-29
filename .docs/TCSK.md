@@ -522,9 +522,56 @@ change that ordering without rechecking it.
 | In app support agent, small model | done, retrieval only, no account access, scope and injection locked |
 | Newsletter agent with draft and approval gate | done as push copy drafting, not email |
 | Quest generation | done, from an existing document |
+| End to end generation pipeline, one run per subject | planned, see below |
 | Quest recurrence, daily and weekly templates | still planned |
 | AI agent with subscription or bring your own key | still planned |
 | Notification deep links | still planned, no client tap handler exists yet |
+
+#### FUTURE SCOPE: THE WHOLE PIPELINE IN ONE RUN
+
+Owner direction, 29-08-2026. Today an administrator makes five separate calls
+to get one topic live: generate the document, approve it, then generate the
+quiz, the notes and the notification against it and approve each. The intent is
+that the entire sequence becomes one operation. Give it a subject and it
+produces the document, its quiz, its notes and summary, and the notification,
+as one unit of work.
+
+Most of the machinery is already here. `assembleDocument` already makes three
+model calls and returns a document whose quiz and notes were generated against
+its own finished body, so a document draft is **already** a document plus a
+quiz plus notes plus a summary. What is missing is the rest of the chain and
+the shape it is reviewed in.
+
+The pieces that would need building:
+
+- **A pipeline draft, or a batch of linked drafts.** One `AiDraft` per artefact
+  is what exists; approving five things individually is the thing being removed.
+  Either a `kind: 'pipeline'` whose payload holds the whole set, or a
+  `batchId` linking rows so they approve together. The second keeps each
+  artefact reviewable on its own, which matters because the quiz is the part
+  most likely to need one question thrown out.
+- **A quest in the same run.** Currently a separate generator against an
+  existing document, so it can only run after the document is approved. In a
+  pipeline it has to be generated against the in memory body, the way the quiz
+  and notes already are, and then created after the document so it has a
+  `contentId` to point at.
+- **Idempotency and partial failure.** Five artefacts and one of them fails to
+  apply. Today a failed apply leaves that draft pending, which is right for one
+  row and unclear for a set: a published document with no quiz is worse than
+  neither. Whether the batch is transactional, and what a retry looks like, is
+  the real design question.
+- **A trigger.** A subject list, a syllabus, or a schedule. Full automation
+  means something decides *what* to write about, and nothing does that today.
+
+**The open decision is the approval gate.** The house rule is that no outreach
+leaves unattended, and the whole layer is built around review being the accuracy
+check, because a generated document has no source text to be held to. A pipeline
+that publishes and notifies without a person reading it removes the only check
+there is. Two ways to keep it honest: keep one approval on the batch, so the
+automation is the generation and the human is still the publish; or let it
+publish on a schedule and accept that the corrections happen after students
+have seen it. The first is what the current design assumes. Confirm which
+before building, because it decides the data model.
 
 The draft queue has no admin UI. Approving a draft is a `POST` to
 `/admin/ai/drafts/:id/approve` today, which belongs on the DESKTOP console

@@ -115,6 +115,7 @@ Date is the date the status last changed.
 | pgvector knowledge base with a reindex route and CLI                              | BHUVNESH  | DONE    | 29-08-2026 |
 | Support agent answering only from retrieved passages, with a daily per user cap   | BHUVNESH  | DONE    | 29-08-2026 |
 | Nightly notification drafting for new content and newly opened quests             | BHUVNESH  | DONE    | 29-08-2026 |
+| End to end pipeline: document, quiz, notes, summary and notification in one run  | BHUVNESH  | PLANNED | 29-08-2026 |
 | Notification deep links, backend payload plus a client tap handler                | BHUVNESH  | PLANNED | 29-08-2026 |
 | Streaming support answers                                                         | BHUVNESH  | PLANNED | 29-08-2026 |
 

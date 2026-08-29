@@ -7,6 +7,41 @@ One entry per unit of work, with the branch, what changed, and why.
 
 **Branch:** `feat/ai-layer`
 
+### Postman collection, and the pipeline recorded as future scope
+
+The collection had gone stale against this branch: eleven new endpoints and
+none of them in it. Added `POST /support/ask` as its own user facing group,
+placed with the other user routes rather than the admin ones, and an
+`Admin - AI Generation` group holding the four generators, the five draft
+routes and the reindex. A `draftId` collection variable goes with them.
+
+Each request carries the same kind of description the existing ones do, written
+against what the handler actually returns rather than what the route is called.
+The approve request carries a warning in its description, because approving a
+document draft publishes it and pushes to every registered device, and
+approving a notification draft sends that push. Neither is undoable from the
+API, and a collection is exactly where someone clicks a button to see what it
+does.
+
+Still missing from the collection, and pre-existing rather than added here:
+the whole `/quests` group, both the user routes and the admin ones.
+
+Recorded in TCSK and RECORDS as future scope, by owner direction: the entire
+sequence of document, quiz, notes, summary and notification becomes one
+operation rather than five calls and five approvals. Most of the machinery
+exists, since `assembleDocument` already produces a document whose quiz and
+notes were generated against its own finished body. What is missing is the
+batch shape, a quest generated in the same run, partial failure handling for a
+set rather than a row, and something that decides what to write about.
+
+The entry flags the one decision that has to be made before any of it is built,
+which is whether the approval gate survives. A generated document has no source
+text to be held to, so review is the only accuracy check the design has. Full
+automation either keeps one approval on the batch, making the generation
+automatic and the publish human, or publishes on a schedule and accepts
+corrections happening after students have read it. That choice decides the data
+model, so it is not a detail to settle during implementation.
+
 ### AI layer, third pass: live infrastructure, and the support agent locked down
 
 The migration is applied to Neon, the knowledge base is indexed, and the
