@@ -49,8 +49,41 @@ const OPENERS = [
 
 const GREETING =
   'Ask me about levels, streaks, quests, downloads or anything else in the ' +
-  'app. I answer from the Studzee help material, so if I do not have ' +
-  'something I will say so rather than guess.';
+  'Studzee app. I only cover Studzee, and I answer from the app help ' +
+  'material, so if I do not have something I will say so rather than guess.';
+
+/**
+ * The answer is plain prose with bold and italic and nothing else, which the
+ * system prompt enforces. Two markers is little enough to split on directly
+ * rather than mounting the native markdown renderer used for study material:
+ * that one is sized and styled for a full article, renders every construct
+ * the assistant is told not to produce, and falls back to raw asterisks on
+ * web. A nested Text inherits the bubble's own typography for free.
+ */
+const RichText = ({ text, className }: { text: string; className: string }) => (
+  <Text className={className}>
+    {text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g).map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <Text key={index} className="font-product-bold">
+            {part.slice(2, -2)}
+          </Text>
+        );
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        // GoogleSans ships no italic face, so this is a synthesised oblique.
+        // Acceptable for the occasional emphasised word, which is all the
+        // prompt allows it to be used for.
+        return (
+          <Text key={index} className="italic">
+            {part.slice(1, -1)}
+          </Text>
+        );
+      }
+      return part;
+    })}
+  </Text>
+);
 
 const Bubble = ({ message }: { message: Message }) => {
   const router = useRouter();
@@ -63,13 +96,20 @@ const Bubble = ({ message }: { message: Message }) => {
           mine ? 'bg-zinc-800' : 'border border-zinc-200 bg-white shadow-sm'
         }`}
       >
-        <Text
-          className={`font-sans text-sm leading-relaxed ${
-            mine ? 'text-zinc-50' : 'text-zinc-700'
-          }`}
-        >
-          {message.content}
-        </Text>
+        {/*
+          Only the assistant's turns carry markers. A question is echoed back
+          exactly as it was typed, so asterisks in it stay asterisks.
+        */}
+        {mine ? (
+          <Text className="font-sans text-sm leading-relaxed text-zinc-50">
+            {message.content}
+          </Text>
+        ) : (
+          <RichText
+            text={message.content}
+            className="font-sans text-sm leading-relaxed text-zinc-700"
+          />
+        )}
       </View>
 
       {/*
