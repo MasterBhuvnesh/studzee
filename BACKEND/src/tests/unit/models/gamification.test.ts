@@ -110,16 +110,19 @@ describe('perfectionist tier predicates', () => {
   })
 })
 
-describe('imageUrl placeholder contract', () => {
-  it('is undefined on every badge entry for now', () => {
-    for (const badge of BADGES) {
-      expect(badge.imageUrl).toBeUndefined()
-    }
-  })
-
+describe('imageUrl contract', () => {
   it('carries artwork on every level entry', () => {
     for (const level of LEVELS) {
       expect(level.imageUrl).toMatch(new RegExp(`/levels/${level.key}\.png$`))
+    }
+  })
+
+  // Badge art was added on 29-08-2026, reusing the levels folder rather than
+  // a separate badges/ prefix, so every badge now carries artwork the same
+  // way every level already did.
+  it('carries artwork on every badge entry', () => {
+    for (const badge of BADGES) {
+      expect(badge.imageUrl).toMatch(new RegExp(`/levels/${badge.key}\.png$`))
     }
   })
 })

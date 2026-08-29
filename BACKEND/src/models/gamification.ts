@@ -111,8 +111,10 @@ export interface Badge {
    */
   threshold: number
   /**
-   * Optional artwork. Left undefined for every entry for now; the client
-   * falls back to a bundled placeholder when it is absent.
+   * Artwork URL, added 29-08-2026, reusing the levels/ folder in the images
+   * bucket rather than a separate badges/ prefix. Still optional so the type
+   * survives a badge added before its art exists; the client falls back to a
+   * bundled placeholder when it is absent.
    */
   imageUrl?: string
 }
