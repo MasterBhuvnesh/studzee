@@ -9,9 +9,10 @@ import { useAuth } from '@clerk/clerk-expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Bot, ChevronRight, Send, Sparkles } from 'lucide-react-native';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -154,6 +155,18 @@ export default function SupportChatScreen() {
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
+  // Opening the keyboard shrinks the transcript without changing its content
+  // size, so onContentSizeChange never fires and the newest message ends up
+  // hidden behind the keyboard. Scrolling on the show event covers that gap.
+  useEffect(() => {
+    const event =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const subscription = Keyboard.addListener(event, () =>
+      scrollRef.current?.scrollToEnd({ animated: true })
+    );
+    return () => subscription.remove();
+  }, []);
+
   const send = useCallback(
     async (text: string) => {
       const question = text.trim();
@@ -217,12 +230,24 @@ export default function SupportChatScreen() {
         end={{ x: 0, y: 1 }}
         className="flex-1"
       >
-        <SafeAreaView className="flex-1">
-          <KeyboardAvoidingView
-            className="flex-1"
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-          >
+        {/*
+          KeyboardAvoidingView sits outside SafeAreaView, as it does in
+          sign-in.tsx. Inside it, the safe area's bottom padding stays applied
+          while the keyboard is up and the input bar is pushed off by exactly
+          that much.
+
+          Android gets 'height' rather than no behavior at all. The screen was
+          written with undefined there, which meant Android had no avoidance
+          whatsoever and the keyboard simply covered the input bar. The app
+          runs edge to edge, so the window resize Android does on its own is
+          not enough to clear it.
+        */}
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={0}
+        >
+          <SafeAreaView className="flex-1">
             <Header title="Support" />
 
             <ScrollView
@@ -233,6 +258,11 @@ export default function SupportChatScreen() {
                 scrollRef.current?.scrollToEnd({ animated: true })
               }
               keyboardShouldPersistTaps="handled"
+              // Dragging the transcript closes the keyboard. sign-in.tsx wraps
+              // its form in a TouchableWithoutFeedback to do this by tapping,
+              // which is wrong here: the same wrapper would sit over the
+              // message bubbles and swallow the taps that open a cited source.
+              keyboardDismissMode="on-drag"
             >
               <View className="mb-4 flex-row items-start rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
                 <View className="mr-3 rounded-full bg-zinc-100 p-2">
@@ -323,8 +353,8 @@ export default function SupportChatScreen() {
                 />
               </Pressable>
             </View>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </LinearGradient>
 
       <CustomAlert

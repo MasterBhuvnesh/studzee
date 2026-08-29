@@ -5,6 +5,41 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 29-08-2026
 
+### Support chat keyboard overlap
+
+**Branch:** `fix/support-chat-keyboard`
+
+The keyboard covered the input bar on the support chat screen. Two causes, both
+structural.
+
+`behavior` was `Platform.OS === 'ios' ? 'padding' : undefined`, so Android had
+no keyboard avoidance at all. The app runs edge to edge, where the window
+resize Android does on its own does not clear the keyboard. It now uses
+'height' on Android, matching `app/(auth)/sign-in.tsx`, which is the working
+precedent in this codebase.
+
+`KeyboardAvoidingView` was nested inside `SafeAreaView`. In that order the safe
+area bottom inset stays applied while the keyboard is up, and the input bar is
+pushed off by exactly that much. sign-in.tsx has the two the other way round,
+and so does this screen now.
+
+Two smaller things. The transcript scrolls to the end on the keyboard show
+event as well as on content size change: opening the keyboard shrinks the
+viewport without changing content size, so `onContentSizeChange` never fires
+and the newest message ends up hidden. And `keyboardDismissMode=on-drag`
+dismisses by dragging the transcript, rather than the
+`TouchableWithoutFeedback` wrapper sign-in uses: that wrapper would sit over
+the message bubbles and swallow the taps that open a cited source.
+
+**Not verified on a device.** Typecheck and Prettier are clean, but keyboard
+behaviour cannot be confirmed without running the app, and Android keyboard
+handling under edge to edge is exactly the kind of thing that reads correct and
+behaves otherwise. If the input bar now floats too far above the keyboard on
+Android, the cause is double adjustment between `softwareKeyboardLayoutMode`
+and the 'height' behavior, and the fix is `undefined` on Android with the
+nesting change kept.
+
+
 **Branch:** `feat/ai-layer`
 
 ### AI layer, third pass: live infrastructure, and the support agent locked down
