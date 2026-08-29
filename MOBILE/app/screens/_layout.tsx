@@ -12,6 +12,7 @@ export default function ScreensLayout() {
         <Stack.Screen name="recent-quizzes" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="get-support" />
+        <Stack.Screen name="support-chat" />
         <Stack.Screen name="send-feedback" />
         <Stack.Screen name="terms-of-use" />
         <Stack.Screen name="privacy-policy" />

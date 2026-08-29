@@ -14,6 +14,9 @@ import type {
   QuestsResponse,
   QuizAttemptResponse,
   QuizAttemptResult,
+  SupportAnswer,
+  SupportAnswerResponse,
+  SupportTurn,
   TodayContentResponse,
   Topic,
   TopicsResponse,
@@ -516,6 +519,71 @@ export async function submitQuizAttempt(
     }
 
     logger.error(`Unexpected error submitting quiz attempt: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Asks the in app support assistant one question (requires authentication)
+ *
+ * The timeout is far longer than every other call here because the request
+ * blocks on a model. The answer is not streamed, so the client waits for the
+ * whole thing.
+ *
+ * @param authToken - Bearer authentication token from Clerk
+ * @param question - The user's question
+ * @param history - Recent turns for context. The backend keeps the last six.
+ * @returns Promise with the answer, its sources and the remaining allowance
+ */
+export async function askSupport(
+  authToken: string,
+  question: string,
+  history: SupportTurn[] = []
+): Promise<SupportAnswer> {
+  try {
+    logger.info('Asking the support assistant');
+
+    const response = await axios.post<SupportAnswerResponse>(
+      `${API_BASE_URL}/support/ask`,
+      { question, history },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        timeout: 60000, // the model call, not a normal request
+      }
+    );
+
+    logger.success('Support answer received');
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<{
+        message?: string;
+        code?: string;
+      }>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.message;
+
+      logger.error(
+        `Failed to get a support answer - Status: ${axiosError.response?.status}, Message: ${errorMessage}`
+      );
+
+      if (axiosError.response?.status === 401) {
+        throw new ApiError('Authentication required. Please sign in.', 401);
+      }
+
+      // The daily allowance and a disabled AI layer both carry a message worth
+      // showing verbatim, so they pass straight through with their code.
+      throw new ApiError(
+        errorMessage || 'Could not reach support right now',
+        axiosError.response?.status,
+        axiosError.response?.data?.code
+      );
+    }
+
+    logger.error(`Unexpected error asking support: ${error}`);
     throw error;
   }
 }
