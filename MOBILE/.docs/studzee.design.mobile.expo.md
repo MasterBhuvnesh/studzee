@@ -2,8 +2,9 @@
 
 Reference for how the mobile client is put together: navigation, the
 notification pipeline, the custom alert and bottom sheet, how a downloaded
-PDF is tracked and viewed, and the skeleton loading pattern. Written against
-what the code actually does, not what it was meant to do.
+PDF is tracked and viewed, the skeleton loading pattern, and the visual
+language, its components, colors, type and buttons. Written against what the
+code actually does, not what it was meant to do.
 
 ## STACK
 
@@ -251,6 +252,230 @@ stuck pointing at a missing file.
 | `expo-linear-gradient`                                                                                       | Background gradients on card screens                                                                         |
 | `axios`                                                                                                      | `lib/api.ts` and `registerTokenWithBackend`, the only HTTP client used                                       |
 | `expo-clipboard`, `expo-image-picker`, `expo-image-manipulator`, `expo-document-picker`, `expo-auth-session` | Profile editing (avatar pick/crop) and auth session handling, not covered above                              |
+
+## VISUAL LANGUAGE
+
+Neutral and quiet by default, with one warm accent (amber, for streaks and
+gems) and semantic colors (red, green, blue) used sparingly for state rather
+than decoration. Nothing here is a design system package; it is NativeWind
+utility classes repeated by convention across screens, so the patterns below
+are read off the code, not off a spec someone wrote first.
+
+### COLOR
+
+`constants/colors.ts` exports the full Tailwind palette (zinc, slate, gray,
+red, orange, amber, yellow, green, blue, and more), each as a 50 to 950 scale.
+Almost everything on screen draws from **zinc**: zinc-50/100 for backgrounds,
+zinc-200 for borders and dividers, zinc-400/500 for secondary text and
+placeholders, zinc-700/800/900 for primary text and the primary button fill.
+There is no separate "brand color". Zinc-800 (`#27272a`) is the closest thing
+to one: it is the fill on every primary call to action across the app.
+
+The other palettes are used narrowly and mean something specific when they
+appear:
+
+| Color | Where | Meaning |
+| ----- | ----- | ------- |
+| `red[500]` / `red[600]` | error banners, destructive alert buttons, unread dot | failure, destructive action |
+| `green[500]` / `green[600]` | success toasts, correct quiz answer state, streak fire | success, correct, active streak |
+| `blue[500]` / `blue[600]` | default alert button text, links, info accents | neutral affirmative action, informational |
+| `amber[400]` / `amber[500]` | gems, streak counters, progress fill | the app's one warm accent, reserved for currency and momentum |
+| `orange[500]` | secondary warning-adjacent accents | soft warning, distinct from red's hard error |
+| `yellow[500]` | badge or highlight accents | attention without alarm |
+
+A component never hardcodes a hex value inline beyond `colors.ts`; every
+color reference in a component is `colors.<palette>[<step>]`.
+
+### TYPE
+
+Three font families, declared in `tailwind.config.js` and loaded in
+`hooks/useCustomFonts.ts`:
+
+| Class | Face | Used for |
+| ----- | ---- | -------- |
+| `font-product` | ProductSans (regular) | headings, screen titles, buttons, anything that reads as UI chrome |
+| `font-product-bold` | ProductSans-Bold | emphasis inside product-styled text (bold spans in the support chat, for example) |
+| `font-sans` | GoogleSans | body copy, descriptions, list items, anything that reads as content |
+
+The rule of thumb the codebase follows without ever stating it: `font-product`
+names things (a screen's `Header`, a button's label), `font-sans` explains
+things (a paragraph, a card's description line). A screen title is
+`font-product text-4xl text-zinc-900` (see `Header`, below); the paragraph
+underneath it is almost always `font-sans text-sm` or `text-base` in
+`text-zinc-500` or `text-zinc-700`.
+
+GoogleSans ships no italic face. Where a component needs italic (the support
+chat's rendering of `*emphasis*`) it uses React Native's synthesised oblique
+via `className="italic"` rather than a missing font file.
+
+### SCREEN ANATOMY
+
+Every full screen in `app/screens/*.tsx` and the tab roots follow the same
+shell, in this order, outermost first:
+
+```
+<LinearGradient colors={[...zinc shades...]} className="flex-1">
+  <SafeAreaView className="flex-1">
+    <Header title="..." />        {/* or a custom header row */}
+    <ScrollView ...>              {/* the screen's content */}
+    ...
+  </SafeAreaView>
+</LinearGradient>
+```
+
+The gradient is always outside the safe area, never the other way round: the
+gradient is decoration and should run edge to edge including under the status
+bar, while the safe area only needs to protect the content inside it. A
+screen with a `KeyboardAvoidingView` (see `support-chat.tsx`) puts that
+between the gradient and the safe area for the same reason: the safe area's
+bottom inset must not double up with the keyboard's height.
+
+Gradients are short, muted zinc ramps (`zinc[50]` to `zinc[200]`, sometimes
+running through pure white first), never a saturated color. The effect is a
+barely-there vignette, not a colored background.
+
+### HEADER
+
+`components/global/Header.tsx` is the whole of it: a `View` with
+`px-6 pt-6` and a `Text` at `font-product text-4xl text-zinc-900`. No back
+button, no actions slot. Screens that need a leading icon, a bell (see
+`NotificationBell`), or a close action build their own header row inline
+rather than extending `Header`, which is why `Header` itself stays a
+single-purpose component rather than growing props for every screen's needs.
+
+### BUTTONS
+
+There are three recurring button shapes, distinguished by fill and radius
+rather than by a named `<Button>` component; **the app has no shared button
+component**, every screen writes its own `TouchableOpacity` or `Pressable`
+with one of these class strings.
+
+**Primary (filled, dark).** The main call to action on a screen. Solid
+`zinc-800` fill, white text, `rounded-lg` or `rounded-xl`, a visible pressed
+state, and a shadow when it needs to read as elevated above a light
+background:
+
+```
+className="w-full rounded-xl bg-zinc-800 px-6 py-4 shadow-lg active:bg-zinc-700 disabled:opacity-50"
+```
+
+Sign in, sign up, and the support chat's send button (recolored to
+`zinc-200`/`zinc-400` while disabled or empty) are all this shape.
+
+**Secondary (outlined, light).** A lower-emphasis action beside or below a
+primary one. White fill, a `zinc-200` border, `zinc-700`-ish text, no shadow:
+
+```
+className="flex-1 rounded-xl border border-zinc-200 bg-white px-6 py-3 active:bg-zinc-50"
+```
+
+**Icon button (circular, ghost).** A single icon with no visible fill until
+pressed. Used for close buttons, the notification bell, and inline toggles:
+
+```
+className="rounded-full bg-zinc-100 p-2 active:bg-zinc-200"
+```
+
+All three use `active:` NativeWind states rather than a JS-driven pressed
+style, and `disabled:opacity-50` rather than a separate disabled color, so a
+disabled control still reads as the same button, just dimmed.
+
+`AppIcon` (`components/global/AppIcon.tsx`) is the one shared primitive
+underneath every icon on screen: a thin wrapper around a `lucide-react-native`
+icon component that fixes the prop names (`size`, `color`, `strokeWidth`,
+`fill`) to one call shape and defaults to `colors.zinc[500]` at
+`strokeWidth={2}`. Nothing renders a lucide icon directly; everything goes
+through `AppIcon`, including cases that need a lighter `strokeWidth={1.5}`
+(most tab bar and header icons) for a less bold look at small sizes.
+
+### CARDS
+
+The default content card is white on a light background, a `zinc-200` border
+(not a shadow-only card), rounded corners, and internal padding proportional
+to how much it holds:
+
+```
+className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+```
+
+`rounded-2xl` is for a card that is a whole tappable unit (a list row, a
+grid tile); `rounded-xl` is for a smaller inline container (an input field, a
+compact info box). `shadow-sm` is the default; `shadow-lg` is reserved for
+something that should visually float above everything else on the screen (a
+floating action pill, a modal's content box, an empty-state illustration
+card).
+
+### PILLS, CHIPS AND BADGES
+
+Small rounded-full elements carry status, category or count information
+inline with text, always `rounded-full` and always sized to their content
+rather than to a fixed width:
+
+- **Tag chip** (`components/content/TagChips.tsx`): `rounded-full bg-zinc-100
+  px-2 py-0.5`, 10px text at `zinc-500`. Capped at three per card so a
+  summary card never wraps to a third line.
+- **Status pill**: `rounded-full border border-amber-200 bg-amber-50 px-2.5
+  py-1` for a warm/active state, or the same shape in `zinc-200`/`zinc-50` for
+  a neutral one.
+- **Unread dot**: a bare `h-2.5 w-2.5 rounded-full bg-red-500`, absolutely
+  positioned over an icon (see `NotificationBell`), no border, no label.
+- **Progress bar**: `h-2 w-full overflow-hidden rounded-full bg-zinc-200`
+  as the track, with an inner `h-full rounded-full bg-amber-400` (or
+  `bg-zinc-700`) sized by inline `style={{ width: '...%' }}` since NativeWind
+  cannot express an arbitrary runtime percentage as a class.
+- **Skeleton block**: the same `h-N rounded-full bg-zinc-200` (or
+  `bg-zinc-100` for a lighter shimmer layer) shape reused with no content, for
+  loading placeholders. See `## SKELETON LOADING` above for the full pattern.
+
+### MODALS AND SHEETS
+
+Two patterns, chosen by how much the content needs:
+
+**Modal** (`CustomAlert`, `FactModal`) for a short, centered, one-screen
+message: React Native's own `Modal` with `transparent animationType="fade"`,
+a `bg-black/50` backdrop tapped to dismiss, and a `rounded-2xl bg-white
+shadow-2xl` content box capped at `max-w-sm`. `CustomAlert` is the app's
+replacement for the native `Alert.alert`, used everywhere so button styling
+(`destructive` in red, `cancel` in zinc, default in blue) stays consistent
+across platforms; `FactModal` is the same shell without the button row, for a
+single dismissible message with a close icon instead.
+
+**Bottom sheet** (`CustomBottomSheetModal`) for content that benefits from a
+drag handle and partial screen height: `@gorhom/bottom-sheet`'s
+`BottomSheetModal`, snap points passed in as a percentage string (default
+`30%`), a `zinc-50` background with a `zinc-100` border and continuous
+corners, and a `zinc-200` handle indicator. Used for the badge/level detail
+sheet in achievements and similar drill-down content where a full modal would
+be too heavy.
+
+Both dismiss on a backdrop tap or an explicit close, never only on a hardware
+back press.
+
+### INPUTS
+
+A single visual shape for every text field, whether it is a sign-in field or
+the support chat's message box:
+
+```
+className="rounded-lg border border-zinc-200 bg-white px-4 py-3 font-product text-zinc-700"
+```
+
+with `placeholderTextColor={colors.zinc[400]}` always set explicitly, since
+NativeWind's `placeholder:` variant does not reach React Native's
+`TextInput`. A field with a trailing icon (the password field's show/hide
+toggle) adds `pr-12` and absolutely positions the icon at `right-3 top-3`
+rather than using a compound input component.
+
+### CHAT BUBBLES
+
+Introduced with the support agent (`app/screens/support-chat.tsx`), the one
+two-party conversational UI in the app: the user's turn is a solid
+`bg-zinc-800` bubble with white text, right-aligned; the assistant's turn is a
+white `border border-zinc-200` bubble with `zinc-700` text, left-aligned,
+`shadow-sm`. Both are `rounded-2xl`, capped at `max-w-[85%]` so a short
+message never spans the full width. This is the only place in the app that
+distinguishes "my content" from "their content" by fill versus outline rather
+than by position alone.
 
 ## KNOWN GAPS, NOT FIXED, JUST RECORDED
 
