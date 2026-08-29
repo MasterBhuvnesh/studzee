@@ -7,6 +7,73 @@ One entry per unit of work, with the branch, what changed, and why.
 
 **Branch:** `feat/ai-layer`
 
+### AI layer, second pass: run it against the real endpoint
+
+The first pass was written without ever calling the model, because Docker was
+down and the outbound request was blocked. This pass called it. Four things
+were wrong, and none of them would have been found by reading the code.
+
+- **The embedding column was the wrong width.** The migration said
+  `vector(1024)` on the strength of a plausible default.
+  `nvidia/nemotron-3-embed-1b` returns **2048**, established by calling
+  `/embeddings` and reading the length. Column, `AI_EMBED_DIM` and the docs are
+  now 2048. Prisma cannot select an `Unsupported` column, so this would have
+  surfaced as an opaque Postgres error on every insert rather than as anything
+  legible.
+- **The planned HNSW index cannot exist.** pgvector caps HNSW at 2000
+  dimensions, so `hnsw (embedding vector_cosine_ops)` on a 2048 column is
+  rejected outright, not merely slow. Dropped it. An exact scan over a few
+  dozen chunks is already sub millisecond, so it would have been ceremony
+  either way. The `halfvec(2048)` upgrade path is recorded in the migration.
+- **Generated copy came back full of em dashes.** The prompt forbids them and
+  the model used them anyway, on the first generation. A prompt is a request,
+  not a constraint, so `client.ts` now normalises punctuation on the raw reply
+  before it is parsed: a dash used as punctuation becomes a comma. Done on the
+  raw string rather than per field, so one pass covers every generator and
+  every support answer, and none of those characters are structural in JSON.
+  Re-ran the generation afterwards: zero remaining.
+- **`nemotron-3-ultra-550b-a55b` is capacity constrained.** Every call over
+  half an hour returned `503 Service temporarily overloaded`. The id is valid
+  and listed by `GET /v1/models`, so this is the build tier rather than a
+  configuration fault. The pipeline was proven against
+  `nemotron-3-super-120b-a12b`, the same family, which is a one line
+  `AI_MODEL` change. That it was one line is the point of keeping `AI_BASE_URL`
+  and `AI_MODEL` as the only provider coupling.
+
+### Title and topic are now the model's to choose
+
+The owner asked for content generation driven by a title or a prompt, with the
+AI deciding the topic and the tags. Both `title` and `topic` became optional on
+`POST /admin/ai/generate/content`, and `brief` was raised from 2000 to 12000
+characters so a whole article can be pasted in, matching the ceiling the prompt
+builder truncates source material at. At least one of `title` and `brief` is
+required, checked before a model call is paid for.
+
+Supplied, they are honoured exactly. Left out, the model writes the title and
+picks the topic from the fixed six key registry, which is safe to delegate
+precisely because it is a registry rather than a free field: the worst case is
+the wrong key, and an approval override fixes it. Tags were always the model's.
+
+Generation was already admin only and needed no change:
+`router.use(clerkAuthMiddleware, requireAuth, requireAdmin)` covers every route
+declared after it on the admin router.
+
+`assembleDocument` was split out of `generateContentDraft` so the whole
+generation path can run with no database behind it. That is the only way to try
+a prompt change while Postgres is down, and it is how everything above was
+verified.
+
+**Verified live.** Pasting the fault tolerance material in with no title and no
+topic produced, in 53 seconds: title "Fault Tolerance", topic `system-design`,
+tags `redundancy`, `replication`, `failover`, `distributed systems`, six
+sections using text and table blocks, six quiz questions each with the answer
+text present in its own options array, seven key notes and a facts paragraph.
+The draft write itself was not exercised, since Postgres was not running.
+
+`fmt:check`, `lint` and the typecheck are clean; 433 tests pass across 44
+files, 55 of them in the AI suite. `src/tests/integration/content.route.test.ts`
+still fails on a hook timeout for want of Mongo.
+
 ### AI layer: generation into a review queue, and a support agent
 
 The backend had no AI code of any kind before this. Every document, quiz item

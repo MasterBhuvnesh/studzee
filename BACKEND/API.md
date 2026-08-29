@@ -983,10 +983,9 @@ Every route below is admin only and returns `503 AI_DISABLED` while
 
 #### Generate a Document
 
-Writes a whole study document from a title and an optional brief. This is the
-only generator with no `contentId`: nothing existing is being derived from, so
-the model is drawing on its own knowledge and the reviewer is the only accuracy
-check there is.
+Writes a whole study document from a title, a brief, or both. This is the only
+generator with no `contentId`: nothing existing is being derived from, so the
+reviewer is the only accuracy check there is.
 
 Three model calls deep, the body first and then the quiz and the notes against
 that body, so it is slow even by the standards of this section. Budget on the
@@ -996,34 +995,46 @@ order of a minute.
 - **Path:** `/admin/ai/generate/content`
 - **Rate limit:** 10 per minute
 
-| Field       | Type   | Required | Notes                                             |
-| ----------- | ------ | -------- | ------------------------------------------------- |
-| `title`     | string | yes      | 3 to 200 characters. Becomes the document title   |
-| `topic`     | string | yes      | One of the six fixed topic keys                   |
-| `brief`     | string | no       | Up to 2000 characters of free text steering scope |
-| `sections`  | number | no       | 2 to 10, defaults to 5                            |
-| `quizCount` | number | no       | 1 to 15, defaults to 5                            |
+| Field       | Type   | Required | Notes                                                              |
+| ----------- | ------ | -------- | ------------------------------------------------------------------ |
+| `title`     | string | no       | 3 to 200 characters. The model writes one if absent                |
+| `topic`     | string | no       | One of the six fixed topic keys. The model picks if absent         |
+| `brief`     | string | no       | Up to 12000 characters. A short steer or a whole article pasted in |
+| `sections`  | number | no       | 2 to 10, defaults to 5                                             |
+| `quizCount` | number | no       | 1 to 15, defaults to 5                                             |
 
-`title` and `topic` stay with the operator because topic drives list filtering
-and unlock gating. The model writes the section prose, the facts paragraph, the
-tags, the quiz and the key notes.
+At least one of `title` and `brief` is required. With neither there is nothing
+to write about, and it is rejected before a model call is paid for.
+
+Supply `title` or `topic` and they are honoured exactly. Leave them out and the
+model chooses both, which is the case this endpoint exists for: paste material
+in and let it be named and filed. Topic is safe to delegate because it is a
+fixed six key registry rather than a free field, so the worst case is the wrong
+key, which an approval override corrects.
+
+The model writes the section prose, the facts paragraph, the tags, the quiz and
+the key notes either way.
 
 ```json
 {
-  "title": "Consistent Hashing",
-  "topic": "system-design",
-  "brief": "Cover the hash ring, virtual nodes and what happens when a node leaves. Assume the reader already knows what a hash function is.",
-  "sections": 5,
+  "brief": "Fault tolerance is a system's capacity to keep working through hardware or software failure. Cover redundancy, the four replication strategies, fault detection and recovery, and how it differs from high availability load balancing.",
+  "sections": 6,
   "quizCount": 6
 }
 ```
+
+That request returns a draft titled "Fault Tolerance", filed under
+`system-design`, tagged `redundancy`, `replication`, `failover` and
+`distributed systems`, with six sections, six quiz questions and seven key
+notes. Nothing in it was supplied by the caller except the brief.
 
 Returns `201` with a draft whose payload is a complete document: `title`,
 `topic`, `content`, `facts`, `tags`, `quiz`, `summary` and `key_notes`.
 Approving it creates the document through `POST /admin/documents`.
 
-Content blocks are validated against the five types the client renders, which
-are `text`, `list`, `table`, `formula` and `code`. `DocumentSchema` types
+Expect this to take around a minute. Content blocks are validated against the
+five types the client renders, which are `text`, `list`, `table`, `formula` and
+`code`. `DocumentSchema` types
 `content` as `any`, which is fine for material an operator can preview before
 shipping, but an invented block type from a model would validate and then
 render as a gap on the screen, so it is rejected here with `AI_INVALID_OUTPUT`.

@@ -96,6 +96,8 @@ describe('AI generation', () => {
     const replies = (blocks: unknown[]) => {
       chatJson
         .mockResolvedValueOnce({
+          title: 'Consistent Hashing By Any Other Name',
+          topic: 'devops',
           content: [
             { title: 'INTRODUCTION', content: blocks },
             {
@@ -146,6 +148,24 @@ describe('AI generation', () => {
       expect(payload.tags).toEqual(['hashing', 'sharding'])
       expect(payload.quiz).toHaveProperty('q1')
       expect(payload.key_notes).toHaveProperty('Hash ring')
+    })
+
+    it('should let the model name and file the document when asked to', async () => {
+      // ARRANGE
+      // The case this exists for: material pasted in with no title and no
+      // topic, so both come back from the model.
+      replies([{ type: 'text', value: 'A hash ring maps keys to nodes.' }])
+
+      // ACT
+      await generateContentDraft(
+        { brief: 'Notes on consistent hashing.', sections: 3, quizCount: 2 },
+        'user_admin'
+      )
+
+      // ASSERT
+      const payload = capturedPayload()
+      expect(payload.title).toBe('Consistent Hashing By Any Other Name')
+      expect(payload.topic).toBe('devops')
     })
 
     it('should reject a block type the client cannot render', async () => {

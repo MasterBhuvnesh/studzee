@@ -141,6 +141,44 @@ describe('AI client', () => {
     })
   })
 
+  describe('punctuation normalising', () => {
+    // House style forbids em dashes. The prompt says so and the model produced
+    // them anyway on the first live generation, so the client enforces it.
+    // Normalising happens on the raw reply, so it covers chatJson too.
+    const normalised = async (content: string) => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatReply(content))
+      return chatText([{ role: 'user', content: 'go' }])
+    }
+
+    it('should turn a dash used as punctuation into a comma', async () => {
+      // ACT
+      const result = await normalised(
+        'Four strategies exist\u2014full, partial\u2014each differing.'
+      )
+
+      // ASSERT
+      expect(result).toBe(
+        'Four strategies exist, full, partial, each differing.'
+      )
+    })
+
+    it('should not leave a doubled comma where the model already had one', async () => {
+      // ACT
+      const result = await normalised('a, b \u2013 c')
+
+      // ASSERT
+      expect(result).toBe('a, b, c')
+    })
+
+    it('should reduce a non breaking hyphen to a plain one', async () => {
+      // ACT
+      const result = await normalised('real\u2011time telemetry')
+
+      // ASSERT
+      expect(result).toBe('real-time telemetry')
+    })
+  })
+
   describe('chatJson', () => {
     it('should return parsed output when the first reply validates', async () => {
       // ARRANGE

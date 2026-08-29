@@ -122,10 +122,31 @@ interface EmbeddingResponse {
  * habitually fence JSON even when asked not to. Both are stripped before the
  * text is parsed or returned, so neither reaches a draft or a support reply.
  */
+/**
+ * House style forbids em dashes, and models produce them constantly however
+ * firmly the prompt says not to. Observed on the first live generation, so
+ * this is a fix rather than a precaution: the prompt asks, and this enforces.
+ *
+ * Applied to the raw reply, before JSON parsing, which is safe because none of
+ * these characters are structural in JSON and it means one pass covers every
+ * generated field and every support answer rather than each caller
+ * remembering. A dash used as punctuation becomes a comma, which is what the
+ * style guide says to write instead; the doubled commas that leaves behind
+ * where the model already had one are collapsed after.
+ */
+const normalisePunctuation = (text: string): string =>
+  text
+    // Non-breaking and figure hyphens are plain hyphens, not punctuation.
+    .replace(/[\u2011\u2012]/g, '-')
+    // Em dash, en dash, and the double hyphen used the same way.
+    .replace(/\s*[\u2013\u2014]\s*|\s+--\s+/g, ', ')
+    .replace(/,\s*,+/g, ', ')
+    .replace(/\s+,/g, ',')
+
 const stripModelScaffolding = (raw: string): string => {
   const withoutThinking = raw.replace(/<think>[\s\S]*?<\/think>/gi, '')
   const fenced = withoutThinking.match(/```(?:json)?\s*([\s\S]*?)```/i)
-  return (fenced ? fenced[1] : withoutThinking).trim()
+  return normalisePunctuation((fenced ? fenced[1] : withoutThinking).trim())
 }
 
 const completionText = (payload: ChatResponse): string => {

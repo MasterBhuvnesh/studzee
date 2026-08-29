@@ -79,6 +79,11 @@ const ContentSectionSchema = z.object({
  * against a finished body than against a brief.
  */
 export const GeneratedArticleSchema = z.object({
+  title: z.string().min(3).max(200),
+  // Picked from the fixed registry, not invented. TopicSchema is the same enum
+  // the document schema uses, so an unknown key fails here rather than landing
+  // in a draft that no filter will ever match.
+  topic: TopicSchema,
   content: z.array(ContentSectionSchema).min(2),
   facts: z.string().min(1).max(2000),
   tags: z.array(z.string().trim().min(1).max(30)).min(2).max(5),
@@ -170,13 +175,33 @@ export type TGeneratedNotification = z.infer<typeof GeneratedNotificationSchema>
  * drives list filtering and unlock gating, and brief is the free text steer
  * for scope, depth and audience.
  */
-export const GenerateContentSchema = z.object({
-  title: z.string().trim().min(3).max(200),
-  topic: TopicSchema,
-  brief: z.string().trim().max(2000).optional(),
-  sections: z.number().int().min(2).max(10).default(5),
-  quizCount: z.number().int().min(1).max(15).default(5),
-})
+export const GenerateContentSchema = z
+  .object({
+    // Both optional. Supplied, they are honoured exactly; left out, the model
+    // picks them and the reviewer corrects either with an approval override.
+    // Topic is worth letting the model choose because it is a six key
+    // registry, not a free field, so the worst case is a wrong key rather than
+    // an invented one.
+    title: z.string().trim().min(3).max(200).optional(),
+    topic: TopicSchema.optional(),
+    // Either a short steer or a whole article pasted in. The ceiling is the
+    // same 12000 characters the prompt builder truncates source material at,
+    // so anything that fits here reaches the model whole.
+    brief: z.string().trim().max(12_000).optional(),
+    sections: z.number().int().min(2).max(10).default(5),
+    quizCount: z.number().int().min(1).max(15).default(5),
+  })
+  .superRefine((data, ctx) => {
+    // With neither a title nor a brief there is nothing to write about, and
+    // the model would invent a subject. Catch it before paying for the call.
+    if (!data.title && !data.brief) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['title'],
+        message: 'Supply a title, a brief, or both',
+      })
+    }
+  })
 export type TGenerateContent = z.infer<typeof GenerateContentSchema>
 
 export const GenerateQuizSchema = z.object({

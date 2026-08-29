@@ -11,6 +11,7 @@ import {
   GeneratedNotificationSchema,
   GeneratedQuestCopySchema,
   GeneratedQuizSchema,
+  TGeneratedDocument,
   TGenerateContent,
   TGenerateQuest,
 } from '@/models/ai.validation'
@@ -105,31 +106,34 @@ const createDraft = async (
  * against a one line brief. The body has to come first; the other two are
  * independent of each other and run together.
  *
- * The operator owns everything with a consequence, exactly as with quests. The
- * title and the topic come from the request, because topic drives list
- * filtering and unlock gating. The model writes prose, tags and questions.
+ * The title and the topic are honoured exactly when the request supplies them
+ * and chosen by the model when it does not. Topic is safe to delegate because
+ * it is a fixed six key registry rather than a free field, so the worst case
+ * is the wrong key, which an approval override corrects. The model writes the
+ * prose, the tags and the questions either way.
  *
  * Nothing here is fact checked. Unlike every other generator, this one has no
  * source text to be held to, so the reviewer is the only accuracy check there
  * is. That is the whole reason it produces a draft.
  */
-export const generateContentDraft = async (
-  input: TGenerateContent,
-  createdBy: string
-) => {
-  const topicLabel =
-    TOPIC_REGISTRY.find((topic) => topic.key === input.topic)?.label ??
-    input.topic
-
+export const assembleDocument = async (
+  input: TGenerateContent
+): Promise<TGeneratedDocument> => {
   const article = await chatJson(
-    contentPrompt(input.title, topicLabel, input.sections, input.brief),
+    contentPrompt(input.sections, input.title, input.topic, input.brief),
     GeneratedArticleSchema,
     { temperature: 0.6 }
   )
 
+  // The request wins wherever it said anything. It is silent on both by
+  // default, which is the case this exists for: paste material in and let the
+  // model name it and file it under one of the six topic keys.
+  const title = input.title ?? article.title
+  const topic = input.topic ?? article.topic
+
   const source: SourceDocument = {
-    title: input.title,
-    topic: topicLabel,
+    title,
+    topic: TOPIC_REGISTRY.find((entry) => entry.key === topic)?.label ?? topic,
     content: article.content,
   }
 
@@ -141,8 +145,8 @@ export const generateContentDraft = async (
   ])
 
   const assembled = {
-    title: input.title,
-    topic: input.topic,
+    title,
+    topic,
     content: article.content,
     facts: article.facts,
     tags: article.tags,
@@ -164,10 +168,21 @@ export const generateContentDraft = async (
     )
   }
 
-  // No sourceId: this document was written from a title, not derived from
-  // anything already in the collection.
-  return createDraft('document', null, parsed.data, createdBy)
+  return parsed.data
 }
+
+/**
+ * The draft row. Split from the assembly above so the whole generation path
+ * can be exercised without a database behind it, which is the only way to try
+ * a prompt change when Postgres is not running.
+ *
+ * No sourceId: this document was written from a title or a brief, not derived
+ * from anything already in the collection.
+ */
+export const generateContentDraft = async (
+  input: TGenerateContent,
+  createdBy: string
+) => createDraft('document', null, await assembleDocument(input), createdBy)
 
 /** Quiz questions for an existing document. */
 export const generateQuizDraft = async (

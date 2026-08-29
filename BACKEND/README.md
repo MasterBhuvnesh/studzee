@@ -326,6 +326,13 @@ Two things are easy to get wrong.
 > against each other on every embed call and refuses, rather than letting it
 > surface as an opaque Postgres error later.
 
+> **Model output is punctuation normalised before anything sees it.** House
+> style forbids em dashes and models emit them regardless of what the prompt
+> says, which showed up on the very first live generation. `client.ts`
+> rewrites a dash used as punctuation into a comma on the raw reply, so one
+> pass covers every generated field and every support answer. If you are
+> reading generated copy and wondering where a dash went, that is where.
+
 > **There is no vector index, deliberately.** pgvector caps an HNSW index at
 > 2000 dimensions and the embeddings are 2048, so the usual
 > `hnsw (embedding vector_cosine_ops)` is rejected outright. The knowledge base
