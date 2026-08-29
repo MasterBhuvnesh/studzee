@@ -139,3 +139,53 @@ model QuestCompletion {
   @@unique([userId, questId])
   @@index([userId])
 }
+
+/// A model generated payload waiting for owner review. kind is one of quiz,
+/// key_notes, quest or notification. The payload is parsed against the same
+/// zod schema the matching admin route uses before this row is written, so an
+/// approved draft cannot fail at apply time for shape reasons. sourceId is the
+/// Mongo document id, or the quest id for a quest notification, and doubles as
+/// the dedupe key the nightly notification job checks against.
+model AiDraft {
+  id         String    @id @default(cuid())
+  kind       String
+  status     String    @default("pending")
+  sourceId   String?
+  payload    Json
+  model      String
+  createdBy  String
+  reviewedBy String?
+  reviewedAt DateTime?
+  /// Id of the thing created when the draft was approved: a document, a quest
+  /// or a notification audit row.
+  appliedId  String?
+  /// Why the last apply attempt failed. A failed apply leaves the row pending
+  /// so it can be retried rather than lost.
+  error      String?
+  createdAt  DateTime  @default(now())
+
+  @@index([status, kind])
+  @@index([sourceId, kind])
+  @@index([createdAt])
+}
+
+/// One embedded passage of the support knowledge base. source is support-md for
+/// the curated file, registry for the levels, badges and topics rendered out of
+/// code, and content for a Mongo document.
+///
+/// The embedding column is a pgvector type Prisma cannot express, so it is
+/// declared Unsupported and every read and write of this model goes through
+/// raw SQL in kb.service.ts. The dimension is fixed by the migration and has to
+/// match AI_EMBED_DIM: changing the embedding model is a migration, not an env
+/// edit.
+model KbChunk {
+  id        String                     @id @default(cuid())
+  source    String
+  sourceId  String?
+  heading   String?
+  text      String                     @db.Text
+  embedding Unsupported("vector(2048)")
+  updatedAt DateTime                   @updatedAt
+
+  @@index([source, sourceId])
+}

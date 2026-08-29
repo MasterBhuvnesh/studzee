@@ -1,6 +1,7 @@
 import { AppIcon } from '@/components/global/AppIcon';
 import { colors } from '@/constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import {
   ChevronRight,
   HelpCircle,
@@ -71,6 +72,8 @@ const ContactOption = ({
 );
 
 export default function GetSupportScreen() {
+  const router = useRouter();
+
   const handleEmailSupport = () => {
     Linking.openURL('mailto:studzee247@gmail.com?subject=Support Request');
   };
@@ -89,7 +92,7 @@ export default function GetSupportScreen() {
     {
       question: 'Can I download content for offline use?',
       answer:
-        'Currently, content is available online. We are working on offline support for future updates.',
+        'PDFs can be downloaded from the Resources tab and read without a connection. They appear under the Downloaded tab, where you can view, share or remove them. Study text and quizzes still need a connection.',
     },
     {
       question: 'How do I update my profile?',
@@ -125,9 +128,9 @@ export default function GetSupportScreen() {
           />
           <ContactOption
             icon={MessageCircle}
-            title="Live Chat"
-            subtitle="Coming soon"
-            onPress={() => {}}
+            title="Ask the assistant"
+            subtitle="Answers from the Studzee help material"
+            onPress={() => router.push('/screens/support-chat')}
           />
 
           {/* FAQs */}

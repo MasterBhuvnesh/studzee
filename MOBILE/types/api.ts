@@ -342,3 +342,36 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
 }
+
+/**
+ * One turn of a support conversation. Held in screen state only: nothing is
+ * stored on the device or the server, so closing the screen ends the thread.
+ */
+export interface SupportTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * A passage the support answer drew on. contentId is set only when the passage
+ * came from study material, which is what makes a source tappable.
+ */
+export interface SupportSource {
+  heading: string | null;
+  contentId: string | null;
+}
+
+/**
+ * Payload inside a POST /support/ask response
+ */
+export interface SupportAnswer {
+  answer: string;
+  sources: SupportSource[];
+  /** Questions left in today's allowance, after this one. */
+  remaining: number;
+}
+
+/**
+ * Full POST /support/ask response
+ */
+export type SupportAnswerResponse = ApiSuccess<SupportAnswer>;

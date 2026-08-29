@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import * as AdminController from '@/api/controllers/admin.controller'
+import * as AiController from '@/api/controllers/ai.controller'
 import * as EmailController from '@/api/controllers/email.controller'
 import * as NotificationController from '@/api/controllers/notification.controller'
 import * as QuestController from '@/api/controllers/quest.controller'
@@ -18,6 +19,16 @@ import {
   SendEmailSchema,
   SendNotificationSchema,
 } from '@/models/notification.validation'
+import {
+  ApproveDraftSchema,
+  GenerateContentSchema,
+  GenerateNotesSchema,
+  GenerateNotificationSchema,
+  GenerateQuestSchema,
+  GenerateQuizSchema,
+  ListDraftsQuerySchema,
+  RejectDraftSchema,
+} from '@/models/ai.validation'
 import { CreateQuestSchema } from '@/models/quest.validation'
 
 const router = Router()
@@ -158,6 +169,133 @@ router.get(
   '/quests',
   rateLimitMiddleware({ windowMs: 60_000, max: 30 }),
   QuestController.listAllQuestsAdmin
+)
+
+// --- AI generation and draft review ---
+//
+// Generation is limited at the same budget as sending email, the lowest in the
+// service. A model call is the most expensive thing an admin can trigger, and
+// it blocks the request for as long as the model takes.
+//
+// Nothing in this block publishes. Every generate route ends at a pending
+// draft, and approving one is what applies it.
+
+const generateLimit = () => rateLimitMiddleware({ windowMs: 60_000, max: 10 })
+
+/**
+ * @route POST /admin/ai/generate/content
+ * @description Draft a whole study document from a title, a topic and an
+ * optional brief. Three model calls deep, so it is slow even by the standards
+ * of this section.
+ */
+router.post(
+  '/ai/generate/content',
+  generateLimit(),
+  validateBody(GenerateContentSchema),
+  AiController.generateContent
+)
+
+/**
+ * @route POST /admin/ai/generate/quiz
+ * @description Draft quiz questions from an existing document.
+ */
+router.post(
+  '/ai/generate/quiz',
+  generateLimit(),
+  validateBody(GenerateQuizSchema),
+  AiController.generateQuiz
+)
+
+/**
+ * @route POST /admin/ai/generate/notes
+ * @description Draft a summary and key notes for an existing document.
+ */
+router.post(
+  '/ai/generate/notes',
+  generateLimit(),
+  validateBody(GenerateNotesSchema),
+  AiController.generateNotes
+)
+
+/**
+ * @route POST /admin/ai/generate/quest
+ * @description Draft a quest from a document. The model writes the title,
+ *              description and questions; the type, gems, window and pass mark
+ *              come from the request.
+ */
+router.post(
+  '/ai/generate/quest',
+  generateLimit(),
+  validateBody(GenerateQuestSchema),
+  AiController.generateQuest
+)
+
+/**
+ * @route POST /admin/ai/generate/notification
+ * @description Draft push copy for a document or a quest. Drafting never
+ *              sends; approving the draft does.
+ */
+router.post(
+  '/ai/generate/notification',
+  generateLimit(),
+  validateBody(GenerateNotificationSchema),
+  AiController.generateNotification
+)
+
+/**
+ * @route GET /admin/ai/drafts
+ * @description Paginated drafts, filterable by status and kind.
+ */
+router.get(
+  '/ai/drafts',
+  rateLimitMiddleware({ windowMs: 60_000, max: 30 }),
+  validateQuery(ListDraftsQuerySchema),
+  AiController.listAiDrafts
+)
+
+/**
+ * @route GET /admin/ai/drafts/:id
+ * @description One draft with its full payload.
+ */
+router.get(
+  '/ai/drafts/:id',
+  rateLimitMiddleware({ windowMs: 60_000, max: 30 }),
+  AiController.getAiDraft
+)
+
+/**
+ * @route POST /admin/ai/drafts/:id/approve
+ * @description Apply a pending draft through the same service the manual admin
+ *              route uses. An optional overrides object is merged over the
+ *              payload first and re-validated.
+ */
+router.post(
+  '/ai/drafts/:id/approve',
+  rateLimitMiddleware({ windowMs: 60_000, max: 20 }),
+  validateBody(ApproveDraftSchema),
+  AiController.approveAiDraft
+)
+
+/**
+ * @route POST /admin/ai/drafts/:id/reject
+ * @description Mark a pending draft rejected, with an optional reason.
+ */
+router.post(
+  '/ai/drafts/:id/reject',
+  rateLimitMiddleware({ windowMs: 60_000, max: 20 }),
+  validateBody(RejectDraftSchema),
+  AiController.rejectAiDraft
+)
+
+/**
+ * @route POST /admin/ai/kb/reindex
+ * @description Rebuild the support knowledge base. Embeds every chunk, so it
+ *              is limited far harder than the listings.
+ */
+router.post(
+  '/ai/kb/reindex',
+  rateLimitMiddleware({ windowMs: 60_000, max: 2 }),
+  AiController.reindexKb
 )
 
 export default router

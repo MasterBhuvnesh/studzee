@@ -13,8 +13,10 @@ import notificationRoutes from '@/api/routes/notification.route'
 import pdfRoutes from '@/api/routes/pdf.route'
 import progressRoutes from '@/api/routes/progress.route'
 import questRoutes from '@/api/routes/quest.route'
+import supportRoutes from '@/api/routes/support.route'
 import webhookRoutes from '@/api/routes/webhook.route'
 import { config, connectDB, connectPostgres, connectRedis } from '@/config'
+import { startAiNotifyJob } from '@/jobs/ai-notify'
 import { scheduleJobs } from '@/jobs/cache-refresh'
 import { startHeartbeatJob } from '@/jobs/heartbeat'
 import { startTokenCleanupJob } from '@/jobs/token-cleanup'
@@ -76,6 +78,7 @@ const main = async () => {
           notifications: '/notifications/register',
           progress: '/progress/me',
           quests: '/quests',
+          support: '/support/ask',
           admin: '/admin',
           webhooks: '/webhooks/clerk',
         },
@@ -88,6 +91,7 @@ const main = async () => {
     app.use('/notifications', notificationRoutes)
     app.use('/progress', progressRoutes)
     app.use('/quests', questRoutes)
+    app.use('/support', supportRoutes)
     app.use('/admin', adminRoutes)
     app.use('/health', healthRoutes)
     app.use('/', healthcheckRoute)
@@ -103,6 +107,7 @@ const main = async () => {
       startHeartbeatJob()
       startTokenCleanupJob()
       scheduleJobs()
+      startAiNotifyJob()
     })
   } catch (err) {
     logger.error(err, 'Failed to start server')

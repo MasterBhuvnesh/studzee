@@ -64,10 +64,18 @@ services:
       retries: 5
       start_period: 30s
 
-  # Users, push tokens, and the notification and email audit logs.
-  # Moved in from the notification service, which the backend now absorbs.
+  # Users, push tokens, the notification and email audit logs, and the AI draft
+  # queue and knowledge base. Moved in from the notification service, which the
+  # backend now absorbs.
+  #
+  # pgvector rather than the plain image because KbChunk stores an embedding
+  # column and the migration runs CREATE EXTENSION vector. Same Postgres 16, so
+  # the schema is unchanged, but it is a different base distribution: an
+  # existing studzee-postgres-data volume may need recreating, and the seeders
+  # restore local data. RDS, Neon and Supabase all offer pgvector, so this does
+  # not narrow the deployment options.
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: studzee_postgres
     restart: unless-stopped
     ports:
