@@ -563,6 +563,18 @@ History is held by the client. No transcript is stored on the server.
 }
 ```
 
+**Answer format.** The reply is plain prose with `**bold**` and `*italic*` and
+nothing else. No tables, no bullet points, no numbered lists, no headings, no
+code fences, no em dashes, no emoji. Two to four sentences for most questions.
+A client can render the two markers or strip them; it never has to parse
+markdown.
+
+**Scope.** The assistant answers about the Studzee app and its study material
+and refuses everything else in one sentence. It will not describe how Studzee
+is built or hosted: server addresses, endpoints, databases, providers,
+environment variables, keys, the model behind it and internal names are all
+refused rather than confirmed or denied. It has no access to any account.
+
 `sources` carries the passages the answer drew on. `contentId` is set only when
 the passage came from study material, which is what makes a source linkable;
 help text passages have nowhere to navigate to.
@@ -1165,7 +1177,7 @@ What approval does, by kind:
 
 | Kind           | Applied through                                                         |
 | -------------- | ----------------------------------------------------------------------- |
-| `document`     | `POST /admin/documents`, creating a new document                        |
+| `document`     | `POST /admin/documents`, then a push announcing it                      |
 | `quiz`         | `PUT /admin/documents/:id`, appending under fresh keys                  |
 | `key_notes`    | `PUT /admin/documents/:id`, replacing the summary and merging the notes |
 | `quest`        | The same service `POST /admin/quests` uses                              |
@@ -1182,6 +1194,18 @@ What approval does, by kind:
 
 A failed apply leaves the draft **pending** with the reason in `error`, so it
 can be retried once the cause is fixed rather than lost.
+
+**Approving a document sends a push.** Approving is what publishes the
+document, and publishing is when students are told, so the announcement is
+part of the publish rather than a second decision. Copy is written by the
+model from the document's title and summary, falling back to the title itself
+if the model is unavailable. The announcement cannot fail the approval: by the
+time it runs the document exists and the caches are invalidated, so a failed
+send is logged and the draft is still marked approved. Every other kind sends
+nothing.
+
+This is the one place outreach follows from an action rather than from its own
+draft, and it still requires a deliberate approval by an administrator.
 
 #### Reject a Draft
 
@@ -1207,13 +1231,26 @@ content import. Nothing reindexes on its own.
 {
   "message": "Knowledge base reindexed",
   "data": {
-    "chunks": 34,
-    "bySource": { "support-md": 12, "registry": 3, "content": 19 }
+    "chunks": 25,
+    "bySource": { "support-md": 14, "registry": 3, "content": 8 },
+    "index": [
+      {
+        "source": "support-md",
+        "sourceId": null,
+        "heading": "STREAKS",
+        "characters": 593
+      }
+    ]
   }
 }
 ```
 
-The command line equivalent is `npm run ai:reindex`.
+`index` lists every passage stored, without its text or its vector.
+
+The command line equivalent is `npm run ai:reindex`, which additionally writes
+`src/services/ai/kb/KB-CONTENTS.md`, a readable inventory of the whole corpus.
+The route does not write that file: it runs inside a container where there is
+nowhere useful to put it.
 
 ---
 

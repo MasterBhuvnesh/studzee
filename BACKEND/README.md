@@ -316,6 +316,15 @@ To enable it:
    same way it does for every other credential.
 3. Run the migration, then `npm run ai:reindex` to build the knowledge base.
 
+The corpus the support assistant answers from has three parts. The half a
+person writes is `src/services/ai/kb/support.md`, one retrievable passage per
+`##` section. The level, badge and topic passages are rendered from the code
+constants at index time so they cannot go stale in prose. The rest is one
+passage per study document. `npm run ai:reindex` rebuilds all three and writes
+`src/services/ai/kb/KB-CONTENTS.md`, which lists exactly what ended up in the
+database. Nothing reindexes on its own, so a `support.md` edit does nothing
+until that command runs.
+
 Two things are easy to get wrong.
 
 > **`AI_EMBED_DIM` is not a free choice.** It has to equal the dimension of

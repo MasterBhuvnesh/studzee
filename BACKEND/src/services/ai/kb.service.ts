@@ -219,9 +219,18 @@ const toVectorLiteral = (vector: number[]): string => `[${vector.join(',')}]`
  * so a failure part way through leaves the previous corpus intact and the
  * assistant still answering.
  */
+/** One line of the inventory: what a passage is, without its text or vector. */
+export interface KbEntry {
+  source: KbSource
+  sourceId: string | null
+  heading: string | null
+  characters: number
+}
+
 export const reindexKnowledgeBase = async (): Promise<{
   chunks: number
   bySource: Record<string, number>
+  index: KbEntry[]
 }> => {
   const chunks: KbChunkInput[] = [
     ...chunkSupportMarkdown(readSupportMarkdown()),
@@ -241,25 +250,35 @@ export const reindexKnowledgeBase = async (): Promise<{
     vectors.push(...(await embed(batch.map((chunk) => chunk.text))))
   }
 
+  // One multi row INSERT, not one statement per chunk. A row at a time is two
+  // statements plus a round trip each against a pooled connection that is not
+  // in the same region, which overran Prisma's five second interactive
+  // transaction limit and failed with P2028 on the first real run. Postgres
+  // caps a statement at 65535 parameters and each row uses five, so this holds
+  // to roughly thirteen thousand passages.
+  const values = chunks.map(
+    (chunk, index) => Prisma.sql`(
+      ${randomUUID()},
+      ${chunk.source},
+      ${chunk.sourceId},
+      ${chunk.heading},
+      ${chunk.text},
+      ${toVectorLiteral(vectors[index])}::vector,
+      NOW()
+    )`
+  )
+
   await prisma.$transaction(async (tx) => {
+    // Delete and reinsert rather than upsert. The corpus is derived, so a
+    // passage removed from support.md or a document deleted from the
+    // collection has to disappear here too, and diffing to find those is more
+    // code than rebuilding the table.
     await tx.$executeRaw`DELETE FROM "KbChunk"`
 
-    for (const [index, chunk] of chunks.entries()) {
-      // randomUUID rather than a cuid because @default(cuid()) is applied by
-      // the Prisma client, which is not involved in a raw insert.
-      await tx.$executeRaw`
-        INSERT INTO "KbChunk" (id, source, "sourceId", heading, text, embedding, "updatedAt")
-        VALUES (
-          ${randomUUID()},
-          ${chunk.source},
-          ${chunk.sourceId},
-          ${chunk.heading},
-          ${chunk.text},
-          ${toVectorLiteral(vectors[index])}::vector,
-          NOW()
-        )
-      `
-    }
+    await tx.$executeRaw`
+      INSERT INTO "KbChunk" (id, source, "sourceId", heading, text, embedding, "updatedAt")
+      VALUES ${Prisma.join(values)}
+    `
   })
 
   const bySource = chunks.reduce<Record<string, number>>((acc, chunk) => {
@@ -267,16 +286,31 @@ export const reindexKnowledgeBase = async (): Promise<{
     return acc
   }, {})
 
+  // The index is returned rather than logged so the caller can write it out.
+  // Knowing which passages exist is the difference between trusting the
+  // assistant's answers and guessing at them, and the text and the vectors are
+  // deliberately left out: the point is an inventory, not a second copy.
+  const index: KbEntry[] = chunks.map((chunk) => ({
+    source: chunk.source,
+    sourceId: chunk.sourceId,
+    heading: chunk.heading,
+    characters: chunk.text.length,
+  }))
+
   logger.info({ chunks: chunks.length, bySource }, 'Knowledge base reindexed')
-  return { chunks: chunks.length, bySource }
+  return { chunks: chunks.length, bySource, index }
 }
 
 /**
  * Nearest passages to a question.
  *
- * `<=>` is pgvector's cosine distance, so similarity is one minus it. Ordering
- * by the raw distance rather than the derived similarity is what lets the HNSW
- * index serve the query; sorting on the computed column would force a scan.
+ * `<=>` is pgvector's cosine distance, so similarity is one minus it.
+ *
+ * This is an exact scan. There is no vector index: pgvector caps HNSW at 2000
+ * dimensions and the embeddings are 2048, so the index cannot be created at
+ * all. At a few dozen passages that costs nothing. The ordering is still on
+ * the raw distance rather than the derived similarity, so that a `halfvec`
+ * column and its index can be dropped in later without touching this query.
  */
 export const searchKnowledgeBase = async (
   question: string,

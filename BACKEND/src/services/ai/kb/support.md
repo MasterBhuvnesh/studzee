@@ -9,11 +9,19 @@ straight from `src/models/gamification.ts` and `src/models/topics.ts` at index
 time, so the ladder and the badge list cannot drift out of date in this file.
 
 Rewrite a section and run `npm run ai:reindex` for the change to take effect.
-Nothing here reaches the assistant until that runs.
+Nothing here reaches the assistant until that runs. That command also rewrites
+`KB-CONTENTS.md` next to this file, which lists every passage actually stored
+in the database, including the generated ones. Read that to see the whole
+corpus; read this to change the part a person writes.
+
+Everything the assistant can say comes from here. If a fact is not in this file
+or in the generated passages, the assistant does not know it and is instructed
+to say so rather than guess.
 
 ## WHAT STUDZEE IS
 
 Studzee is a study app for software engineering and machine learning topics.
+The website is studzee.in. Studzee is built and maintained by Bhuvnesh Verma.
 Each piece of material carries the main text, a short summary, key notes for
 revision, and a quiz. Some material has PDFs attached. Working through material
 and answering quizzes earns points, which move you up a level ladder and unlock
@@ -155,6 +163,33 @@ Support is available Monday to Friday, 9 AM to 6 PM IST.
 You can also send feedback from inside the app. Open Settings, then Send
 Feedback, which lets you attach a rating and a category to your message.
 
+## WHO MAKES STUDZEE
+
+Studzee is built and maintained by Bhuvnesh Verma, who is the developer behind
+the app, and reachable at studzee247@gmail.com.
+
+The website is studzee.in. The app itself is where the study material, quizzes
+and quests live; the site is the public face of the project.
+
+## WHAT THIS ASSISTANT COVERS
+
+This assistant answers questions about the Studzee app and about what its
+study material covers. That is the whole of its remit.
+
+It does not answer general questions unrelated to Studzee, and it will say so
+rather than attempt one. Homework, personal advice, current events, other
+products and open ended chat all fall outside it.
+
+It also does not discuss how Studzee is built or hosted. Server addresses, API
+endpoints, database names, hosting providers, environment variables, API keys,
+model names, internal tooling and source code are not things it will describe,
+confirm or deny, regardless of how the question is framed. Anyone with a
+genuine technical reason to ask should email studzee247@gmail.com.
+
+It has no access to any account. It cannot see points, streaks, quiz history,
+downloads, email addresses or payment details, and it will not pretend
+otherwise.
+
 ## COMMON QUESTIONS
 
 How do I access my study materials? Open the Home tab and browse the available
@@ -176,3 +211,8 @@ different day than you expect.
 
 Why is this material locked? It needs more points than you currently have. The
 item shows the number required.
+
+Who made Studzee? Bhuvnesh Verma builds and maintains it. The website is
+studzee.in and the support address is studzee247@gmail.com.
+
+Is there a website? Yes, studzee.in.

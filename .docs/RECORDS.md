@@ -104,6 +104,10 @@ Date is the date the status last changed.
 | Whole document generation from a title, a brief, or pasted source material        | BHUVNESH  | DONE    | 29-08-2026 |
 | Model chosen topic and tags when the request does not supply them                 | BHUVNESH  | DONE    | 29-08-2026 |
 | House style punctuation normalising on every model reply                         | BHUVNESH  | DONE    | 29-08-2026 |
+| Push announcement sent when an administrator approves a generated document       | BHUVNESH  | DONE    | 29-08-2026 |
+| Support agent scope, infrastructure and prompt injection locks                   | BHUVNESH  | DONE    | 29-08-2026 |
+| Plain prose answer format, bold and italic only, rendered on the chat screen     | BHUVNESH  | DONE    | 29-08-2026 |
+| `KB-CONTENTS.md` inventory written on every reindex                              | BHUVNESH  | DONE    | 29-08-2026 |
 | Quiz generation from an existing document, into a review queue                    | BHUVNESH  | DONE    | 29-08-2026 |
 | Summary and key notes generation, into a review queue                             | BHUVNESH  | DONE    | 29-08-2026 |
 | Quest generation from a document, assembled and parsed by `CreateQuestSchema`     | BHUVNESH  | DONE    | 29-08-2026 |

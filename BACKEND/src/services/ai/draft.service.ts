@@ -11,6 +11,8 @@ import {
 } from '@/models/ai.validation'
 import { CreateQuestSchema } from '@/models/quest.validation'
 import { adminService } from '@/services/admin.service'
+import { chatJson } from '@/services/ai/client'
+import { notificationPrompt } from '@/services/ai/prompts'
 import { sendExpoNotification } from '@/services/expo.service'
 import { saveNotification } from '@/services/notification.service'
 import { createQuest } from '@/services/quest.service'
@@ -112,15 +114,117 @@ const revalidate = (kind: DraftKind, payload: unknown): unknown => {
 }
 
 /**
- * Create the document.
+ * Send a push to every registered device and write the audit row.
+ *
+ * The send, the token pruning and the audit row mirror what
+ * notification.controller.ts does. Shared by the two paths that reach it: an
+ * approved notification draft, and the announcement a published document
+ * makes for itself.
+ */
+const broadcast = async (
+  title: string,
+  message: string,
+  sentBy: string
+): Promise<{ recordId: string; targeted: number; sent: number }> => {
+  const tokens = await getAllUsersTokens()
+  if (tokens.length === 0) {
+    throw appError(404, 'No registered devices found')
+  }
+
+  const result = await sendExpoNotification(tokens, title, message)
+
+  if (result.invalidTokens.length > 0) {
+    await removeExpoTokens(result.invalidTokens)
+  }
+
+  const record = await saveNotification({
+    title,
+    message,
+    sentBy,
+    sentTo: [],
+    sentToAll: true,
+    status: result.success ? 'sent' : 'failed',
+  })
+
+  return { recordId: record.id, targeted: tokens.length, sent: result.sent }
+}
+
+/**
+ * Tell everyone a new document is out.
+ *
+ * The house rule is that no outreach leaves the service unattended, and this
+ * does not break it: approving is a deliberate act by an administrator, and
+ * approving a document is what publishes it. The announcement is part of the
+ * publish rather than a second decision, by owner instruction.
+ *
+ * Copy comes from the model, falling back to the document's own title and
+ * summary. A push is cosmetic next to the publish, so a model that is down
+ * should cost a nicely worded notification, not the announcement.
+ *
+ * Nothing in here can fail the approval. By the time it runs the document is
+ * already created and the caches already invalidated, so throwing would mark
+ * a successful publish as a failed apply and leave the draft pending against
+ * a document that exists. It logs and returns instead.
+ */
+const announcePublication = async (
+  doc: { _id: unknown; title: string; summary?: string | null },
+  reviewedBy: string
+): Promise<void> => {
+  try {
+    let copy: { title: string; message: string }
+
+    try {
+      copy = await chatJson(
+        notificationPrompt('content', {
+          title: doc.title,
+          summary: doc.summary,
+        }),
+        GeneratedNotificationSchema,
+        { temperature: 0.6 }
+      )
+    } catch (error) {
+      logger.warn(
+        { documentId: String(doc._id) },
+        'Publish notification copy could not be generated, using the title'
+      )
+      copy = {
+        title: doc.title.slice(0, 60),
+        message: (
+          doc.summary ?? `New study material is available: ${doc.title}`
+        ).slice(0, 160),
+      }
+    }
+
+    const sent = await broadcast(copy.title, copy.message, reviewedBy)
+    logger.info(
+      { documentId: String(doc._id), ...sent },
+      'Published document announced'
+    )
+  } catch (error) {
+    logger.error(
+      { documentId: String(doc._id), reason: String(error) },
+      'Published document could not be announced'
+    )
+  }
+}
+
+/**
+ * Create the document, then announce it.
  *
  * adminService.createDocument re-parses with DocumentSchema and invalidates
  * the caches, so an approved generated document takes exactly the path
  * POST /admin/documents takes. Nothing about the row says it was generated
  * once it lands; the AiDraft it came from is the record of that.
  */
-const applyDocument = async (payload: unknown): Promise<string> => {
+const applyDocument = async (
+  payload: unknown,
+  reviewedBy: string
+): Promise<string> => {
   const doc = await adminService.createDocument(payload as TDocument)
+  await announcePublication(
+    { _id: doc._id, title: doc.title, summary: doc.summary },
+    reviewedBy
+  )
   return String(doc._id)
 }
 
@@ -238,37 +342,14 @@ const applyNotification = async (
 ): Promise<string> => {
   const { title, message } = payload as { title: string; message: string }
 
-  const tokens = await getAllUsersTokens()
-  if (tokens.length === 0) {
-    throw appError(404, 'No registered devices found')
-  }
-
-  const result = await sendExpoNotification(tokens, title, message)
-
-  if (result.invalidTokens.length > 0) {
-    await removeExpoTokens(result.invalidTokens)
-  }
-
-  const record = await saveNotification({
-    title,
-    message,
-    sentBy: reviewedBy,
-    sentTo: [],
-    sentToAll: true,
-    status: result.success ? 'sent' : 'failed',
-  })
+  const sent = await broadcast(title, message, reviewedBy)
 
   logger.info(
-    {
-      draftId: draft.id,
-      targeted: tokens.length,
-      sent: result.sent,
-      failed: result.failed,
-    },
+    { draftId: draft.id, ...sent },
     'Approved notification draft delivered'
   )
 
-  return record.id
+  return sent.recordId
 }
 
 export interface ApproveResult {
@@ -311,7 +392,7 @@ export const approveDraft = async (
   try {
     switch (kind) {
       case 'document':
-        appliedId = await applyDocument(payload)
+        appliedId = await applyDocument(payload, reviewedBy)
         break
       case 'quiz':
         appliedId = await applyQuiz(draft, payload)

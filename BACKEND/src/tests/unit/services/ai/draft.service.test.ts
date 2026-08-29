@@ -24,7 +24,9 @@ const {
   questFindUnique,
   leanFindById,
   updateDocument,
+  createDocument,
   createQuest,
+  chatJson,
   sendExpoNotification,
   saveNotification,
   getAllUsersTokens,
@@ -35,7 +37,9 @@ const {
   questFindUnique: vi.fn(),
   leanFindById: vi.fn(),
   updateDocument: vi.fn(),
+  createDocument: vi.fn(),
   createQuest: vi.fn(),
+  chatJson: vi.fn(),
   sendExpoNotification: vi.fn(),
   saveNotification: vi.fn(),
   getAllUsersTokens: vi.fn(),
@@ -63,8 +67,10 @@ vi.mock('@/models/document.model', () => ({
 }))
 
 vi.mock('@/services/admin.service', () => ({
-  adminService: { updateDocument },
+  adminService: { updateDocument, createDocument },
 }))
+
+vi.mock('@/services/ai/client', () => ({ chatJson }))
 
 vi.mock('@/services/quest.service', () => ({ createQuest }))
 vi.mock('@/services/expo.service', () => ({ sendExpoNotification }))
@@ -132,6 +138,111 @@ describe('AI draft review', () => {
     })
     saveNotification.mockResolvedValue({ id: 'notif_1' })
     updateDocument.mockResolvedValue({})
+    createDocument.mockResolvedValue({
+      _id: DOC_ID,
+      title: 'Fault Tolerance',
+      summary: 'How systems keep working through failure.',
+    })
+    chatJson.mockResolvedValue({
+      title: 'New: Fault Tolerance',
+      message: 'Learn how systems keep working when components fail.',
+    })
+  })
+
+  const validDocumentPayload = {
+    title: 'Fault Tolerance',
+    topic: 'system-design',
+    content: [
+      {
+        title: 'INTRODUCTION',
+        content: [{ type: 'text', value: 'Systems fail. Plan for it.' }],
+      },
+      {
+        title: 'CORE CONCEPTS',
+        content: [{ type: 'text', value: 'Redundancy masks a failure.' }],
+      },
+    ],
+    facts: 'Fault tolerance came out of early mainframe computing.',
+    summary:
+      'How a system keeps working when some of its components stop working.',
+    key_notes: { Redundancy: 'Spare components take over on failure.' },
+    tags: ['redundancy', 'replication'],
+    quiz: {
+      q1: {
+        que: 'What is fault tolerance?',
+        ans: 'Working through failure',
+        options: ['Working through failure', 'Faster disks'],
+      },
+    },
+  }
+
+  describe('approving a document draft', () => {
+    const documentDraft = () =>
+      draftRow({
+        kind: 'document',
+        sourceId: null,
+        payload: validDocumentPayload,
+      })
+
+    it('should create the document and announce it', async () => {
+      // ARRANGE
+      aiDraftFindUnique.mockResolvedValue(documentDraft())
+
+      // ACT
+      const result = await approveDraft('draft_1', REVIEWER)
+
+      // ASSERT
+      // Approving a document is what publishes it, and publishing is when
+      // students are told, by owner instruction. The send still only happens
+      // on a deliberate approval, never unattended.
+      expect(createDocument).toHaveBeenCalledTimes(1)
+      expect(sendExpoNotification).toHaveBeenCalledWith(
+        ['ExponentPushToken[abc]'],
+        'New: Fault Tolerance',
+        'Learn how systems keep working when components fail.'
+      )
+      expect(saveNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ sentBy: REVIEWER, sentToAll: true })
+      )
+      expect(result.appliedId).toBe(DOC_ID)
+    })
+
+    it('should fall back to the document title when copy cannot be generated', async () => {
+      // ARRANGE
+      aiDraftFindUnique.mockResolvedValue(documentDraft())
+      chatJson.mockRejectedValue(new Error('model down'))
+
+      // ACT
+      await approveDraft('draft_1', REVIEWER)
+
+      // ASSERT
+      // A push is cosmetic next to the publish, so a model that is down costs
+      // a nicely worded notification, not the announcement.
+      expect(sendExpoNotification).toHaveBeenCalledWith(
+        ['ExponentPushToken[abc]'],
+        'Fault Tolerance',
+        // Read off the created document rather than the draft payload, so the
+        // announcement describes what actually landed.
+        'How systems keep working through failure.'
+      )
+    })
+
+    it('should still approve when the announcement fails outright', async () => {
+      // ARRANGE
+      aiDraftFindUnique.mockResolvedValue(documentDraft())
+      getAllUsersTokens.mockResolvedValue([])
+
+      // ACT
+      const result = await approveDraft('draft_1', REVIEWER)
+
+      // ASSERT
+      // The document exists and the caches are already invalidated by this
+      // point. Failing the apply would mark a successful publish as failed and
+      // leave the draft pending against a document that is live.
+      expect(result.appliedId).toBe(DOC_ID)
+      expect(result.draft.status).toBe('approved')
+      expect(sendExpoNotification).not.toHaveBeenCalled()
+    })
   })
 
   describe('approving a quiz draft', () => {
