@@ -59,7 +59,14 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-navigation-bar",
+        {
+          "visibility": "hidden",
+          "behavior": "overlay-swipe"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -39,7 +39,6 @@ Android, the cause is double adjustment between `softwareKeyboardLayoutMode`
 and the 'height' behavior, and the fix is `undefined` on Android with the
 nesting change kept.
 
-
 **Branch:** `feat/ai-layer`
 
 ### Postman collection, and the pipeline recorded as future scope
@@ -379,6 +378,50 @@ has correspondingly never been applied to a real Postgres. `expo lint` fails in
 MOBILE with `Plugin "" not found` from `eslint.config.js`, which is
 pre-existing and untouched here.
 
+## 28-08-2026
+
+**Branch:** `fix/mobile-android-navigation-bar`
+
+### Hiding the Android navigation bar, and a real mobile README
+
+- On Android 7 and 8 the three button navigation bar sat on top of the tab
+  bar. The app is edge to edge, so it draws behind the system bars, and React
+  Navigation normally compensates by padding the tab bar with `insets.bottom`.
+  `(tabs)/_layout.tsx` hardcodes `height: 60` and `paddingBottom: 5`, and
+  since `tabBarStyle` merges last and `getTabBarHeight` returns a numeric
+  custom height verbatim, that inset was discarded. Gesture navigation devices
+  report `insets.bottom` as 0, which is why only older hardware showed it.
+- Fixed with the `expo-navigation-bar` config plugin rather than runtime code:
+  `visibility: hidden` and `behavior: overlay-swipe` in `app.json`. The plugin
+  writes both into `strings.xml`, and
+  `NavigationBarReactActivityLifecycleListener` applies them at activity
+  `onCreate`, before the JS engine starts. `overlay-swipe` maps to
+  `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`, so a swipe reveals the bar
+  transiently and it hides itself again without shifting the layout.
+- The runtime approach does not work here. `setBehaviorAsync` returns early
+  with a warning when edge to edge is enabled, and `setHidden`, which the
+  current docs recommend, does not exist in the version SDK 54 installs,
+  `expo-navigation-bar@5.0.10`. The published docs are ahead of the release;
+  the installed source is the authority.
+- This is a native change. An `expo-updates` push will not deliver it to
+  existing builds.
+- `MOBILE/README.md` was a scratchpad of install commands and stale notes.
+  Replaced with a reference: prerequisites, setup, environment, running,
+  project layout, routing, fonts, adding an onboarding slide, builds and
+  releases, and pointers to the design doc. Three notes in it were wrong and
+  were not carried over: the fonts come from local `.ttf` files rather than
+  `@expo-google-fonts`, onboarding lives at `app/(auth)/onboarding.tsx` and
+  not `app/(onboarding)/index.tsx`, and `imageSource` is passed as a bare URL
+  string by all three current slides.
+
+### Not fixed
+
+- `(tabs)/_layout.tsx` still hardcodes the tab bar height. Dormant while the
+  navigation bar is hidden, but it returns the moment `visibility` goes back
+  to `visible`.
+- `(tabs)/_layout.tsx` still nests a second redundant `SafeAreaProvider`
+  inside the root one.
+
 ## 26-08-2026
 
 **Branch:** `fix/levels-tab-empty-fallback`
@@ -446,7 +489,7 @@ pre-existing and untouched here.
   segments: Jan-Apr, May-Aug, Sep-Dec. The opening segment is still the one
   containing today.
 - Verification: `npm run fmt:check`, `npm run lint` (0 errors), `npx tsc
-  --noEmit -p tsconfig.json` and `npm test` (388 tests across 40 files) all
+--noEmit -p tsconfig.json` and `npm test` (388 tests across 40 files) all
   pass in BACKEND, and `npx tsc --noEmit` plus Prettier pass in MOBILE.
   `npm run lint` in MOBILE fails to load `eslint.config.js` with
   `Plugin "" not found`, which predates this branch and is untouched by it.
