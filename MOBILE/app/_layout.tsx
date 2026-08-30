@@ -7,8 +7,10 @@ import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Slot, SplashScreen, useRouter, useSegments } from 'expo-router';
-import { StatusBar } from "expo-status-bar";
+import * as NavigationBar from 'expo-navigation-bar';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -108,6 +110,18 @@ function RootLayoutNav() {
 export default function RootLayout() {
   const { fontsLoaded, fontError } = useCustomFonts();
 
+  // The app.json config plugin is what actually hides the bar, applied
+  // natively at activity onCreate before this ever runs. These two calls are
+  // a defensive belt on top of that: harmless if the plugin already did the
+  // job, and a fallback for any surface the plugin does not reach. Per
+  // .docs/FIXES.md, setBehaviorAsync is known to no-op with a warning while
+  // edge to edge is enabled, so this cannot be relied on as the fix by itself.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    NavigationBar.setBehaviorAsync('overlay-swipe');
+    NavigationBar.setVisibilityAsync('hidden');
+  }, []);
+
   if (!fontsLoaded && !fontError) {
     return <LoadingScreen />;
   }
@@ -115,7 +129,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-        <StatusBar style="dark" translucent/>
+        <StatusBar style="dark" translucent />
         <SafeAreaProvider>
           <NotificationProvider>
             <BottomSheetModalProvider>
