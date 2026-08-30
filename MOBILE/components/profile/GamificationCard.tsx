@@ -163,15 +163,24 @@ export const GamificationCard = ({
         <View className="p-6 pb-4">
           {/* Level and points */}
           <View className="mb-4 flex-row items-center justify-between">
-            <View>
-              <Text className="font-product text-lg text-zinc-800">
-                {progress.level?.label || 'No Level Yet'}
-              </Text>
-              <Text className="mt-0.5 font-sans text-sm text-zinc-500">
-                {progress.nextLevel
-                  ? `${Math.max(progress.nextLevel.minPoints - progress.points, 0)} pts to ${progress.nextLevel.label}`
-                  : 'Top level reached'}
-              </Text>
+            <View className="flex-row items-center gap-2">
+              {progress.level?.imageUrl ? (
+                <Image
+                  source={{ uri: progress.level.imageUrl }}
+                  style={{ width: 32, height: 32 }}
+                  contentFit="contain"
+                />
+              ) : null}
+              <View>
+                <Text className="font-product text-lg text-zinc-800">
+                  {progress.level?.label || 'No Level Yet'}
+                </Text>
+                <Text className="mt-0.5 font-sans text-sm text-zinc-500">
+                  {progress.nextLevel
+                    ? `${Math.max(progress.nextLevel.minPoints - progress.points, 0)} pts to ${progress.nextLevel.label}`
+                    : 'Top level reached'}
+                </Text>
+              </View>
             </View>
             <View className="flex-row items-center gap-1.5 rounded-xl bg-zinc-100 px-3 py-1.5">
               <Image
