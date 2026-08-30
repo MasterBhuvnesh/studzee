@@ -351,6 +351,44 @@
       ]
     },
     {
+      "name": "Support",
+      "item": [
+        {
+          "name": "Ask Support",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["support", "ask"]
+            },
+            "description": "Ask the in app support assistant one question. Requires a signed in Clerk user, not an admin.\n\nThe assistant answers only from a knowledge base built out of the help material, the level and badge registries, and the study material catalogue. It has no access to the caller's account and cannot read progress, history, downloads or email. It answers about Studzee and nothing else, and it will not describe how the service is built or hosted.\n\nThe answer is plain prose with **bold** and *italic* and nothing else. No tables, lists, headings, code fences, em dashes or emoji.\n\n`history` is held by the client and capped at 12 turns, of which the last 6 reach the model. No transcript is stored on the server.\n\nWhen nothing in the knowledge base matches, this still returns 200 with an email referral and an empty `sources` array, and no model call is made.\n\n`remaining` is how many questions the caller has left today. Over the allowance is 429 AI_QUOTA_EXCEEDED; Redis being unreachable is 503 AI_QUOTA_UNAVAILABLE, because the spend ceiling fails closed.\n\nThe reply is not streamed, so set a client timeout far longer than for any other endpoint.\n\nReturns 503 AI_DISABLED while AI_ENABLED is false.\n\nRate limit: 10 requests per minute, on top of the per account daily allowance.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"why did my streak reset\",\n  \"history\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"how do streaks work\"\n    },\n    {\n      \"role\": \"assistant\",\n      \"content\": \"A streak counts consecutive days with activity.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Webhooks",
       "item": [
         {
@@ -869,6 +907,328 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Admin - AI Generation",
+      "item": [
+        {
+          "name": "Generate a Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/generate/content",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "generate", "content"]
+            },
+            "description": "Write a whole study document from a title, a brief, or both. At least one of the two is required, checked before a model call is paid for.\n\nThis is the only generator with no `contentId`. Nothing existing is being derived from, so the reviewer is the only accuracy check there is.\n\nSupply `title` or `topic` and they are honoured exactly. Leave them out and the model writes the title and picks the topic from the fixed six key registry, which is the case this endpoint exists for: paste material in and let it be named and filed. `brief` takes up to 12000 characters, so a whole article fits.\n\nThree model calls deep, the body first and then the quiz and the notes against that body. Budget around a minute.\n\nReturns 201 with a pending draft carrying a complete document. Approving it creates the document and pushes a notification.\n\nContent blocks are validated against the five types the client renders, which are text, list, table, formula and code. An invented block type is rejected with AI_INVALID_OUTPUT rather than rendering as a gap on the screen.\n\nRequires the admin role. Rate limit: 10 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brief\": \"Fault tolerance is a system's capacity to keep working through hardware or software failure. Cover redundancy, the four replication strategies, fault detection and recovery, and how it differs from high availability load balancing.\",\n  \"sections\": 6,\n  \"quizCount\": 6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate a Quiz",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/generate/quiz",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "generate", "quiz"]
+            },
+            "description": "Draft quiz questions from a document that already exists.\n\nThe generated quiz is validated against the same QuizItemSchema the document schema uses, so every item already has at least two options and an `ans` matching one of them character for character.\n\nApproving appends the questions to the document's quiz under fresh keys rather than merging by key, because the generator numbers from q1 every time and merging would overwrite the existing questions.\n\n`count` is 1 to 15 and defaults to 5.\n\nRequires the admin role. Rate limit: 10 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{documentId}}\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate a Summary and Key Notes",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/generate/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "generate", "notes"]
+            },
+            "description": "Draft a summary and key notes for a document that already exists.\n\nApproving replaces the summary and merges the key notes, with the generated ones winning a heading collision. Merging rather than replacing means approving notes cannot silently delete notes written by hand.\n\nRequires the admin role. Rate limit: 10 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{documentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate a Quest",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/generate/quest",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "generate", "quest"]
+            },
+            "description": "Draft a quest from a document that already exists.\n\nThe model writes the title, description and questions only. The type, gems, window and pass mark come from this request, and the assembled quest is parsed by CreateQuestSchema, the same schema POST /admin/quests uses, before the draft is stored, so approval cannot fail on shape.\n\n`passScore` is clamped to the number of questions the model actually returned. Asking for three and getting two would otherwise produce a quest nobody can complete. Left out, it defaults to sixty percent of the questions, rounded up.\n\n`type` is mcq, scq, fill_blank or read_blog. A read_blog quest carries no questions and keeps the contentId; a graded quest is self contained.\n\nQuest.title is unique, so approval pre-checks and returns 409 QUEST_TITLE_TAKEN on a clash, which is resolved by approving again with an overrides.title.\n\nRequires the admin role. Rate limit: 10 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{documentId}}\",\n  \"type\": \"mcq\",\n  \"gems\": 10,\n  \"questionCount\": 3,\n  \"startsAt\": \"2026-09-01T00:00:00.000Z\",\n  \"endsAt\": \"2026-09-30T00:00:00.000Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Notification Copy",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/generate/notification",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "generate", "notification"]
+            },
+            "description": "Draft push copy for a document or a quest. Drafts only, it sends nothing. Approving the draft is the send.\n\n`kind` is content or quest. `id` is a Mongo document id or a quest cuid, so it is not constrained to a Mongo shape.\n\nTitle is capped at 60 characters and message at 160, which is what a phone shows before truncating.\n\nA nightly job at 01:00 UTC drafts these automatically for material published and quests opened in the previous day, skipping any subject that already has a notification draft in any state.\n\nRequires the admin role. Rate limit: 10 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"content\",\n  \"id\": \"{{documentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Drafts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/drafts?page=1&limit=20&status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "drafts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            },
+            "description": "Paginated review queue, newest first.\n\nFilter by `status` (pending, approved, rejected) and by `kind` (document, quiz, key_notes, quest, notification). Both are optional.\n\nA draft that failed to apply stays pending with the reason in `error`, so filtering on pending surfaces retryable work as well as unreviewed work.\n\nRequires the admin role. Rate limit: 30 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get One Draft",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/drafts/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "drafts", ":id"]
+            },
+            "description": "One draft with its full payload. This is what you read before approving.\n\nRequires the admin role. Rate limit: 30 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve a Draft",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/drafts/:id/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "drafts", ":id", "approve"]
+            },
+            "description": "Apply the draft. This is the only path by which a generated payload becomes something a student can see.\n\nWARNING. Approving a document draft publishes it AND pushes a notification to every registered device. Approving a notification draft sends that push. Neither can be undone from this API.\n\n`overrides` is merged over the stored payload before it applies, which is how a title clash or a bad question is fixed without a separate edit endpoint. The merged result is re-validated against the schema the draft was generated under, so an override cannot introduce a shape the generator would have rejected.\n\nEach kind dispatches to the service the matching admin route already uses: document to POST /admin/documents, quiz and key_notes to PUT /admin/documents/:id, quest to the service POST /admin/quests uses, and notification to the send and audit pair POST /admin/notifications/send uses.\n\n409 DRAFT_NOT_PENDING if it was already approved or rejected. 409 QUEST_TITLE_TAKEN on a duplicate quest title. 400 DRAFT_INVALID if the payload failed validation after overrides.\n\nA failed apply leaves the draft pending with the reason in `error` rather than losing it, so a transient failure is retryable.\n\nRequires the admin role. Rate limit: 20 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"overrides\": {\n    \"title\": \"Fault Tolerance in Distributed Systems\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject a Draft",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/drafts/:id/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "drafts", ":id", "reject"]
+            },
+            "description": "Mark the draft rejected with an optional reason, up to 500 characters.\n\nA rejected notification draft still counts for the nightly job's dedupe check, so rejecting one stops it being redrafted tomorrow.\n\nRequires the admin role. Rate limit: 20 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Two questions test the article rather than the subject.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reindex the Knowledge Base",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai/kb/reindex",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai", "kb", "reindex"]
+            },
+            "description": "Rebuild every knowledge base passage and re-embed it. The table is deleted and rewritten, so a passage removed from support.md or a document deleted from the collection disappears here too.\n\nRun after editing src/services/ai/kb/support.md, after changing a level or badge, and after a content import. Nothing reindexes on its own, so a support.md edit does nothing until this runs.\n\nThe response `index` lists every passage stored, without its text or its vector. The command line equivalent, npm run ai:reindex, additionally writes src/services/ai/kb/KB-CONTENTS.md, a readable inventory of the whole corpus. This route does not write that file, because it runs inside a container where there is nowhere useful to put it.\n\nRequires the admin role. Rate limit: 2 requests per minute.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clerkToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -905,6 +1265,11 @@
       "value": "",
       "type": "string",
       "description": "Set automatically by Get Paginated Content and by Create Document. Used by every request that takes a document id."
+    },
+    {
+      "key": "draftId",
+      "value": "",
+      "type": "string"
     }
   ]
 }
