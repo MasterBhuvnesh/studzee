@@ -239,6 +239,23 @@ export default function RootLayout({
 }
 ```
 
+- [ ] **Step 5b: Write a temporary `app/page.tsx`**
+
+Next.js needs at least one route to build, and the real root route
+(`app/(dashboard)/page.tsx`) cannot exist until Task 11, which needs the
+backend client. This stub holds the slot until then. **Task 11 deletes this
+file** in the same commit that adds the real one: `app/page.tsx` and
+`app/(dashboard)/page.tsx` both resolve to `/`, so leaving both in place is a
+build error, not a harmless leftover.
+
+```tsx
+// Temporary: replaced by app/(dashboard)/page.tsx in Task 11, which deletes
+// this file. Both resolve to "/", so they cannot coexist.
+export default function Placeholder() {
+  return null
+}
+```
+
 - [ ] **Step 6: Write `package.json`**
 
 Same runtime dependencies as the sample plus `@clerk/nextjs`, `zod` and
@@ -358,10 +375,11 @@ cd ADMIN
 npm run build
 ```
 
-Expected: succeeds (the default Next.js `app/page.tsx` is still the
-create-next-app placeholder at this point; it is replaced in Task 11). If
-`ClerkProvider` throws for missing keys at build time, add placeholder values
-to `ADMIN/.env.local` for the build step only, never committed.
+Expected: succeeds, with the single placeholder route from Step 5b. If
+`ClerkProvider` throws for missing keys at build time, put placeholder values
+in `ADMIN/.env.local` for the build step only. `.env.local` is gitignored by
+Step 9 and must never be committed; never put a real key in it during this
+task.
 
 - [ ] **Step 12: Commit**
 
@@ -485,7 +503,14 @@ done
 
 - [ ] **Step 2: Write `components/dashboard/sidebar.tsx`, nav swapped to Studzee's sections**
 
+The whole file is a client component: it renders Clerk's `UserButton` and
+reads `useUser()`. A `"use client"` directive is only valid at the top of a
+file, never inside a function body, so it goes on line 1 and the profile
+block below is a plain local function.
+
 ```tsx
+"use client";
+
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { IconSvgElement } from "@hugeicons/react";
@@ -580,10 +605,8 @@ export function Sidebar({
   );
 }
 
-/** Client boundary for Clerk's useUser(), kept small so Sidebar itself can
- * stay a plain function shared by the desktop and mobile nav renders. */
+/** The signed-in admin's card at the foot of the nav. */
 function SidebarProfile() {
-  "use client";
   const { user } = useUser();
   return (
     <div className="flex w-full items-center gap-2.5 rounded-lg border bg-card p-2.5 shadow-xs">
@@ -874,18 +897,23 @@ describe('requireAdminUser', () => {
     mockClerkClient.users.getUser.mockReset()
   })
 
-  it('returns the user when publicMetadata.role is admin', async () => {
+  it('returns the user and primary email when publicMetadata.role is admin', async () => {
     mockAuth.mockResolvedValue({ userId: 'user_1' })
     mockClerkClient.users.getUser.mockResolvedValue({
       id: 'user_1',
       publicMetadata: { role: 'admin' },
+      primaryEmailAddressId: 'idn_2',
+      emailAddresses: [
+        { id: 'idn_1', emailAddress: 'old@studzee.in' },
+        { id: 'idn_2', emailAddress: 'admin@studzee.in' },
+      ],
     })
 
     const result = await requireAdminUser()
 
     expect(result).toEqual({
       ok: true,
-      user: { id: 'user_1', publicMetadata: { role: 'admin' } },
+      user: { id: 'user_1', email: 'admin@studzee.in' },
     })
   })
 
@@ -894,6 +922,8 @@ describe('requireAdminUser', () => {
     mockClerkClient.users.getUser.mockResolvedValue({
       id: 'user_2',
       publicMetadata: {},
+      primaryEmailAddressId: null,
+      emailAddresses: [],
     })
 
     const result = await requireAdminUser()
@@ -927,7 +957,7 @@ Expected: FAIL with "Cannot find module './require-admin'".
 import { auth, clerkClient } from '@clerk/nextjs/server'
 
 export type AdminCheck =
-  | { ok: true; user: { id: string; publicMetadata: Record<string, unknown> } }
+  | { ok: true; user: { id: string; email: string | null } }
   | { ok: false; reason: 'unauthenticated' | 'not-admin' }
 
 /**
@@ -950,7 +980,15 @@ export async function requireAdminUser(): Promise<AdminCheck> {
     return { ok: false, reason: 'not-admin' }
   }
 
-  return { ok: true, user: { id: user.id, publicMetadata: user.publicMetadata } }
+  // Email comes off the Clerk user's primary address, not publicMetadata,
+  // which carries only the role. The Settings page displays it.
+  const email =
+    user.emailAddresses.find((address) => address.id === user.primaryEmailAddressId)
+      ?.emailAddress ??
+    user.emailAddresses[0]?.emailAddress ??
+    null
+
+  return { ok: true, user: { id: user.id, email } }
 }
 ```
 
@@ -1198,22 +1236,246 @@ status and message on a non-2xx response."
 
 ---
 
-### Task 6: Backend API client — documents and content
+### Task 6: BACKEND admin document read route, and the ADMIN client for documents and content
+
+This task spans both modules on purpose. `BACKEND`'s admin router can create,
+update and delete a document but cannot **read** one, and the only read route
+that exists, `GET /content/:id`, is gated: `getDocumentById` in
+`BACKEND/src/api/controllers/content.controller.ts:82-97` throws
+`403 CONTENT_LOCKED` when the caller's progress points are below the
+document's `unlockPoints`, with no admin exemption. An admin account has no
+progress points, so ADMIN's edit page would 403 on exactly the gated
+documents an admin most needs to edit. `GET /content` cannot substitute: it
+is projected to `'title summary createdAt topic tags'`
+(`BACKEND/src/services/content.service.ts:27`) and carries no `content` or
+`quiz` for a form to load.
+
+The root-cause fix is one small ungated admin read route, which also closes a
+real gap in an admin router that already owns the other three verbs. A
+reviewer would reject the route and its client together, so they ship
+together.
 
 **Files:**
+- Modify: `BACKEND/src/api/controllers/admin.controller.ts`,
+  `BACKEND/src/api/routes/admin.route.ts`, `BACKEND/API.md`
+- Test: `BACKEND/src/tests/unit/controllers/admin.controller.test.ts`
 - Create: `ADMIN/lib/backend/documents.ts`, `ADMIN/lib/backend/content.ts`
 - Test: `ADMIN/lib/backend/documents.test.ts`
 
 **Interfaces:**
 - Consumes: `backendFetch` (Task 5).
-- Produces: `TDocument`, `TQuizItem`, `TPdfFile` types; `listDocumentsAdmin`
-  is not exposed by `BACKEND` (only `GET /content` exists, public, cached,
-  paginated) so document listing reuses that; `createDocument(input)`,
+- Produces: `GET /admin/documents/:id` on `BACKEND`, returning the whole
+  document ungated; and in ADMIN the `TDocument`, `TQuizItem`, `TPdfFile` and
+  `DocumentListItem` types plus `createDocument(input)`,
   `updateDocument(id, input)`, `deleteDocument(id)`, `getDocument(id)`,
-  `listTopics()` — the exact functions `documents/page.tsx`,
-  `documents/new/page.tsx` and `documents/[id]/page.tsx` (Task 12) call.
+  `listDocuments(params)`, `listTopics()` — the exact functions
+  `documents/page.tsx`, `documents/new/page.tsx` and `documents/[id]/page.tsx`
+  (Task 12) and `quests/new/page.tsx` (Task 13) call.
+- **`listDocuments` returns `DocumentListItem`, not `TDocument`.** The list
+  route is projected, so a list row carries only `id`, `title`, `summary`,
+  `createdAt`, `topic` and `tags`. Only `getDocument` returns a whole
+  document. Tasks 12 and 13 consume the list type; only Task 12's edit page
+  consumes the whole one.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing BACKEND controller test**
+
+Append to `BACKEND/src/tests/unit/controllers/admin.controller.test.ts`,
+creating the file if it does not exist. Follow the house pattern in
+`src/tests/unit/controllers/content.controller.test.ts`: mock the service
+layer, build partial `req`/`res`/`next` objects, AAA comments,
+`vi.clearAllMocks()` in `beforeEach`.
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import * as AdminController from '@/api/controllers/admin.controller'
+import * as ContentService from '@/services/content.service'
+import { Request, Response, NextFunction } from 'express'
+
+vi.mock('@/services/content.service')
+
+describe('AdminController - getDocument', () => {
+  let mockReq: Partial<Request>
+  let mockRes: Partial<Response>
+  let mockNext: NextFunction
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockReq = { params: { id: 'doc1' } }
+    mockRes = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    }
+    mockNext = vi.fn()
+  })
+
+  it('returns the whole document regardless of unlockPoints', async () => {
+    // ARRANGE: a gated document. The admin read must not consult points.
+    const gated = { title: 'Gated', unlockPoints: 500, quiz: {}, content: {} }
+    vi.mocked(ContentService.getContentById).mockResolvedValue(gated as never)
+
+    // ACT
+    await AdminController.getDocument(
+      mockReq as Request,
+      mockRes as Response,
+      mockNext
+    )
+
+    // ASSERT
+    expect(ContentService.getContentById).toHaveBeenCalledWith('doc1')
+    expect(mockRes.json).toHaveBeenCalledWith(gated)
+    expect(mockNext).not.toHaveBeenCalled()
+  })
+
+  it('returns 404 when the document does not exist', async () => {
+    // ARRANGE
+    vi.mocked(ContentService.getContentById).mockResolvedValue(null)
+
+    // ACT
+    await AdminController.getDocument(
+      mockReq as Request,
+      mockRes as Response,
+      mockNext
+    )
+
+    // ASSERT
+    expect(mockRes.status).toHaveBeenCalledWith(404)
+    expect(mockRes.json).toHaveBeenCalledWith({ message: 'Document not found' })
+  })
+
+  it('passes an unexpected error to next rather than swallowing it', async () => {
+    // ARRANGE
+    const boom = new Error('mongo is down')
+    vi.mocked(ContentService.getContentById).mockRejectedValue(boom)
+
+    // ACT
+    await AdminController.getDocument(
+      mockReq as Request,
+      mockRes as Response,
+      mockNext
+    )
+
+    // ASSERT
+    expect(mockNext).toHaveBeenCalledWith(boom)
+  })
+})
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+cd BACKEND
+npx vitest run src/tests/unit/controllers/admin.controller.test.ts
+```
+
+Expected: FAIL, `AdminController.getDocument is not a function`.
+
+Run Vitest from `BACKEND`, never from the repository root: from the root it
+resolves no `@/*` aliases and every suite fails misleadingly.
+
+- [ ] **Step 3: Add the controller**
+
+In `BACKEND/src/api/controllers/admin.controller.ts`, add the import for the
+content service alongside the existing imports and append:
+
+```typescript
+/**
+ * Read one document for the admin console.
+ *
+ * GET /content/:id cannot serve this: it gates on unlockPoints against the
+ * caller's progress points, and an admin has none, so every gated document
+ * would 403 for the one person allowed to edit it. The list route is
+ * projected and carries no content or quiz. This route is the ungated read
+ * the admin surface was missing; it reuses the cached service read, so it
+ * costs nothing extra against Mongo.
+ */
+export const getDocument = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const document = await ContentService.getContentById(req.params.id)
+
+    if (!document) {
+      return res.status(404).json({ message: 'Document not found' })
+    }
+
+    return res.json(document)
+  } catch (error) {
+    next(error)
+  }
+}
+```
+
+`admin.controller.ts` currently imports only `Request` and `Response` from
+express; add `NextFunction` to that import, and add
+`import * as ContentService from '@/services/content.service'`.
+
+- [ ] **Step 4: Register the route**
+
+In `BACKEND/src/api/routes/admin.route.ts`, in the `// --- Documents ---`
+block, add above `router.post('/documents', ...)`:
+
+```typescript
+/**
+ * @route GET /admin/documents/:id
+ * @description Read one document, ungated. The public content route gates on
+ *              unlockPoints, which an admin never satisfies.
+ */
+router.get('/documents/:id', AdminController.getDocument)
+```
+
+- [ ] **Step 5: Run the tests to verify they pass**
+
+```bash
+cd BACKEND
+npx vitest run src/tests/unit/controllers/admin.controller.test.ts
+```
+
+Expected: PASS, 3 tests.
+
+- [ ] **Step 6: Run the BACKEND gates**
+
+```bash
+cd BACKEND
+npm run fmt:check
+npm run lint
+npx tsc --noEmit -p tsconfig.json
+```
+
+Expected: all clean. If `fmt:check` flags the files you touched, run
+`npx prettier --write` on those files and re-check.
+
+- [ ] **Step 7: Document the endpoint in `BACKEND/API.md`**
+
+In the Admin Endpoints section, add an entry for `GET /admin/documents/:id`
+in the same style as the surrounding entries: route, description, protected
+(yes, admin), and a `200 OK` response showing a whole document plus the
+`404` shape `{"message": "Document not found"}`. Write it against what the
+handler actually returns, which is the document object itself with no
+envelope.
+
+- [ ] **Step 8: Commit the BACKEND half**
+
+```bash
+cd D:\Projects\Studzee
+git add BACKEND/src/api/controllers/admin.controller.ts BACKEND/src/api/routes/admin.route.ts BACKEND/src/tests/unit/controllers/admin.controller.test.ts BACKEND/API.md
+git commit -m "feat(backend): add an ungated admin document read route
+
+The admin router could create, update and delete a document but not
+read one. The only read route, GET /content/:id, gates on unlockPoints
+against the caller's progress points, and an admin account has none,
+so every gated document answered 403 CONTENT_LOCKED for the one person
+allowed to edit it. GET /content is projected to title, summary,
+createdAt, topic and tags, so it cannot stand in either.
+
+GET /admin/documents/:id returns the whole document with no gate,
+reusing the cached service read. Found while building the ADMIN
+console's document edit page, which had no way to load a gated
+document."
+```
+
+- [ ] **Step 9: Write the failing ADMIN test**
 
 ```typescript
 // ADMIN/lib/backend/documents.test.ts
@@ -1261,17 +1523,28 @@ describe('documents backend client', () => {
     })
   })
 
-  it('getDocument reads /content/:id', async () => {
+  it('getDocument reads the ungated admin route, not /content/:id', async () => {
     mockBackendFetch.mockResolvedValue({ title: 'x' })
 
     await getDocument('doc1')
 
-    expect(mockBackendFetch).toHaveBeenCalledWith('/content/doc1')
+    expect(mockBackendFetch).toHaveBeenCalledWith('/admin/documents/doc1')
+  })
+
+  it('listDocuments defaults to limit 100 and passes a topic filter', async () => {
+    mockBackendFetch.mockResolvedValue({ data: [], meta: { page: 1, limit: 100, total: 0 } })
+
+    await listDocuments({ topic: 'aws' })
+
+    expect(mockBackendFetch).toHaveBeenCalledWith('/content?page=1&limit=100&topic=aws')
   })
 })
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+Add `listDocuments` to the import at the top of that test file alongside the
+other four functions.
+
+- [ ] **Step 10: Run it to verify it fails**
 
 ```bash
 cd ADMIN
@@ -1280,7 +1553,7 @@ npm test -- backend/documents
 
 Expected: FAIL with "Cannot find module './documents'".
 
-- [ ] **Step 3: Write `lib/backend/documents.ts`**
+- [ ] **Step 11: Write `lib/backend/documents.ts`**
 
 Types mirror `BACKEND/src/models/document.validation.ts` and
 `BACKEND/src/types/document.ts`:
@@ -1346,21 +1619,44 @@ export async function deleteDocument(id: string) {
   return backendFetch<null>(`/admin/documents/${id}`, { method: 'DELETE' })
 }
 
+/**
+ * Reads the ungated admin route added in this task's BACKEND half, not
+ * GET /content/:id: that one gates on unlockPoints against the caller's
+ * progress points, and an admin has none, so every gated document would 403.
+ */
 export async function getDocument(id: string) {
-  return backendFetch<TDocument>(`/content/${id}`)
+  return backendFetch<TDocument>(`/admin/documents/${id}`)
+}
+
+/**
+ * One row of the document list.
+ *
+ * GET /content is projected to 'title summary createdAt topic tags'
+ * (BACKEND/src/services/content.service.ts), so a list row is NOT a whole
+ * TDocument: it carries no content, quiz, key_notes, facts, imageUrl,
+ * pdfUrl or unlockPoints. Anything needing those calls getDocument.
+ */
+export interface DocumentListItem {
+  id: string
+  title: string
+  summary?: string
+  createdAt: string
+  topic: TopicKey
+  tags?: string[]
 }
 
 export interface DocumentListResult {
-  data: (TDocument & { id: string })[]
+  data: DocumentListItem[]
   meta: { page: number; limit: number; total: number }
 }
 
 /**
  * BACKEND has no admin-only document listing route; GET /content is the
  * same public, cached, paginated listing the mobile app reads, and is what
- * the documents list page (Task 12) is built on. limit defaults high (100)
- * so useDataTable (ported in Task 3) can do search/sort/pagination over one
- * fetched page in memory, the same pattern the sample project uses.
+ * the documents list page (Task 12) is built on. limit defaults high (100,
+ * the route's own maximum) so useDataTable (ported in Task 3) can do
+ * search/sort/pagination over one fetched page in memory, the same pattern
+ * the sample project uses.
  */
 export async function listDocuments(params: {
   page?: number
@@ -1378,7 +1674,7 @@ export async function listDocuments(params: {
 }
 ```
 
-- [ ] **Step 4: Write `lib/backend/content.ts` for the topic registry**
+- [ ] **Step 12: Write `lib/backend/content.ts` for the topic registry**
 
 ```typescript
 import { backendFetch } from './client'
@@ -1395,26 +1691,29 @@ export async function listTopics() {
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [ ] **Step 13: Run the tests to verify they pass**
 
 ```bash
+cd ADMIN
 npm test -- backend/documents
 ```
 
-Expected: PASS, 4 tests.
+Expected: PASS, 5 tests.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 14: Commit the ADMIN half**
 
 ```bash
+cd D:\Projects\Studzee
 git add ADMIN/lib/backend/documents.ts ADMIN/lib/backend/content.ts ADMIN/lib/backend/documents.test.ts
 git commit -m "feat(admin): backend client for documents and topics
 
 TDocument and TQuizItem mirror BACKEND's DocumentSchema exactly.
-Listing reuses the public, cached GET /content route since BACKEND
-has no separate admin document listing; create, update, delete and
-single-document read go through their matching /admin/documents and
-/content/:id routes. listTopics() backs the topic selector the TCSK
-notes call for on document forms."
+Listing reuses the public, cached GET /content route, whose projection
+is reflected in a separate DocumentListItem type so a caller cannot
+mistake a list row for a whole document. The single-document read goes
+to the ungated GET /admin/documents/:id added alongside this.
+listTopics() backs the topic selector the TCSK notes call for on
+document forms."
 ```
 
 ---
@@ -2388,12 +2687,22 @@ validation is still the actual source of truth on every write."
 
 **Files:**
 - Create: `ADMIN/app/(dashboard)/page.tsx`
+- Delete: `ADMIN/app/page.tsx` (the Task 1 placeholder)
 
 **Interfaces:**
 - Consumes: `listUsers`, `listQuests`, `listDrafts` (Tasks 7-9), `Shell`,
   `KpiCard` (Task 3).
 
-- [ ] **Step 1: Write `app/(dashboard)/page.tsx`**
+- [ ] **Step 1: Delete the Task 1 placeholder route**
+
+```bash
+rm ADMIN/app/page.tsx
+```
+
+`app/page.tsx` and `app/(dashboard)/page.tsx` both resolve to `/`. Leaving
+both is a build error, so the delete and the create land in one commit.
+
+- [ ] **Step 2: Write `app/(dashboard)/page.tsx`**
 
 ```tsx
 import { Shell } from '@/components/dashboard/shell'
@@ -2427,22 +2736,20 @@ export default async function OverviewPage() {
 }
 ```
 
-- [ ] **Step 2: Verify the build**
+- [ ] **Step 3: Verify the build**
 
 ```bash
 cd ADMIN
 npm run build
 ```
 
-Expected: succeeds. This is the first real page, so also verify manually:
-set `.env.local` from `.env.example` with real Clerk and `BACKEND_API_URL`
-values, run `npm run dev`, sign in with an admin account, confirm the three
-KPI numbers render without throwing.
+Expected: succeeds, and `/` now resolves to the Overview page rather than the
+placeholder.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add "ADMIN/app/(dashboard)/page.tsx"
+git add "ADMIN/app/(dashboard)/page.tsx" ADMIN/app/page.tsx
 git commit -m "feat(admin): overview page with KPI counts
 
 Registered user count, active quest count (endsAt in the future) and
@@ -2476,6 +2783,20 @@ BACKEND route."
 
 - [ ] **Step 1: Write `app/(dashboard)/documents/actions.ts`, the Server Actions**
 
+Two rules govern every Server Action in this plan, and both are load bearing:
+
+1. **An action called from inside a `try`/`catch` must not call `redirect()`.**
+   `redirect()` works by throwing a `NEXT_REDIRECT` error; a surrounding
+   `catch` swallows it and renders it as a failure message instead of
+   navigating. `DocumentForm` and `QuestForm` both wrap their submit in
+   `try`/`catch`, so their actions return a value and the form navigates with
+   `useRouter()`. `deleteDocumentAction` is different: it is invoked through a
+   `<form action=...>` with no `try`/`catch` around it, so it may redirect.
+2. **A Server Component may only pass a Server Action itself to a Client
+   Component, never a closure wrapping one.** `onSubmit={(v) => act(id, v)}`
+   fails to serialize. Bind the extra argument instead:
+   `act.bind(null, id)`.
+
 ```typescript
 'use server'
 
@@ -2484,11 +2805,16 @@ import { redirect } from 'next/navigation'
 import { createDocument, deleteDocument, updateDocument, type TDocumentInput } from '@/lib/backend/documents'
 import { documentFormSchema } from '@/lib/schemas'
 
-export async function createDocumentAction(input: TDocumentInput) {
+/**
+ * Returns the new id rather than redirecting: the caller runs inside a
+ * try/catch, which would swallow redirect()'s NEXT_REDIRECT throw and show
+ * it as an error. The form navigates on the returned id instead.
+ */
+export async function createDocumentAction(input: TDocumentInput): Promise<string> {
   const parsed = documentFormSchema.parse(input)
   const result = await createDocument(parsed as TDocumentInput)
   revalidatePath('/documents')
-  redirect(`/documents/${result.doc.id}`)
+  return result.doc.id as string
 }
 
 export async function updateDocumentAction(id: string, input: Partial<TDocumentInput>) {
@@ -2498,6 +2824,10 @@ export async function updateDocumentAction(id: string, input: Partial<TDocumentI
   revalidatePath(`/documents/${id}`)
 }
 
+/**
+ * Invoked through <form action=...> with no try/catch around it, so
+ * redirecting here is safe.
+ */
 export async function deleteDocumentAction(id: string) {
   await deleteDocument(id)
   revalidatePath('/documents')
@@ -2515,6 +2845,8 @@ wells, `space-y-3` field stack):
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -2530,9 +2862,11 @@ export function DocumentForm({
 }: {
   topics: TopicEntry[]
   initial?: Partial<TDocument>
-  onSubmit: (input: TDocumentInput) => Promise<void>
+  /** Create returns the new document's id to navigate to; update returns nothing. */
+  onSubmit: (input: TDocumentInput) => Promise<string | void>
   submitLabel: string
 }) {
+  const router = useRouter()
   const [title, setTitle] = useState(initial?.title ?? '')
   const [topic, setTopic] = useState(initial?.topic ?? topics[0]?.key ?? '')
   const [summary, setSummary] = useState(initial?.summary ?? '')
@@ -2547,7 +2881,7 @@ export function DocumentForm({
     setSubmitting(true)
     setError(null)
     try {
-      await onSubmit({
+      const newId = await onSubmit({
         title,
         topic: topic as TDocumentInput['topic'],
         summary: summary || undefined,
@@ -2559,6 +2893,10 @@ export function DocumentForm({
         content: initial?.content ?? {},
         quiz: initial?.quiz ?? {},
       })
+      toast.success('Saved')
+      if (typeof newId === 'string') {
+        router.push(`/documents/${newId}`)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -2804,14 +3142,14 @@ import { Card } from '@/components/ui/card'
 import { PanelTitle } from '@/components/dashboard/cards'
 import { useDataTable, Th, FilterPills } from '@/components/dashboard/use-table'
 import { TablePagination } from '@/components/dashboard/table-pagination'
-import type { TDocument } from '@/lib/backend/documents'
+import type { DocumentListItem } from '@/lib/backend/documents'
 import type { TopicEntry } from '@/lib/backend/content'
 
 export function DocumentsTable({
   documents,
   topics,
 }: {
-  documents: (TDocument & { id: string })[]
+  documents: DocumentListItem[]
   topics: TopicEntry[]
 }) {
   const t = useDataTable(documents, {
@@ -2956,7 +3294,7 @@ export default async function EditDocumentPage({
       <DocumentForm
         topics={topics}
         initial={document}
-        onSubmit={(input) => updateDocumentAction(id, input)}
+        onSubmit={updateDocumentAction.bind(null, id)}
         submitLabel="Save Changes"
       />
       <UploadFields documentId={id} />
@@ -3018,11 +3356,14 @@ server-side, so the token never reaches the browser."
 
 - [ ] **Step 1: Write `app/(dashboard)/quests/actions.ts`**
 
+No `redirect()` here: `QuestForm` calls this inside a `try`/`catch`, which
+would swallow `redirect()`'s `NEXT_REDIRECT` throw and render it as a
+failure. The form navigates with `useRouter()` after this resolves.
+
 ```typescript
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createQuest, type TCreateQuestInput } from '@/lib/backend/quests'
 import { questFormSchema } from '@/lib/schemas'
 
@@ -3038,7 +3379,6 @@ export async function createQuestAction(input: TCreateQuestInput) {
     endsAt: parsed.endsAt.toISOString(),
   })
   revalidatePath('/quests')
-  redirect('/quests')
 }
 ```
 
@@ -3051,20 +3391,23 @@ builder, `read_blog` shows a content picker:
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { QUEST_TYPES, type ChoiceQuestion, type QuestType, type TCreateQuestInput } from '@/lib/backend/quests'
-import type { TDocument } from '@/lib/backend/documents'
+import type { DocumentListItem } from '@/lib/backend/documents'
 
 export function QuestForm({
   documents,
   onSubmit,
 }: {
-  documents: (TDocument & { id: string })[]
+  documents: DocumentListItem[]
   onSubmit: (input: TCreateQuestInput) => Promise<void>
 }) {
+  const router = useRouter()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [type, setType] = useState<QuestType>('mcq')
@@ -3100,6 +3443,8 @@ export function QuestForm({
         startsAt,
         endsAt,
       })
+      toast.success('Quest created')
+      router.push('/quests')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -4181,8 +4526,8 @@ export default async function DraftDetailPage({
       <h1 className="text-2xl font-medium tracking-tight">Review Draft</h1>
       <DraftReview
         draft={draft}
-        onApprove={(overrides) => approveDraftAction(id, overrides)}
-        onReject={(reason) => rejectDraftAction(id, reason)}
+        onApprove={approveDraftAction.bind(null, id)}
+        onReject={rejectDraftAction.bind(null, id)}
       />
     </Shell>
   )
@@ -4227,7 +4572,8 @@ returned."
 
 **Files:**
 - Create: `ADMIN/app/(dashboard)/settings/page.tsx`,
-  `ADMIN/app/(dashboard)/settings/actions.ts`
+  `ADMIN/app/(dashboard)/settings/actions.ts`,
+  `ADMIN/app/(dashboard)/settings/reindex-button.tsx`
 
 **Interfaces:**
 - Consumes: `reindexKb` (Task 9), `requireAdminUser` (Task 4, for the
@@ -4255,10 +4601,9 @@ import { requireAdminUser } from '@/lib/require-admin'
 import { ReindexButton } from './reindex-button'
 
 export default async function SettingsPage() {
+  // The (dashboard) layout already gated this route, so ok is true here.
   const check = await requireAdminUser()
-  const email = check.ok
-    ? (check.user.publicMetadata as { email?: string }).email ?? check.user.id
-    : ''
+  const email = check.ok ? (check.user.email ?? check.user.id) : ''
 
   return (
     <Shell breadcrumb="Settings" active="Settings">
