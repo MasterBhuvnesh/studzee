@@ -9,12 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ChoiceQuestion, QuestType, TCreateQuestInput } from '@/lib/backend/quests'
 import type { DocumentListItem } from '@/lib/backend/documents'
-
-// Value import, not type-only: importing QUEST_TYPES from lib/backend/quests
-// would pull backendFetch (and @clerk/nextjs/server) into this client bundle.
-// lib/schemas.ts already keeps its own copy of this same list for the same
-// reason.
-const QUEST_TYPES = ['mcq', 'scq', 'fill_blank', 'read_blog'] as const
+import { QUEST_TYPES } from '@/lib/backend/constants'
 
 export function QuestForm({
   documents,

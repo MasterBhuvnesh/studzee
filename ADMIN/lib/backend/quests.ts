@@ -1,7 +1,8 @@
 import { backendFetch } from './client'
+import type { QuestType } from './constants'
 
-export const QUEST_TYPES = ['mcq', 'scq', 'fill_blank', 'read_blog'] as const
-export type QuestType = (typeof QUEST_TYPES)[number]
+export { QUEST_TYPES } from './constants'
+export type { QuestType } from './constants'
 
 export interface ChoiceQuestion {
   key: string

@@ -2,12 +2,10 @@ import { backendFetch } from './client'
 import type { Pagination } from './notifications'
 import type { QuestType } from './quests'
 import type { TopicKey } from './documents'
+import type { DraftKind, DraftStatus } from './constants'
 
-export const DRAFT_KINDS = ['document', 'quiz', 'key_notes', 'quest', 'notification'] as const
-export type DraftKind = (typeof DRAFT_KINDS)[number]
-
-export const DRAFT_STATUSES = ['pending', 'approved', 'rejected'] as const
-export type DraftStatus = (typeof DRAFT_STATUSES)[number]
+export { DRAFT_KINDS, DRAFT_STATUSES } from './constants'
+export type { DraftKind, DraftStatus } from './constants'
 
 export interface AiDraft {
   id: string
