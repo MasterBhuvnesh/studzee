@@ -27,8 +27,18 @@ export interface Pagination {
   totalPages: number
 }
 
+/**
+ * Send a push notification to registered devices. Returns detailed delivery
+ * stats including targeted count, sent count, failed count, and pruned invalid
+ * tokens. The backend returns HTTP 207 on partial delivery (some devices failed)
+ * to distinguish from a clean send; backendFetch treats 207 as success, so the
+ * caller must inspect the delivered counts to detect partial failure.
+ */
 export async function sendNotification(input: SendNotificationInput) {
-  return backendFetch<{ message: string }>('/admin/notifications/send', {
+  return backendFetch<{
+    message: string
+    data: { targeted: number; sent: number; failed: number; prunedTokens: number }
+  }>('/admin/notifications/send', {
     method: 'POST',
     body: input,
   })

@@ -21,12 +21,15 @@ describe('users backend client', () => {
     expect(mockBackendFetch).toHaveBeenCalledWith('/admin/users?page=1&limit=20')
   })
 
-  it('listUserEmails reads /admin/users/emails', async () => {
-    mockBackendFetch.mockResolvedValue(['a@b.com'])
+  it('listUserEmails unwraps the data envelope', async () => {
+    mockBackendFetch.mockResolvedValue({
+      data: ['a@b.com', 'c@d.com'],
+      meta: { total: 2 },
+    })
 
     const result = await listUserEmails()
 
     expect(mockBackendFetch).toHaveBeenCalledWith('/admin/users/emails')
-    expect(result).toEqual(['a@b.com'])
+    expect(result).toEqual(['a@b.com', 'c@d.com'])
   })
 })

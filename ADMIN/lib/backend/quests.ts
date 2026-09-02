@@ -36,10 +36,13 @@ export interface TQuest extends TCreateQuestInput {
 }
 
 export async function createQuest(input: TCreateQuestInput) {
-  return backendFetch<{ success: boolean; data: TQuest }>('/admin/quests', {
-    method: 'POST',
-    body: input,
-  })
+  return backendFetch<{ success: boolean; message: string; data: TQuest }>(
+    '/admin/quests',
+    {
+      method: 'POST',
+      body: input,
+    }
+  )
 }
 
 export async function listQuests() {

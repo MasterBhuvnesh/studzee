@@ -10,10 +10,13 @@ import { sendEmail, listEmailLogs } from './email'
 describe('email backend client', () => {
   beforeEach(() => mockBackendFetch.mockReset())
 
-  it('sendEmail posts to /admin/emails/send', async () => {
-    mockBackendFetch.mockResolvedValue({ message: 'ok' })
+  it('sendEmail posts to /admin/emails/send and returns recipients and messageId', async () => {
+    mockBackendFetch.mockResolvedValue({
+      message: 'Email sent',
+      data: { recipients: 1, messageId: 'msg-123' },
+    })
 
-    await sendEmail({
+    const result = await sendEmail({
       emails: ['a@b.com'],
       subject: 's',
       title: 't',
@@ -24,6 +27,8 @@ describe('email backend client', () => {
       method: 'POST',
       body: { emails: ['a@b.com'], subject: 's', title: 't', body: 'b' },
     })
+    expect(result.data.recipients).toBe(1)
+    expect(result.data.messageId).toBe('msg-123')
   })
 
   it('listEmailLogs reads /admin/emails/logs with paging', async () => {

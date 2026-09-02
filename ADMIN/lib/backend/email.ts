@@ -22,8 +22,14 @@ export interface EmailLogRecord {
   createdAt: string
 }
 
+/**
+ * Send a transactional email. Returns recipient count and Mailpit message ID.
+ */
 export async function sendEmail(input: SendEmailInput) {
-  return backendFetch<{ message: string }>('/admin/emails/send', {
+  return backendFetch<{
+    message: string
+    data: { recipients: number; messageId: string }
+  }>('/admin/emails/send', {
     method: 'POST',
     body: input,
   })
