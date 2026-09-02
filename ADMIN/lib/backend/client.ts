@@ -32,9 +32,10 @@ export async function backendFetch<T>(
   const token = await getToken()
 
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${token}`,
     ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     ...(init.headers as Record<string, string> | undefined),
+    // Authorization is written last to prevent caller from overriding the session token
+    Authorization: `Bearer ${token}`,
   }
 
   const response = await fetch(`${baseUrl}${path}`, {
@@ -44,7 +45,20 @@ export async function backendFetch<T>(
   })
 
   const text = await response.text()
-  const data = text ? JSON.parse(text) : null
+  let data: unknown
+
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch (e) {
+    if (!response.ok) {
+      // Non-2xx with unparseable body: use trimmed raw text as message
+      const message = text.length > 500 ? text.slice(0, 500) + '...' : text
+      throw new BackendError(response.status, message || `HTTP ${response.status}`, text)
+    } else {
+      // 2xx with unparseable body: backend returned non-JSON on success
+      throw new BackendError(response.status, 'Response was not valid JSON', text)
+    }
+  }
 
   if (!response.ok) {
     const message =
