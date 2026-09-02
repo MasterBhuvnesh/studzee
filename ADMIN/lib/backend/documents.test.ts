@@ -19,11 +19,11 @@ describe('documents backend client', () => {
   it('createDocument posts to /admin/documents', async () => {
     mockBackendFetch.mockResolvedValue({ message: 'ok', doc: { title: 'x' } })
 
-    await createDocument({ title: 'x', content: {}, quiz: {} })
+    await createDocument({ title: 'x', content: {}, quiz: {}, topic: 'aws' })
 
     expect(mockBackendFetch).toHaveBeenCalledWith('/admin/documents', {
       method: 'POST',
-      body: { title: 'x', content: {}, quiz: {} },
+      body: { title: 'x', content: {}, quiz: {}, topic: 'aws' },
     })
   })
 
