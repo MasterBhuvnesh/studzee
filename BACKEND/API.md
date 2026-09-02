@@ -641,6 +641,68 @@ Common failures on all admin routes:
 
 ### Documents
 
+#### Get Document
+
+- **Route:** `GET /admin/documents/:id`
+- **Description:** Complete document by its ID, ungated. `GET /content/:id` gates on `unlockPoints` against the caller's progress points, and an admin account has none, so every gated document would 403 for the one person allowed to edit it. This route reuses the same cached service read with no gate.
+- **URL Parameters:**
+  - `id` (string, required) - MongoDB document ID
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "title": "Introduction to TypeScript",
+      "content": [
+        {
+          "title": "Introduction",
+          "content": [
+            {
+              "type": "text",
+              "value": "TypeScript is a typed superset of JavaScript."
+            },
+            {
+              "type": "list",
+              "items": ["Static types", "Compiles to JavaScript"]
+            }
+          ]
+        }
+      ],
+      "summary": "A comprehensive guide to TypeScript basics",
+      "facts": "TypeScript was developed by Microsoft",
+      "imageUrl": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/images/507f1f77bcf86cd799439011.png",
+      "pdfUrl": [
+        {
+          "name": "typescript-guide.pdf",
+          "url": "https://lammfakgegmrkxdkwukd.supabase.co/storage/v1/object/public/pdfs/introduction-to-typescript.pdf",
+          "uploadedAt": "2026-08-10T10:30:00.000Z",
+          "size": 1234567
+        }
+      ],
+      "quiz": {
+        "q1": {
+          "que": "What is TypeScript?",
+          "ans": "A typed superset of JavaScript",
+          "options": [
+            "A typed superset of JavaScript",
+            "A new programming language"
+          ]
+        }
+      },
+      "key_notes": {
+        "note1": "TypeScript adds static types to JavaScript",
+        "note2": "It compiles down to plain JavaScript"
+      },
+      "unlockPoints": 500,
+      "createdAt": "2026-08-10T10:30:00.000Z",
+      "updatedAt": "2026-08-10T10:30:00.000Z"
+    }
+    ```
+  - `404 Not Found`
+    ```json
+    { "message": "Document not found" }
+    ```
+
 #### Create Document
 
 - **Route:** `POST /admin/documents`

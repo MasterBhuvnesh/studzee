@@ -1,5 +1,6 @@
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { adminService } from '@/services/admin.service'
+import * as ContentService from '@/services/content.service'
 import { z } from 'zod'
 
 /**
@@ -55,5 +56,33 @@ export const deleteDocument = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Document not found' })
     }
     res.status(500).json({ message: 'Error deleting document', error })
+  }
+}
+
+/**
+ * Read one document for the admin console.
+ *
+ * GET /content/:id cannot serve this: it gates on unlockPoints against the
+ * caller's progress points, and an admin has none, so every gated document
+ * would 403 for the one person allowed to edit it. The list route is
+ * projected and carries no content or quiz. This route is the ungated read
+ * the admin surface was missing; it reuses the cached service read, so it
+ * costs nothing extra against Mongo.
+ */
+export const getDocument = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const document = await ContentService.getContentById(req.params.id)
+
+    if (!document) {
+      return res.status(404).json({ message: 'Document not found' })
+    }
+
+    return res.json(document)
+  } catch (error) {
+    next(error)
   }
 }
