@@ -5,6 +5,28 @@ One entry per unit of work, with the branch, what changed, and why.
 
 ## 06-09-2026
 
+### Quest deactivate toggle and graceful document edit 404
+
+**Branch:** `feat/quest-deactivate`
+
+Two ADMIN console fixes. The documents Edit button already existed: the
+reported 404 came from the deployed backend, whose `latest` image predates
+the `GET /admin/documents/:id` read route, so its catch-all answered
+`Not Found`. No code change fixes that row until the image is redeployed;
+the edit page now renders not-found instead of the runtime overlay for any
+missing document.
+
+The quest toggle needed a real route. `PATCH /admin/quests/:id` takes only
+`{ active }` under a strict schema, with 400 on anything wider and 404 on an
+unknown id, and the quests table gained an Activate and Deactivate action per
+row. Withdrawing hides the quest from the live list and closes completions
+through the existing ended path.
+
+Verification: BACKEND lint 0 errors, Prettier check clean, typecheck clean,
+targeted Vitest suites pass (quest service 16, quest validation 21). ADMIN
+lint 0 errors, typecheck clean, full suite 38 passed across 9 files, and
+`next build` compiles all routes.
+
 ### ADMIN panel completion: AI drafts and Settings
 
 **Branch:** `feat/admin-panel`

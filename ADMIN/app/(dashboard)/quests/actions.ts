@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createQuest, type TCreateQuestInput } from '@/lib/backend/quests'
+import { createQuest, setQuestActive, type TCreateQuestInput } from '@/lib/backend/quests'
 import { questFormSchema } from '@/lib/schemas'
 
 export async function createQuestAction(input: TCreateQuestInput) {
@@ -15,5 +15,10 @@ export async function createQuestAction(input: TCreateQuestInput) {
     startsAt: parsed.startsAt.toISOString(),
     endsAt: parsed.endsAt.toISOString(),
   })
+  revalidatePath('/quests')
+}
+
+export async function setQuestActiveAction(id: string, active: boolean) {
+  await setQuestActive(id, active)
   revalidatePath('/quests')
 }

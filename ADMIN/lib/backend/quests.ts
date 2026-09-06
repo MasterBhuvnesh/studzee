@@ -52,3 +52,10 @@ export async function listQuests() {
   )
   return result.data
 }
+
+export async function setQuestActive(id: string, active: boolean) {
+  return backendFetch<{ success: boolean; message: string; data: TQuest }>(
+    `/admin/quests/${id}`,
+    { method: 'PATCH', body: { active } }
+  )
+}

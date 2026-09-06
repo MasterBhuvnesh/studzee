@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import { Shell } from '@/components/dashboard/shell'
 import { getDocument } from '@/lib/backend/documents'
 import { listTopics } from '@/lib/backend/content'
@@ -12,7 +13,17 @@ export default async function EditDocumentPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const [document, topics] = await Promise.all([getDocument(id), listTopics()])
+
+  // A document deleted after the list rendered, or a backend older than the
+  // admin read route, answers 404 here. Show the not-found page rather than
+  // the runtime error overlay.
+  let document
+  let topics
+  try {
+    ;[document, topics] = await Promise.all([getDocument(id), listTopics()])
+  } catch {
+    notFound()
+  }
 
   return (
     <Shell breadcrumb="Documents / Edit" active="Documents">

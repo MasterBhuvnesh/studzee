@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { PlusSignIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
@@ -11,11 +13,30 @@ import { useDataTable, Th } from '@/components/dashboard/use-table'
 import { TablePagination } from '@/components/dashboard/table-pagination'
 import type { TQuest } from '@/lib/backend/quests'
 
-export function QuestsTable({ quests }: { quests: TQuest[] }) {
+export function QuestsTable({
+  quests,
+  onToggleActive,
+}: {
+  quests: TQuest[]
+  onToggleActive: (id: string, active: boolean) => Promise<void>
+}) {
   const t = useDataTable(quests, {
     searchFields: (q) => [q.title, q.type],
     sorters: { title: (q) => q.title, endsAt: (q) => q.endsAt },
   })
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  async function handleToggle(q: TQuest) {
+    setBusyId(q.id as string)
+    try {
+      await onToggleActive(q.id as string, q.active === false)
+      toast.success(q.active === false ? 'Quest activated' : 'Quest withdrawn')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed')
+    } finally {
+      setBusyId(null)
+    }
+  }
 
   return (
     <Card className="gap-0 bg-muted/50 p-1 ring-0 shadow-sm dark:bg-muted">
@@ -37,13 +58,14 @@ export function QuestsTable({ quests }: { quests: TQuest[] }) {
               <TableHead className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Type</TableHead>
               <TableHead className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Gems</TableHead>
               <Th label="Ends" k="endsAt" sort={t} />
-              <TableHead className="pr-4 text-right font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Status</TableHead>
+              <TableHead className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Status</TableHead>
+              <TableHead className="pr-4 text-right font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {t.rows.length === 0 && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                   No results found
                 </TableCell>
               </TableRow>
@@ -56,8 +78,18 @@ export function QuestsTable({ quests }: { quests: TQuest[] }) {
                   <TableCell className="font-mono">{q.type}</TableCell>
                   <TableCell className="font-mono">{q.gems}</TableCell>
                   <TableCell className="font-mono">{new Date(q.endsAt).toLocaleDateString()}</TableCell>
-                  <TableCell className="pr-4 text-right">
+                  <TableCell>
                     <StatusBadge status={ended ? 'Ended' : q.active === false ? 'Withdrawn' : 'Active'} />
+                  </TableCell>
+                  <TableCell className="pr-4 text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busyId === q.id}
+                      onClick={() => handleToggle(q)}
+                    >
+                      {q.active === false ? 'Activate' : 'Deactivate'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               )
