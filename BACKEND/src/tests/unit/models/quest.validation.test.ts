@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CreateQuestSchema,
   QuestSubmissionSchema,
+  UpdateQuestSchema,
 } from '@/models/quest.validation'
 
 const CHOICE_PAYLOAD = {
@@ -124,6 +125,23 @@ describe('CreateQuestSchema', () => {
     if (!result.success) {
       expect(Object.keys(result.error.flatten().fieldErrors)).toContain(path)
     }
+  })
+})
+
+describe('UpdateQuestSchema', () => {
+  it.each([
+    ['withdrawing', { active: false }],
+    ['reactivating', { active: true }],
+  ])('accepts %s', (_label, body) => {
+    expect(UpdateQuestSchema.safeParse(body).success).toBe(true)
+  })
+
+  it.each([
+    ['a missing active flag', {}],
+    ['a non boolean flag', { active: 'yes' }],
+    ['a stray field beside the flag', { active: false, title: 'New' }],
+  ])('rejects %s', (_label, body) => {
+    expect(UpdateQuestSchema.safeParse(body).success).toBe(false)
   })
 })
 

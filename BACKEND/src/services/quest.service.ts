@@ -1,6 +1,10 @@
 import { prisma } from '@/config'
 import { Badge } from '@/models/gamification'
-import { CreateQuestSchema, TQuestResponses } from '@/models/quest.validation'
+import {
+  CreateQuestSchema,
+  TQuestResponses,
+  UpdateQuestSchema,
+} from '@/models/quest.validation'
 import { Streaks, recordActivityAndAward } from '@/services/progress.service'
 import { AppError } from '@/types/errors'
 import logger from '@/utils/logger'
@@ -289,4 +293,27 @@ export const createQuest = async (input: unknown) => {
 /** Full quest list for the admin console, newest first. */
 export const listAllQuests = async () => {
   return prisma.quest.findMany({ orderBy: { createdAt: 'desc' } })
+}
+
+/**
+ * Admin side active toggle. Withdrawing (active false) hides the quest from
+ * the live list and closes completions through the same ended path as an
+ * expired window; reactivating reverses both. Unknown ids answer 404 like
+ * the completion path.
+ */
+export const setQuestActive = async (id: string, input: unknown) => {
+  const parsed = UpdateQuestSchema.safeParse(input)
+  if (!parsed.success) {
+    throw appError(400, 'Invalid quest update')
+  }
+
+  const quest = await prisma.quest.findUnique({ where: { id } })
+  if (!quest) {
+    throw appError(404, 'Quest not found')
+  }
+
+  return prisma.quest.update({
+    where: { id },
+    data: { active: parsed.data.active },
+  })
 }

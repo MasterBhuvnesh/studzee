@@ -93,6 +93,19 @@ export const CreateQuestSchema = z
 
 export type TCreateQuest = z.infer<typeof CreateQuestSchema>
 
+/**
+ * Toggling a quest live or withdrawn. Strict so a stray field cannot widen
+ * this into a partial update: title, window and gems stay create time
+ * decisions, and withdrawing is the only post create edit.
+ */
+export const UpdateQuestSchema = z
+  .object({
+    active: z.boolean(),
+  })
+  .strict()
+
+export type TUpdateQuest = z.infer<typeof UpdateQuestSchema>
+
 /** Option indices for mcq and scq submissions. */
 const NumericResponsesSchema = z.record(z.string(), z.number().int().min(0))
 

@@ -135,6 +135,8 @@ Date is the date the status last changed.
 | ADMIN panel: AI drafts list with status filter and generation panel                           | BHUVNESH  | DONE    | 06-09-2026 |
 | ADMIN panel: AI draft detail page with approve, reject and overrides                          | BHUVNESH  | DONE    | 06-09-2026 |
 | ADMIN panel: Settings page showing session and environment                                    | BHUVNESH  | DONE    | 06-09-2026 |
+| Quest live and withdrawn toggle: `PATCH /admin/quests/:id` plus the ADMIN row button          | BHUVNESH  | DONE    | 06-09-2026 |
+| ADMIN document edit page renders not-found instead of crashing on a missing document          | BHUVNESH  | DONE    | 06-09-2026 |
 | Support assistant chat screen wired into Get Support                                        | BHUVNESH  | DONE    | 29-08-2026 |
 
 ## DEPLOYMENT

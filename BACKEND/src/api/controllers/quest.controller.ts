@@ -4,6 +4,7 @@ import {
   createQuest,
   listActiveQuests,
   listAllQuests,
+  setQuestActive,
 } from '@/services/quest.service'
 
 /**
@@ -77,6 +78,25 @@ export const listAllQuestsAdmin = async (
   try {
     const quests = await listAllQuests()
     return res.status(200).json({ success: true, data: quests })
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * Admin side active toggle. Route middleware validates the body against
+ * UpdateQuestSchema before this runs.
+ */
+export const updateQuestAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const quest = await setQuestActive(req.params.id, req.body)
+    return res
+      .status(200)
+      .json({ success: true, message: 'Quest updated', data: quest })
   } catch (error) {
     next(error)
   }

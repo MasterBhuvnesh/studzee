@@ -1043,6 +1043,62 @@ Common failures on all admin routes:
 
 ---
 
+### Quests
+
+#### Create Quest
+
+- **Route:** `POST /admin/quests`
+- **Rate Limit:** 20 requests per minute
+- **Request Body:** `title`, `description`, `type` (`mcq`, `scq`, `fill_blank`, `read_blog`), `gems`, `startsAt`, `endsAt`, plus `contentId` for `read_blog` and a `payload` of questions with `passScore` for graded types
+- **Response:**
+  - `201 Created`
+    ```json
+    {
+      "success": true,
+      "message": "Quest created",
+      "data": { "id": "clx1234567890" }
+    }
+    ```
+
+#### List All Quests
+
+- **Route:** `GET /admin/quests`
+- **Description:** Every quest, newest first, including expired and withdrawn ones
+- **Rate Limit:** 30 requests per minute
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "success": true,
+      "data": [
+        { "id": "clx1234567890", "title": "Week one quiz", "active": true }
+      ]
+    }
+    ```
+
+#### Update Quest Active Flag
+
+- **Route:** `PATCH /admin/quests/:id`
+- **Description:** Flip a quest live or withdrawn. Withdrawing hides it from the live list and closes completions through the ended path. The body carries only the flag.
+- **Rate Limit:** 20 requests per minute
+- **Request Body:**
+  ```json
+  { "active": false }
+  ```
+- **Response:**
+  - `200 OK`
+    ```json
+    {
+      "success": true,
+      "message": "Quest updated",
+      "data": { "id": "clx1234567890", "active": false }
+    }
+    ```
+  - `400 Bad Request` - Anything but the `active` boolean
+  - `404 Not Found` - Unknown quest id
+
+---
+
 ### AI Generation and Drafts
 
 Generation turns existing material into a **pending draft**. Nothing in this

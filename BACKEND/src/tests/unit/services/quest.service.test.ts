@@ -23,6 +23,7 @@ const { prismaMock } = vi.hoisted(() => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
     questCompletion: {
       findMany: vi.fn(),
@@ -40,7 +41,11 @@ const { recordActivityAndAward } = vi.hoisted(() => ({
 
 vi.mock('@/services/progress.service', () => ({ recordActivityAndAward }))
 
-import { completeQuest, listActiveQuests } from '@/services/quest.service'
+import {
+  completeQuest,
+  listActiveQuests,
+  setQuestActive,
+} from '@/services/quest.service'
 
 const USER = 'clerk_user_1'
 const QUEST_ID = 'quest_1'
@@ -275,5 +280,39 @@ describe('award delegation', () => {
     // Quest completions are activity for streaks but never QuizAttempts, so
     // nothing here touches attempt counting.
     expect(recordActivityAndAward).toHaveBeenCalledWith(USER, 25)
+  })
+})
+
+describe('setQuestActive', () => {
+  it('flips the active flag on a known quest', async () => {
+    prismaMock.quest.update.mockResolvedValue(buildQuest({ active: false }))
+
+    const result = await setQuestActive(QUEST_ID, { active: false })
+
+    expect(prismaMock.quest.update).toHaveBeenCalledWith({
+      where: { id: QUEST_ID },
+      data: { active: false },
+    })
+    expect(result.active).toBe(false)
+  })
+
+  it('answers 404 for an unknown quest id', async () => {
+    prismaMock.quest.findUnique.mockResolvedValue(null)
+
+    await expect(
+      setQuestActive('quest_missing', { active: false })
+    ).rejects.toMatchObject({
+      statusCode: 404,
+    })
+    expect(prismaMock.quest.update).not.toHaveBeenCalled()
+  })
+
+  it('answers 400 when the body carries anything but the flag', async () => {
+    await expect(
+      setQuestActive(QUEST_ID, { active: false, gems: 99 })
+    ).rejects.toMatchObject({
+      statusCode: 400,
+    })
+    expect(prismaMock.quest.update).not.toHaveBeenCalled()
   })
 })

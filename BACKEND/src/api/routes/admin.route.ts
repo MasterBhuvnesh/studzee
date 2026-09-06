@@ -29,7 +29,7 @@ import {
   ListDraftsQuerySchema,
   RejectDraftSchema,
 } from '@/models/ai.validation'
-import { CreateQuestSchema } from '@/models/quest.validation'
+import { CreateQuestSchema, UpdateQuestSchema } from '@/models/quest.validation'
 
 const router = Router()
 
@@ -176,6 +176,18 @@ router.get(
   '/quests',
   rateLimitMiddleware({ windowMs: 60_000, max: 30 }),
   QuestController.listAllQuestsAdmin
+)
+
+/**
+ * @route PATCH /admin/quests/:id
+ * @description Flip a quest live or withdrawn. Withdrawing hides it from the
+ *              live list and closes completions through the ended path.
+ */
+router.patch(
+  '/quests/:id',
+  rateLimitMiddleware({ windowMs: 60_000, max: 20 }),
+  validateBody(UpdateQuestSchema),
+  QuestController.updateQuestAdmin
 )
 
 // --- AI generation and draft review ---

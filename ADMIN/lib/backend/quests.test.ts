@@ -5,7 +5,7 @@ vi.mock('./client', () => ({
   backendFetch: (...args: unknown[]) => mockBackendFetch(...args),
 }))
 
-import { createQuest, listQuests } from './quests'
+import { createQuest, listQuests, setQuestActive } from './quests'
 
 describe('quests backend client', () => {
   beforeEach(() => mockBackendFetch.mockReset())
@@ -36,5 +36,16 @@ describe('quests backend client', () => {
 
     expect(mockBackendFetch).toHaveBeenCalledWith('/admin/quests')
     expect(result).toEqual([{ id: 'q1' }])
+  })
+
+  it('setQuestActive patches /admin/quests/:id with the flag', async () => {
+    mockBackendFetch.mockResolvedValue({ success: true, data: { id: 'q1', active: false } })
+
+    await setQuestActive('q1', false)
+
+    expect(mockBackendFetch).toHaveBeenCalledWith(
+      '/admin/quests/q1',
+      expect.objectContaining({ method: 'PATCH', body: { active: false } })
+    )
   })
 })
