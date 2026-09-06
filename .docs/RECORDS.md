@@ -132,6 +132,9 @@ Date is the date the status last changed.
 | Wire `useNotificationPermissions` into Settings with foreground re-registration             | BHUVNESH  | DONE    | 25-08-2026 |
 | MOBILE rewrite, after the backend is settled                                                | BHUVNESH  | PLANNED | 10-08-2026 |
 | DESKTOP admin console: content CRUD, quests, users, push composer                                | BHUVNESH  | IN PROGRESS | 26-08-2026 |
+| ADMIN panel: AI drafts list with status filter and generation panel                           | BHUVNESH  | DONE    | 06-09-2026 |
+| ADMIN panel: AI draft detail page with approve, reject and overrides                          | BHUVNESH  | DONE    | 06-09-2026 |
+| ADMIN panel: Settings page showing session and environment                                    | BHUVNESH  | DONE    | 06-09-2026 |
 | Support assistant chat screen wired into Get Support                                        | BHUVNESH  | DONE    | 29-08-2026 |
 
 ## DEPLOYMENT
