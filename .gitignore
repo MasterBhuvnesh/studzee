@@ -6,3 +6,7 @@ node_modules/
 # Scratch logs from running a dev server in the background.
 .dev.log
 .dev.err
+
+# Agent execution scratch: ledgers, task briefs, review packages. The git
+# history is the durable record, so none of this belongs in the repository.
+.superpowers/

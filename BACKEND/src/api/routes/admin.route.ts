@@ -39,6 +39,13 @@ router.use(clerkAuthMiddleware, requireAuth, requireAdmin)
 // --- Documents ---
 
 /**
+ * @route GET /admin/documents/:id
+ * @description Read one document, ungated. The public content route gates on
+ *              unlockPoints, which an admin never satisfies.
+ */
+router.get('/documents/:id', AdminController.getDocument)
+
+/**
  * @route POST /admin/documents
  * @description Create a new document.
  */

@@ -3,6 +3,33 @@
 Running record of work done on this repository. Newest entry first.
 One entry per unit of work, with the branch, what changed, and why.
 
+## 06-09-2026
+
+### ADMIN panel completion: AI drafts and Settings
+
+**Branch:** `feat/admin-panel`
+
+The ADMIN Next.js console had every section except the AI layer: the
+`ai-drafts` server actions and the `DraftReview` component existed with no
+pages behind them, and the sidebar linked to a `/settings` route that did not
+exist. Three pages close that gap, following the existing quests and
+notifications patterns (server page fetching through `lib/backend`, client
+table and form components, server actions for mutations).
+
+- `ai-drafts/page.tsx` lists drafts with the shared searchable table plus a
+  generation panel for all five generators. Generation stays draft only:
+  runs land pending in the queue and publish on approval.
+- `ai-drafts/[id]/page.tsx` shows draft metadata with the payload review,
+  approve with optional JSON overrides, and reject with an optional reason.
+  Unknown ids render the not-found page.
+- `settings/page.tsx` shows the signed-in admin session from
+  `requireAdminUser` and the non-secret environment (backend URL, Clerk key
+  presence). No secret value is displayed.
+
+Verification: `npm run lint` reports 0 errors, `tsc --noEmit` is clean,
+`vitest run` passes 37 tests across 9 files, and `next build` compiles all
+15 routes including the three new ones.
+
 ## 29-08-2026
 
 ### Support chat keyboard overlap
