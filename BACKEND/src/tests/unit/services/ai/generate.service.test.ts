@@ -39,12 +39,14 @@ vi.mock('@/models/document.model', () => ({
 
 vi.mock('@/config', async (importOriginal) => {
   // The real config is kept so AI_MODEL and the rest still resolve; only the
-  // Prisma client is replaced.
+  // Prisma client is replaced. No stored chat model, so drafts record the env
+  // default.
   const actual = await importOriginal<typeof import('@/config')>()
   return {
     ...actual,
     prisma: {
       aiDraft: { create: aiDraftCreate },
+      aiConfig: { findUnique: async () => null },
       quest: { findUnique: questFindUnique },
     },
   }

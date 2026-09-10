@@ -35,6 +35,41 @@ export type DraftKind = (typeof DRAFT_KINDS)[number]
 export const DRAFT_STATUSES = ['pending', 'approved', 'rejected'] as const
 export type DraftStatus = (typeof DRAFT_STATUSES)[number]
 
+/**
+ * CHAT MODELS
+ *
+ * Every id below was verified present on the live NVIDIA endpoint
+ * (GET https://integrate.api.nvidia.com/v1/models) on 10-09-2026, the day
+ * the Ultra default started answering 503. Instruction tuned models only:
+ * reasoning variants do not honour response_format json_object reliably,
+ * which the structured generators depend on.
+ */
+export const AI_CHAT_MODELS = [
+  'nvidia/nemotron-3-super-120b-a12b',
+  'nvidia/nemotron-3-ultra-550b-a55b',
+  'nvidia/nemotron-nano-3-30b-a3b',
+  'nvidia/nemotron-3.5-lightning-30b-a3b',
+  'nvidia/llama-3.1-nemotron-70b-instruct',
+  'openai/gpt-oss-20b',
+] as const
+export type AiChatModel = (typeof AI_CHAT_MODELS)[number]
+
+export const AiChatModelSchema = z.enum(AI_CHAT_MODELS)
+
+/** One global chat model, changed by an admin from the Settings screen. */
+export const UpdateAiConfigSchema = z.object({
+  chatModel: AiChatModelSchema,
+})
+export type TUpdateAiConfig = z.infer<typeof UpdateAiConfigSchema>
+
+export const SCHEDULED_STATUSES = [
+  'pending',
+  'done',
+  'failed',
+  'canceled',
+] as const
+export type ScheduledStatus = (typeof SCHEDULED_STATUSES)[number]
+
 /** A 24 character Mongo document id, matching the rule CreateQuestSchema uses. */
 const MongoIdSchema = z
   .string()
@@ -264,6 +299,47 @@ export const ListDraftsQuerySchema = z.object({
   kind: z.enum(DRAFT_KINDS).optional(),
 })
 export type TListDraftsQuery = z.infer<typeof ListDraftsQuerySchema>
+
+/**
+ * A one shot content generation booked for later. The generation input is the
+ * same GenerateContentSchema the immediate route uses, so a scheduled run and
+ * a manual run validate identically and produce the same draft shape.
+ */
+// GenerateContentSchema is a ZodEffects after its own superRefine, which has
+// no extend, so this reaches the inner object and restates both refinements:
+// the title or brief requirement and the future runAt.
+export const ScheduleContentSchema = GenerateContentSchema.innerType()
+  .extend({
+    runAt: z.coerce.date(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.title && !data.brief) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['title'],
+        message: 'Supply a title, a brief, or both',
+      })
+    }
+    // A minute of grace for clock skew between the admin console and the API,
+    // but nothing in the past: a past runAt would either fire immediately,
+    // surprising the owner, or sit ambiguously next to genuinely due rows.
+    if (data.runAt.getTime() <= Date.now() - 60_000) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['runAt'],
+        message: 'runAt must be in the future',
+      })
+    }
+    // The title or brief requirement is inherited from GenerateContentSchema.
+  })
+export type TScheduleContent = z.infer<typeof ScheduleContentSchema>
+
+export const ListSchedulesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(SCHEDULED_STATUSES).optional(),
+})
+export type TListSchedulesQuery = z.infer<typeof ListSchedulesQuerySchema>
 
 /**
  * Approval may carry field overrides, merged over the stored payload before it

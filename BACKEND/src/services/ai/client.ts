@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { config } from '@/config'
+import { resolveChatModel } from '@/services/ai/config.service'
 import { AppError } from '@/types/errors'
 import logger from '@/utils/logger'
 
@@ -25,6 +26,8 @@ export interface ChatOptions {
   /** Lower for structured extraction, higher for support prose. */
   temperature?: number
   maxTokens?: number
+  /** Rare override. Defaults to the admin selected model, else AI_MODEL. */
+  model?: string
 }
 
 const appError = (
@@ -163,7 +166,7 @@ export const chatText = async (
   options: ChatOptions = {}
 ): Promise<string> => {
   const payload = await post<ChatResponse>('/chat/completions', {
-    model: config.AI_MODEL,
+    model: options.model ?? (await resolveChatModel()),
     messages,
     temperature: options.temperature ?? 0.3,
     max_tokens: options.maxTokens ?? config.AI_MAX_TOKENS,
@@ -219,7 +222,7 @@ export const chatJson = async <T>(
   options: ChatOptions = {}
 ): Promise<T> => {
   const body = {
-    model: config.AI_MODEL,
+    model: options.model ?? (await resolveChatModel()),
     temperature: options.temperature ?? 0.2,
     max_tokens: options.maxTokens ?? config.AI_MAX_TOKENS,
     response_format: { type: 'json_object' as const },

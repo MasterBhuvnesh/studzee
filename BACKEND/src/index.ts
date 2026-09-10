@@ -17,6 +17,7 @@ import supportRoutes from '@/api/routes/support.route'
 import webhookRoutes from '@/api/routes/webhook.route'
 import { config, connectDB, connectPostgres, connectRedis } from '@/config'
 import { startAiNotifyJob } from '@/jobs/ai-notify'
+import { startAiScheduleJob } from '@/jobs/ai-schedule'
 import { scheduleJobs } from '@/jobs/cache-refresh'
 import { startHeartbeatJob } from '@/jobs/heartbeat'
 import { startTokenCleanupJob } from '@/jobs/token-cleanup'
@@ -108,6 +109,7 @@ const main = async () => {
       startTokenCleanupJob()
       scheduleJobs()
       startAiNotifyJob()
+      startAiScheduleJob()
     })
   } catch (err) {
     logger.error(err, 'Failed to start server')

@@ -17,6 +17,16 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { z } from 'zod'
+
+// The chat client resolves the admin selected model before every call. Pin it
+// here so these transport tests never touch the database; config.service has
+// its own suite covering the stored versus env fallback.
+const { resolveChatModel } = vi.hoisted(() => ({
+  resolveChatModel: vi.fn(),
+}))
+
+vi.mock('@/services/ai/config.service', () => ({ resolveChatModel }))
+
 import { config } from '@/config'
 import { chatJson, chatText, embed } from '@/services/ai/client'
 import { AppError } from '@/types/errors'
@@ -46,6 +56,7 @@ const ShapeSchema = z.object({ answer: z.string(), count: z.number() })
 describe('AI client', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    resolveChatModel.mockResolvedValue('model-under-test')
   })
 
   describe('chatText', () => {
@@ -125,6 +136,22 @@ describe('AI client', () => {
       // ASSERT
       expect((failure as AppError).statusCode).toBe(504)
       expect((failure as AppError).code).toBe('AI_TIMEOUT')
+    })
+
+    it('should send the admin selected model', async () => {
+      // ARRANGE
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(chatReply('ok'))
+
+      // ACT
+      await chatText([{ role: 'user', content: 'q' }])
+
+      // ASSERT
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string) as {
+        model: string
+      }
+      expect(body.model).toBe('model-under-test')
     })
 
     it('should raise a 502 on an empty completion', async () => {

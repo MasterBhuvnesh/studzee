@@ -27,7 +27,10 @@ import {
   GenerateQuestSchema,
   GenerateQuizSchema,
   ListDraftsQuerySchema,
+  ListSchedulesQuerySchema,
   RejectDraftSchema,
+  ScheduleContentSchema,
+  UpdateAiConfigSchema,
 } from '@/models/ai.validation'
 import { CreateQuestSchema, UpdateQuestSchema } from '@/models/quest.validation'
 
@@ -259,6 +262,62 @@ router.post(
   generateLimit(),
   validateBody(GenerateNotificationSchema),
   AiController.generateNotification
+)
+
+/**
+ * @route GET /admin/ai/config
+ * @description The effective chat model, the allowlist, and where the value
+ *              comes from. Read by the admin Settings screen.
+ */
+router.get(
+  '/ai/config',
+  rateLimitMiddleware({ windowMs: 60_000, max: 30 }),
+  AiController.getAiConfig
+)
+
+/**
+ * @route PUT /admin/ai/config
+ * @description Store the admin's chat model choice. The body is constrained
+ *              to the allowlist, so an unknown id is a 400.
+ */
+router.put(
+  '/ai/config',
+  rateLimitMiddleware({ windowMs: 60_000, max: 20 }),
+  validateBody(UpdateAiConfigSchema),
+  AiController.updateAiConfig
+)
+
+/**
+ * @route POST /admin/ai/schedule/content
+ * @description Book a whole document draft for a future time. The per minute
+ *              job generates it into the pending queue; nothing publishes.
+ */
+router.post(
+  '/ai/schedule/content',
+  generateLimit(),
+  validateBody(ScheduleContentSchema),
+  AiController.scheduleContent
+)
+
+/**
+ * @route GET /admin/ai/schedule
+ * @description Paginated bookings, filterable by status.
+ */
+router.get(
+  '/ai/schedule',
+  rateLimitMiddleware({ windowMs: 60_000, max: 30 }),
+  validateQuery(ListSchedulesQuerySchema),
+  AiController.listSchedules
+)
+
+/**
+ * @route DELETE /admin/ai/schedule/:id
+ * @description Withdraw a booking that has not run yet.
+ */
+router.delete(
+  '/ai/schedule/:id',
+  rateLimitMiddleware({ windowMs: 60_000, max: 20 }),
+  AiController.cancelSchedule
 )
 
 /**

@@ -169,6 +169,38 @@ model AiDraft {
   @@index([createdAt])
 }
 
+/// The one global AI setting row, id always 'global'. chatModel overrides the
+/// AI_MODEL environment default for every generation and support answer, and
+/// is changed by an admin from the Settings screen through
+/// PUT /admin/ai/config. No row means the environment default applies, so a
+/// fresh database behaves exactly like before this table existed.
+model AiConfig {
+  id        String   @id @default("global")
+  chatModel String
+  updatedBy String
+  updatedAt DateTime @updatedAt
+}
+
+/// A content generation booked for a future time. input is the validated
+/// GenerateContentSchema body the immediate route would have received, so a
+/// scheduled run produces exactly the same draft shape as a manual one. The
+/// per minute ai-schedule job picks up due pending rows and runs them through
+/// generateContentDraft; the resulting AiDraft id lands in draftId and the
+/// row moves to done, or to failed with the error recorded.
+model ScheduledDraft {
+  id        String   @id @default(cuid())
+  kind      String   @default("document")
+  input     Json
+  runAt     DateTime
+  status    String   @default("pending")
+  createdBy String
+  draftId   String?
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([status, runAt])
+}
+
 /// One embedded passage of the support knowledge base. source is support-md for
 /// the curated file, registry for the levels, badges and topics rendered out of
 /// code, and content for a Mongo document.
