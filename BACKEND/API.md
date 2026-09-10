@@ -1428,14 +1428,14 @@ applies.
 - **Path:** `/admin/ai/schedule/content`
 - **Rate limit:** 10 per minute
 
-| Field     | Type   | Required | Notes                                             |
-| --------- | ------ | -------- | ------------------------------------------------- |
-| `runAt`   | date   | yes      | ISO 8601, must be in the future                   |
-| `title`   | string | no       | Same rules as generating a document immediately   |
-| `topic`   | string | no       | Same rules as generating a document immediately   |
-| `brief`   | string | no       | Same rules as generating a document immediately   |
-| `sections`| number | no       | Same rules as generating a document immediately   |
-| `quizCount`| number | no       | Same rules as generating a document immediately   |
+| Field       | Type   | Required | Notes                                           |
+| ----------- | ------ | -------- | ----------------------------------------------- |
+| `runAt`     | date   | yes      | ISO 8601, must be in the future                 |
+| `title`     | string | no       | Same rules as generating a document immediately |
+| `topic`     | string | no       | Same rules as generating a document immediately |
+| `brief`     | string | no       | Same rules as generating a document immediately |
+| `sections`  | number | no       | Same rules as generating a document immediately |
+| `quizCount` | number | no       | Same rules as generating a document immediately |
 
 Returns `201` with the booking. A per minute job generates due bookings into
 the pending draft queue, where the approval gate applies unchanged: nothing
@@ -1449,11 +1449,11 @@ recorded on the row rather than retried, so the owner reschedules by hand.
 - **Path:** `/admin/ai/schedule`
 - **Rate limit:** 30 per minute
 
-| Query    | Type   | Notes                                           |
-| -------- | ------ | ----------------------------------------------- |
-| `page`   | number | Defaults to 1                                   |
-| `limit`  | number | 1 to 100, defaults to 20                        |
-| `status` | string | `pending`, `done`, `failed` or `canceled`       |
+| Query    | Type   | Notes                                     |
+| -------- | ------ | ----------------------------------------- |
+| `page`   | number | Defaults to 1                             |
+| `limit`  | number | 1 to 100, defaults to 20                  |
+| `status` | string | `pending`, `done`, `failed` or `canceled` |
 
 #### Cancel a Scheduled Draft
 
@@ -1466,9 +1466,9 @@ as the audit record.
 
 **Errors**
 
-| Status | Code               | Meaning                                  |
-| ------ | ------------------ | ---------------------------------------- |
-| `404`  |                    | No booking with that id                  |
+| Status | Code               | Meaning                                     |
+| ------ | ------------------ | ------------------------------------------- |
+| `404`  |                    | No booking with that id                     |
 | `409`  | `SCHEDULE_SETTLED` | The booking already ran, failed or canceled |
 
 ---

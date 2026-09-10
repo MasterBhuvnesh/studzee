@@ -242,54 +242,54 @@ four, so a fresh clone runs with no external account.
 
 Configuration is parsed and validated by Zod at import time. A missing or malformed required variable throws before the server starts, rather than failing on the first request that needs it.
 
-| Variable                       | Description                                                              | Required | Default               |
-| ------------------------------ | ------------------------------------------------------------------------ | -------- | --------------------- |
-| `NODE_ENV`                     | Environment (development/production/test)                                | Yes      | development           |
-| `PORT`                         | Server port                                                              | No       | 4000                  |
-| `MONGO_URI`                    | MongoDB connection string                                                | Yes      | -                     |
-| `DB_NAME`                      | MongoDB database name                                                    | No       | Studzee_Database      |
-| `MONGO_ROOT_USER`              | MongoDB root username (Docker only)                                      | Yes      | -                     |
-| `MONGO_ROOT_PASSWORD`          | MongoDB root password (Docker only)                                      | Yes      | -                     |
-| `DATABASE_URL`                 | PostgreSQL connection string used by Prisma                              | Yes      | -                     |
-| `POSTGRES_USER`                | Postgres username (Docker only)                                          | No       | postgres              |
-| `POSTGRES_PASSWORD`            | Postgres password (Docker only)                                          | No       | postgres              |
-| `POSTGRES_DB`                  | Postgres database name (Docker only)                                     | No       | studzee_notifications |
-| `POSTGRES_PORT`                | Postgres host port (Docker only)                                         | No       | 5432                  |
-| `REDIS_URL`                    | Redis connection URL                                                     | Yes      | -                     |
-| `CLERK_SECRET_KEY`             | Clerk authentication secret key                                          | Yes      | -                     |
-| `CLERK_PUBLISHABLE_KEY`        | Clerk publishable key                                                    | Yes      | -                     |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | Signing secret for `/webhooks/clerk`. The webhook returns 500 without it | No       | -                     |
-| `LIST_CACHE_TTL`               | List cache TTL in seconds                                                | No       | 300                   |
-| `DOC_CACHE_TTL`                | Document cache TTL in seconds                                            | No       | 86400                 |
-| `TODAY_CACHE_TTL`              | Today's content cache TTL in seconds                                     | No       | 3600                  |
-| `JOB_CRON`                     | Cron expression for cache refresh job (currently unused)                 | No       | 0 0 \* \* \*          |
-| `LOG_LEVEL`                    | Logging level (info/debug/error)                                         | No       | info                  |
-| `S3_REGION`                    | Storage region. Must match the Supabase project region exactly           | Yes      | -                     |
-| `S3_ACCESS_KEY_ID`             | Storage access key ID                                                    | Yes      | -                     |
-| `S3_SECRET_ACCESS_KEY`         | Storage secret access key                                                | Yes      | -                     |
-| `S3_BUCKET_IMAGES`             | Public bucket holding uploaded images                                    | Yes      | -                     |
-| `S3_BUCKET_PDFS`               | Public bucket holding uploaded PDFs                                      | Yes      | -                     |
-| `S3_ENDPOINT`                  | S3 API endpoint, Supabase or MinIO                                       | Yes      | -                     |
-| `S3_PUBLIC_URL`                | Base public object URLs are built from, bucket and key appended          | Yes      | -                     |
-| `SMTP_HOST`                    | SMTP server hostname                                                     | Yes      | -                     |
-| `SMTP_PORT`                    | SMTP port. Implicit TLS on 465, STARTTLS elsewhere                       | No       | 587                   |
-| `SMTP_USER`                    | SMTP username                                                            | Yes      | -                     |
-| `SMTP_PASSWORD`                | SMTP password                                                            | Yes      | -                     |
-| `EMAIL_FROM`                   | Sender address on outbound email                                         | Yes      | -                     |
-| `SITE_URL`                     | Public site URL used in email templates                                  | No       | https://studzee.in    |
-| `EMAIL_BANNER_URL`             | Banner image used in email templates                                     | No       | the S3 brand banner   |
-| `EMAIL_ATTACHMENT_HOSTS`       | Comma separated hosts an email attachment may be fetched from            | No       | the S3 asset bucket   |
-| `DEV_TOKEN`                    | Development auth bypass token (bypasses Clerk authentication)            | No       | -                     |
-| `HEALTHCHECK_URL`              | URL for the heartbeat job to ping. The job is skipped when unset         | No       | -                     |
-| `AI_ENABLED`                   | Turns the whole AI layer on. Everything below is ignored while false     | No       | `false`               |
-| `AI_BASE_URL`                  | OpenAI compatible endpoint for chat completions and embeddings           | No       | NVIDIA build          |
-| `AI_API_KEY`                   | Provider key. **Required** once `AI_ENABLED` is true                     | No       | -                     |
+| Variable                       | Description                                                                                          | Required | Default               |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------- | -------- | --------------------- |
+| `NODE_ENV`                     | Environment (development/production/test)                                                            | Yes      | development           |
+| `PORT`                         | Server port                                                                                          | No       | 4000                  |
+| `MONGO_URI`                    | MongoDB connection string                                                                            | Yes      | -                     |
+| `DB_NAME`                      | MongoDB database name                                                                                | No       | Studzee_Database      |
+| `MONGO_ROOT_USER`              | MongoDB root username (Docker only)                                                                  | Yes      | -                     |
+| `MONGO_ROOT_PASSWORD`          | MongoDB root password (Docker only)                                                                  | Yes      | -                     |
+| `DATABASE_URL`                 | PostgreSQL connection string used by Prisma                                                          | Yes      | -                     |
+| `POSTGRES_USER`                | Postgres username (Docker only)                                                                      | No       | postgres              |
+| `POSTGRES_PASSWORD`            | Postgres password (Docker only)                                                                      | No       | postgres              |
+| `POSTGRES_DB`                  | Postgres database name (Docker only)                                                                 | No       | studzee_notifications |
+| `POSTGRES_PORT`                | Postgres host port (Docker only)                                                                     | No       | 5432                  |
+| `REDIS_URL`                    | Redis connection URL                                                                                 | Yes      | -                     |
+| `CLERK_SECRET_KEY`             | Clerk authentication secret key                                                                      | Yes      | -                     |
+| `CLERK_PUBLISHABLE_KEY`        | Clerk publishable key                                                                                | Yes      | -                     |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Signing secret for `/webhooks/clerk`. The webhook returns 500 without it                             | No       | -                     |
+| `LIST_CACHE_TTL`               | List cache TTL in seconds                                                                            | No       | 300                   |
+| `DOC_CACHE_TTL`                | Document cache TTL in seconds                                                                        | No       | 86400                 |
+| `TODAY_CACHE_TTL`              | Today's content cache TTL in seconds                                                                 | No       | 3600                  |
+| `JOB_CRON`                     | Cron expression for cache refresh job (currently unused)                                             | No       | 0 0 \* \* \*          |
+| `LOG_LEVEL`                    | Logging level (info/debug/error)                                                                     | No       | info                  |
+| `S3_REGION`                    | Storage region. Must match the Supabase project region exactly                                       | Yes      | -                     |
+| `S3_ACCESS_KEY_ID`             | Storage access key ID                                                                                | Yes      | -                     |
+| `S3_SECRET_ACCESS_KEY`         | Storage secret access key                                                                            | Yes      | -                     |
+| `S3_BUCKET_IMAGES`             | Public bucket holding uploaded images                                                                | Yes      | -                     |
+| `S3_BUCKET_PDFS`               | Public bucket holding uploaded PDFs                                                                  | Yes      | -                     |
+| `S3_ENDPOINT`                  | S3 API endpoint, Supabase or MinIO                                                                   | Yes      | -                     |
+| `S3_PUBLIC_URL`                | Base public object URLs are built from, bucket and key appended                                      | Yes      | -                     |
+| `SMTP_HOST`                    | SMTP server hostname                                                                                 | Yes      | -                     |
+| `SMTP_PORT`                    | SMTP port. Implicit TLS on 465, STARTTLS elsewhere                                                   | No       | 587                   |
+| `SMTP_USER`                    | SMTP username                                                                                        | Yes      | -                     |
+| `SMTP_PASSWORD`                | SMTP password                                                                                        | Yes      | -                     |
+| `EMAIL_FROM`                   | Sender address on outbound email                                                                     | Yes      | -                     |
+| `SITE_URL`                     | Public site URL used in email templates                                                              | No       | https://studzee.in    |
+| `EMAIL_BANNER_URL`             | Banner image used in email templates                                                                 | No       | the S3 brand banner   |
+| `EMAIL_ATTACHMENT_HOSTS`       | Comma separated hosts an email attachment may be fetched from                                        | No       | the S3 asset bucket   |
+| `DEV_TOKEN`                    | Development auth bypass token (bypasses Clerk authentication)                                        | No       | -                     |
+| `HEALTHCHECK_URL`              | URL for the heartbeat job to ping. The job is skipped when unset                                     | No       | -                     |
+| `AI_ENABLED`                   | Turns the whole AI layer on. Everything below is ignored while false                                 | No       | `false`               |
+| `AI_BASE_URL`                  | OpenAI compatible endpoint for chat completions and embeddings                                       | No       | NVIDIA build          |
+| `AI_API_KEY`                   | Provider key. **Required** once `AI_ENABLED` is true                                                 | No       | -                     |
 | `AI_MODEL`                     | Chat model for generation and support answers. Overridable at runtime through `PUT /admin/ai/config` | No       | Nemotron 3 Super      |
-| `AI_EMBED_MODEL`               | Embedding model for the knowledge base                                   | No       | `nemotron-3-embed-1b` |
-| `AI_EMBED_DIM`                 | Embedding dimension. Must match the `vector(n)` column in the migration  | No       | `2048`                |
-| `AI_TIMEOUT_MS`                | Deadline for one model call                                              | No       | `120000`              |
-| `AI_MAX_TOKENS`                | Completion ceiling                                                       | No       | `8192`                |
-| `AI_SUPPORT_DAILY_LIMIT`       | Support questions one user may ask per UTC day                           | No       | `30`                  |
+| `AI_EMBED_MODEL`               | Embedding model for the knowledge base                                                               | No       | `nemotron-3-embed-1b` |
+| `AI_EMBED_DIM`                 | Embedding dimension. Must match the `vector(n)` column in the migration                              | No       | `2048`                |
+| `AI_TIMEOUT_MS`                | Deadline for one model call                                                                          | No       | `120000`              |
+| `AI_MAX_TOKENS`                | Completion ceiling                                                                                   | No       | `8192`                |
+| `AI_SUPPORT_DAILY_LIMIT`       | Support questions one user may ask per UTC day                                                       | No       | `30`                  |
 
 ### Clerk Setup
 
