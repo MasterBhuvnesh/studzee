@@ -10,6 +10,10 @@ import {
   generateNotification,
   generateContent,
 } from '@/lib/backend/ai-drafts'
+import {
+  cancelSchedule,
+  scheduleContent,
+} from '@/lib/backend/schedule'
 import type { QuestType } from '@/lib/backend/constants'
 import type { TopicKey } from '@/lib/backend/documents'
 
@@ -65,5 +69,22 @@ export async function generateContentAction(input: {
   quizCount?: number
 }) {
   await generateContent(input)
+  revalidatePath('/ai-drafts')
+}
+
+export async function scheduleContentAction(input: {
+  title?: string
+  topic?: TopicKey
+  brief?: string
+  sections?: number
+  quizCount?: number
+  runAt: string
+}) {
+  await scheduleContent(input)
+  revalidatePath('/ai-drafts')
+}
+
+export async function cancelScheduleAction(id: string) {
+  await cancelSchedule(id)
   revalidatePath('/ai-drafts')
 }

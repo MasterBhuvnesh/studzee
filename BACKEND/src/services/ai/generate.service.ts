@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client'
-import { config, prisma } from '@/config'
+import { prisma } from '@/config'
 import { DocumentModel } from '@/models/document.model'
 import {
   DraftKind,
@@ -17,6 +17,7 @@ import {
 } from '@/models/ai.validation'
 import { CreateQuestSchema } from '@/models/quest.validation'
 import { chatJson } from '@/services/ai/client'
+import { resolveChatModel } from '@/services/ai/config.service'
 import { TOPIC_REGISTRY } from '@/models/topics'
 import {
   contentPrompt,
@@ -88,7 +89,9 @@ const createDraft = async (
       // the column actually stores. CreateQuestSchema coerces them back on
       // approval, so nothing downstream has to know the difference.
       payload: JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue,
-      model: config.AI_MODEL,
+      // The chat client already resolved the admin selected model for the
+      // calls above, so the row records the same value.
+      model: await resolveChatModel(),
       createdBy,
     },
   })

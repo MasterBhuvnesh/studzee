@@ -8,8 +8,20 @@ import {
   TGenerateQuest,
   TGenerateQuiz,
   TListDraftsQuery,
+  TListSchedulesQuery,
   TRejectDraft,
+  TScheduleContent,
+  TUpdateAiConfig,
 } from '@/models/ai.validation'
+import {
+  getAiConfig as readAiConfig,
+  updateAiConfig as writeAiConfig,
+} from '@/services/ai/config.service'
+import {
+  cancelScheduledDraft as cancelScheduledDraftService,
+  listSchedules as listSchedulesService,
+  scheduleContentDraft as scheduleContentDraftService,
+} from '@/services/ai/schedule.service'
 import {
   approveDraft,
   getDraft,
@@ -177,6 +189,94 @@ export const rejectAiDraft = async (
     const { reason } = req.body as TRejectDraft
     const draft = await rejectDraft(req.params.id, clerkId!, reason)
     return res.status(200).json({ message: 'Draft rejected', data: draft })
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * The effective chat model, the allowlist, and where the value comes from.
+ * Read by the admin Settings screen to render the model selector.
+ */
+export const getAiConfig = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    return res.status(200).json({ data: await readAiConfig() })
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * Store the admin's chat model choice. The route validates the body against
+ * the allowlist, so an unknown id is a 400 before anything is written.
+ */
+export const updateAiConfig = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const clerkId = req.auth().userId
+    const { chatModel } = req.body as TUpdateAiConfig
+    const row = await writeAiConfig(chatModel, clerkId!)
+    return res.status(200).json({ message: 'Chat model updated', data: row })
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * Book a whole document draft for a future time. Returns 201 like the
+ * immediate generator, because it creates a row, but nothing is generated
+ * until the per minute job picks it up.
+ */
+export const scheduleContent = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const clerkId = req.auth().userId
+    const row = await scheduleContentDraftService(
+      req.body as TScheduleContent,
+      clerkId!
+    )
+    return res
+      .status(201)
+      .json({ message: 'Content draft scheduled', data: row })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const listSchedules = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const query = res.locals.query as TListSchedulesQuery
+    return res.status(200).json(await listSchedulesService(query))
+  } catch (error) {
+    next(error)
+  }
+}
+
+/** Withdraw a booking that has not run yet. */
+export const cancelSchedule = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const row = await cancelScheduledDraftService(req.params.id)
+    return res
+      .status(200)
+      .json({ message: 'Scheduled draft canceled', data: row })
   } catch (error) {
     next(error)
   }

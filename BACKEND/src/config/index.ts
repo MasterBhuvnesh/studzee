@@ -87,7 +87,11 @@ const configSchema = z
       .url()
       .default('https://integrate.api.nvidia.com/v1'),
     AI_API_KEY: z.string().optional(),
-    AI_MODEL: z.string().default('nvidia/nemotron-3-ultra-550b-a55b'),
+    // Default moved from nemotron-3-ultra to nemotron-3-super on 10-09-2026:
+    // the Ultra id is still listed on the NVIDIA endpoint but answers 503 to
+    // chat completions. An admin can override this at runtime through
+    // PUT /admin/ai/config, which takes precedence whenever a row exists.
+    AI_MODEL: z.string().default('nvidia/nemotron-3-super-120b-a12b'),
     AI_EMBED_MODEL: z.string().default('nvidia/nemotron-3-embed-1b'),
     // Must equal the vector(n) dimension in the KbChunk migration. They are
     // checked against each other at reindex time rather than trusted, because a
