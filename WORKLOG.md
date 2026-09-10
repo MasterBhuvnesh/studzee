@@ -3,6 +3,53 @@
 Running record of work done on this repository. Newest entry first.
 One entry per unit of work, with the branch, what changed, and why.
 
+## 10-09-2026
+
+### Selectable chat model, scheduled drafts, quest drawer, proxy rename
+
+**Branch:** `feat/ai-model-schedule-quests`
+
+Five requests in one pass. Next 16 renamed the middleware convention to
+proxy, so `ADMIN/middleware.ts` became `ADMIN/proxy.ts` with identical code,
+per the Clerk and Next migration notes. `next build` reports
+Proxy (Middleware) and the deprecation warning is gone.
+
+Every AI generation was failing with `AI_UPSTREAM`: the Ultra chat model id
+is still listed on the NVIDIA endpoint but answers 503 to chat completions.
+The default moved to `nvidia/nemotron-3-super-120b-a12b`, verified present on
+the live model list the same day. Unlike the transient Ultra outage logged on
+29-08-2026, this one persisted, so the fix also removes the single point of
+failure: `PUT /admin/ai/config` stores one global chat model constrained to a
+six model allowlist, and the chat client resolves it on every call with
+fallback to `AI_MODEL` when nothing is stored, when the stored id leaves the
+allowlist, or when the read fails. Draft rows record the model actually used.
+The ADMIN Settings page renders the selector from `GET /admin/ai/config` and
+degrades gracefully when the backend is down.
+
+One shot scheduled drafts: `POST /admin/ai/schedule/content` books a full
+document generation for a future time under the same `GenerateContentSchema`
+the immediate route uses. A per minute `ai-schedule` job drains due rows into
+the pending queue; re-validation failures and generation errors are recorded
+on the row rather than retried, and the approval gate is unchanged. `GET`
+lists bookings, `DELETE` cancels a pending one. The AI Drafts page gained a
+Schedule card with a local time picker converted to ISO before sending, plus
+cancel and a short settled history.
+
+Quest viewing: titles in the quests table now open a detail drawer with
+description, window, content link, pass score and the full question list. The
+toggle 404 in the log is the same stale deploy pattern as the document 404 on
+06-09-2026: the deployed image predates `PATCH /admin/quests/:id`, so its
+catch-all answers `Not Found`. Redeploying the backend resolves it; no admin
+code change can.
+
+Verification: BACKEND typecheck clean, lint 0 errors, 464 unit tests pass
+across 47 files (16 new). The integration suite needs Docker, which is down
+on this machine, so it was excluded. ADMIN typecheck clean, lint 0 errors (1
+pre-existing warning), full suite 43 passed across 11 files, `next build`
+compiles all routes. Migration `20260910000000_ai_config_and_schedules` is
+hand written and unapplied locally for the same Docker reason; it applies on
+next deploy through the container start command.
+
 ## 06-09-2026
 
 ### Quest deactivate toggle and graceful document edit 404

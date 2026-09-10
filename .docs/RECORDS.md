@@ -118,6 +118,9 @@ Date is the date the status last changed.
 | End to end pipeline: document, quiz, notes, summary and notification in one run  | BHUVNESH  | PLANNED | 29-08-2026 |
 | Notification deep links, backend payload plus a client tap handler                | BHUVNESH  | PLANNED | 29-08-2026 |
 | Streaming support answers                                                         | BHUVNESH  | PLANNED | 29-08-2026 |
+| Chat default moved from Nemotron 3 Ultra to Nemotron 3 Super 120B, Ultra answers 503 | BHUVNESH | DONE | 10-09-2026 |
+| Admin selectable global chat model, `GET` and `PUT /admin/ai/config` over a six model allowlist | BHUVNESH | DONE | 10-09-2026 |
+| One shot scheduled document drafts with a per minute runner job, approval gate unchanged | BHUVNESH | DONE | 10-09-2026 |
 
 ## CLIENTS
 
@@ -138,6 +141,10 @@ Date is the date the status last changed.
 | Quest live and withdrawn toggle: `PATCH /admin/quests/:id` plus the ADMIN row button          | BHUVNESH  | DONE    | 06-09-2026 |
 | ADMIN document edit page renders not-found instead of crashing on a missing document          | BHUVNESH  | DONE    | 06-09-2026 |
 | Support assistant chat screen wired into Get Support                                        | BHUVNESH  | DONE    | 29-08-2026 |
+| ADMIN `middleware.ts` renamed to `proxy.ts` for Next 16                                       | BHUVNESH  | DONE    | 10-09-2026 |
+| ADMIN Settings AI model selector over `GET` and `PUT /admin/ai/config`                        | BHUVNESH  | DONE    | 10-09-2026 |
+| ADMIN quest detail drawer on row click, full questions and pass score                          | BHUVNESH  | DONE    | 10-09-2026 |
+| ADMIN schedule card on the AI Drafts page, bookings with cancel and history                    | BHUVNESH  | DONE    | 10-09-2026 |
 
 ## DEPLOYMENT
 

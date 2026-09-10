@@ -284,7 +284,7 @@ Configuration is parsed and validated by Zod at import time. A missing or malfor
 | `AI_ENABLED`                   | Turns the whole AI layer on. Everything below is ignored while false     | No       | `false`               |
 | `AI_BASE_URL`                  | OpenAI compatible endpoint for chat completions and embeddings           | No       | NVIDIA build          |
 | `AI_API_KEY`                   | Provider key. **Required** once `AI_ENABLED` is true                     | No       | -                     |
-| `AI_MODEL`                     | Chat model for generation and support answers                            | No       | Nemotron 3 Ultra      |
+| `AI_MODEL`                     | Chat model for generation and support answers. Overridable at runtime through `PUT /admin/ai/config` | No       | Nemotron 3 Super      |
 | `AI_EMBED_MODEL`               | Embedding model for the knowledge base                                   | No       | `nemotron-3-embed-1b` |
 | `AI_EMBED_DIM`                 | Embedding dimension. Must match the `vector(n)` column in the migration  | No       | `2048`                |
 | `AI_TIMEOUT_MS`                | Deadline for one model call                                              | No       | `120000`              |

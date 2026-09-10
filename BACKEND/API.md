@@ -1257,7 +1257,7 @@ notification draft in any state.
           "q1": { "que": "...", "ans": "...", "options": ["...", "..."] }
         }
       },
-      "model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
       "createdBy": "user_...",
       "reviewedBy": null,
       "reviewedAt": null,
@@ -1369,6 +1369,107 @@ The command line equivalent is `npm run ai:reindex`, which additionally writes
 `src/services/ai/kb/KB-CONTENTS.md`, a readable inventory of the whole corpus.
 The route does not write that file: it runs inside a container where there is
 nowhere useful to put it.
+
+#### Get the AI Config
+
+The effective chat model, where it comes from, and the models an admin may
+choose from. The admin Settings screen renders its model selector from this.
+
+- **Method:** `GET`
+- **Path:** `/admin/ai/config`
+- **Rate limit:** 30 per minute
+
+```json
+{
+  "data": {
+    "chatModel": "nvidia/nemotron-3-super-120b-a12b",
+    "source": "stored",
+    "updatedBy": "user_...",
+    "updatedAt": "2026-09-10T10:00:00.000Z",
+    "availableModels": [
+      "nvidia/nemotron-3-super-120b-a12b",
+      "nvidia/nemotron-3-ultra-550b-a55b",
+      "nvidia/nemotron-nano-3-30b-a3b",
+      "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "nvidia/llama-3.1-nemotron-70b-instruct",
+      "openai/gpt-oss-20b"
+    ],
+    "defaultModel": "nvidia/nemotron-3-super-120b-a12b"
+  }
+}
+```
+
+`source` is `stored` when an admin has chosen a model and `env` when the
+`AI_MODEL` default applies. Every id in `availableModels` was verified present
+on the live NVIDIA endpoint. Instruction tuned models only: reasoning variants
+do not honour `response_format: json_object` reliably, which the structured
+generators depend on.
+
+#### Update the AI Config
+
+- **Method:** `PUT`
+- **Path:** `/admin/ai/config`
+- **Rate limit:** 20 per minute
+
+| Field       | Type   | Required | Notes                          |
+| ----------- | ------ | -------- | ------------------------------ |
+| `chatModel` | string | yes      | One of the allowlist ids above |
+
+Stores one global chat model used by every generation and support answer. An
+unknown id is a `400` before anything is written.
+
+#### Schedule a Document Draft
+
+Books a whole document draft for a future time. The request body is the
+`Generate a Document` body plus `runAt`; the same title or brief requirement
+applies.
+
+- **Method:** `POST`
+- **Path:** `/admin/ai/schedule/content`
+- **Rate limit:** 10 per minute
+
+| Field     | Type   | Required | Notes                                             |
+| --------- | ------ | -------- | ------------------------------------------------- |
+| `runAt`   | date   | yes      | ISO 8601, must be in the future                   |
+| `title`   | string | no       | Same rules as generating a document immediately   |
+| `topic`   | string | no       | Same rules as generating a document immediately   |
+| `brief`   | string | no       | Same rules as generating a document immediately   |
+| `sections`| number | no       | Same rules as generating a document immediately   |
+| `quizCount`| number | no       | Same rules as generating a document immediately   |
+
+Returns `201` with the booking. A per minute job generates due bookings into
+the pending draft queue, where the approval gate applies unchanged: nothing
+publishes without review. A booking whose input no longer validates at run
+time is marked `failed` rather than generated, and a generation failure is
+recorded on the row rather than retried, so the owner reschedules by hand.
+
+#### List Scheduled Drafts
+
+- **Method:** `GET`
+- **Path:** `/admin/ai/schedule`
+- **Rate limit:** 30 per minute
+
+| Query    | Type   | Notes                                           |
+| -------- | ------ | ----------------------------------------------- |
+| `page`   | number | Defaults to 1                                   |
+| `limit`  | number | 1 to 100, defaults to 20                        |
+| `status` | string | `pending`, `done`, `failed` or `canceled`       |
+
+#### Cancel a Scheduled Draft
+
+Withdraws a booking that has not run yet. Settled rows are history and stay
+as the audit record.
+
+- **Method:** `DELETE`
+- **Path:** `/admin/ai/schedule/:id`
+- **Rate limit:** 20 per minute
+
+**Errors**
+
+| Status | Code               | Meaning                                  |
+| ------ | ------------------ | ---------------------------------------- |
+| `404`  |                    | No booking with that id                  |
+| `409`  | `SCHEDULE_SETTLED` | The booking already ran, failed or canceled |
 
 ---
 
