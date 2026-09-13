@@ -58,9 +58,19 @@ describe('GET /health/liveness', () => {
     const response = await request(await buildApp()).get('/health/liveness')
 
     expect(response.status).toBe(200)
-    expect(response.body).toEqual({ status: 'ok' })
+    expect(response.body.status).toBe('ok')
+    expect(typeof response.body.version).toBe('string')
     expect(queryRaw).not.toHaveBeenCalled()
     expect(ping).not.toHaveBeenCalled()
+  })
+
+  it('names the running release', async () => {
+    const response = await request(await buildApp()).get('/health/liveness')
+
+    // Read off the same manifest the route reads, so the assertion follows
+    // release bumps instead of pinning a number that rots every release.
+    const { SERVICE_VERSION } = await import('@/config/version')
+    expect(response.body.version).toBe(SERVICE_VERSION)
   })
 })
 
@@ -78,9 +88,12 @@ describe('GET /health/readiness', () => {
     const response = await request(await buildApp()).get('/health/readiness')
 
     expect(response.status).toBe(200)
-    expect(response.body).toEqual({
-      status: 'ready',
-      checks: { db: 'ok', postgres: 'ok', redis: 'ok' },
+    expect(response.body.status).toBe('ready')
+    expect(typeof response.body.version).toBe('string')
+    expect(response.body.checks).toEqual({
+      db: 'ok',
+      postgres: 'ok',
+      redis: 'ok',
     })
   })
 

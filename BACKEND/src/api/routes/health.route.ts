@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import mongoose from 'mongoose'
 import { prisma, redisClient } from '@/config'
+import { SERVICE_VERSION } from '@/config/version'
 import logger from '@/utils/logger'
 
 const router = Router()
@@ -52,7 +53,7 @@ const probe = async (
  * @access Public
  */
 router.get('/liveness', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok' })
+  res.status(200).json({ status: 'ok', version: SERVICE_VERSION })
 })
 
 /**
@@ -84,6 +85,7 @@ router.get('/readiness', async (req: Request, res: Response) => {
 
   res.status(ready ? 200 : 503).json({
     status: ready ? 'ready' : 'unavailable',
+    version: SERVICE_VERSION,
     checks,
   })
 })

@@ -65,6 +65,7 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
     {
       "message": "Studzee Backend API",
       "status": "running",
+      "version": "4.5.5",
       "endpoints": {
         "health": "/healthcheck",
         "liveness": "/health/liveness",
@@ -88,8 +89,10 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
 - **Response:**
   - `200 OK`
     ```json
-    { "status": "ok" }
+    { "status": "ok", "version": "4.5.5" }
     ```
+
+`version` is the release answering, read off `package.json` at boot, so a deployment is told apart from the previous one without signing in.
 
 ### Healthcheck (Render/Production)
 
@@ -115,6 +118,7 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
     ```json
     {
       "status": "ready",
+      "version": "4.5.5",
       "checks": { "db": "ok", "postgres": "ok", "redis": "ok" }
     }
     ```
@@ -122,6 +126,7 @@ Local development runs MinIO with the same three buckets, `images`, `pdfs` and `
     ```json
     {
       "status": "unavailable",
+      "version": "4.5.5",
       "checks": { "db": "error", "postgres": "ok", "redis": "ok" }
     }
     ```

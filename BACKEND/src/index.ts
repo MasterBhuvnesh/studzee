@@ -23,6 +23,7 @@ import { startHeartbeatJob } from '@/jobs/heartbeat'
 import { startTokenCleanupJob } from '@/jobs/token-cleanup'
 import { errorHandler, notFoundHandler } from '@/middleware/errorHandler'
 import { helmetConfig } from '@/middleware/helmet'
+import { SERVICE_VERSION } from '@/config/version'
 import logger from '@/utils/logger'
 
 const main = async () => {
@@ -70,6 +71,7 @@ const main = async () => {
       res.json({
         message: 'Studzee Backend API',
         status: 'running',
+        version: SERVICE_VERSION,
         endpoints: {
           health: '/healthcheck',
           liveness: '/health/liveness',
