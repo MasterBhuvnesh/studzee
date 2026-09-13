@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { documentFormSchema, questFormSchema } from './schemas'
+import { documentFormSchema, notificationFormSchema, questFormSchema } from './schemas'
 
 describe('documentFormSchema', () => {
   it('rejects a title shorter than 3 characters', () => {
@@ -68,6 +68,37 @@ describe('questFormSchema', () => {
       gems: 10,
       startsAt: '2026-09-01T00:00:00.000Z',
       endsAt: '2026-09-10T00:00:00.000Z',
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('notificationFormSchema', () => {
+  it('accepts a send without an image', () => {
+    const result = notificationFormSchema.safeParse({
+      title: 'New notes published',
+      message: 'System Design chapter 4 is now available.',
+      sendToAll: true,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts a valid image URL', () => {
+    const result = notificationFormSchema.safeParse({
+      title: 'New notes published',
+      message: 'System Design chapter 4 is now available.',
+      imageUrl: 'https://example.com/banner.png',
+      sendToAll: true,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a non URL image value', () => {
+    const result = notificationFormSchema.safeParse({
+      title: 'New notes published',
+      message: 'System Design chapter 4 is now available.',
+      imageUrl: 'not a url',
+      sendToAll: true,
     })
     expect(result.success).toBe(false)
   })

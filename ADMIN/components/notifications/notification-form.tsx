@@ -19,9 +19,21 @@ export function NotificationForm({
 }) {
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [sendToAll, setSendToAll] = useState(true)
   const [selectedEmails, setSelectedEmails] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
+
+  // Empty is fine (no image); a non-empty value previews only when it parses
+  // as a URL, which is also what the schema and the backend require.
+  const previewUrl = (() => {
+    if (!imageUrl.trim()) return null
+    try {
+      return new URL(imageUrl.trim()).toString()
+    } catch {
+      return null
+    }
+  })()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,6 +42,7 @@ export function NotificationForm({
       const result = await onSubmit({
         title,
         message,
+        imageUrl: imageUrl.trim() || undefined,
         sendToAll,
         emails: sendToAll ? undefined : selectedEmails,
       })
@@ -47,6 +60,7 @@ export function NotificationForm({
       }
       setTitle('')
       setMessage('')
+      setImageUrl('')
       setSelectedEmails([])
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Send failed')
@@ -65,6 +79,25 @@ export function NotificationForm({
       <div className="space-y-1.5">
         <Label className="font-mono text-[11px] tracking-wide text-muted-foreground uppercase">Message</Label>
         <Input value={message} onChange={(e) => setMessage(e.target.value)} className="bg-muted/40 shadow-none" required />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="font-mono text-[11px] tracking-wide text-muted-foreground uppercase">Image URL (optional)</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://..."
+            className="bg-muted/40 shadow-none"
+          />
+          {previewUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt="Notification image preview" className="h-10 w-10 shrink-0 rounded-md object-cover" />
+          )}
+        </div>
+        {imageUrl.trim() && !previewUrl && (
+          <p className="text-xs text-red-500">That is not a valid URL, the send will be rejected.</p>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

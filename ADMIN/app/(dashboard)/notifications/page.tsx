@@ -35,6 +35,7 @@ export default async function NotificationsPage() {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Title</TableHead>
+                <TableHead className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Image</TableHead>
                 <TableHead className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Recipients</TableHead>
                 <TableHead className="pr-4 text-right font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Status</TableHead>
               </TableRow>
@@ -42,7 +43,7 @@ export default async function NotificationsPage() {
             <TableBody>
               {notifications.length === 0 && (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={3} className="py-8 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
                     No notifications sent yet
                   </TableCell>
                 </TableRow>
@@ -50,6 +51,14 @@ export default async function NotificationsPage() {
               {notifications.map((n) => (
                 <TableRow key={n.id}>
                   <TableCell className="font-medium">{n.title}</TableCell>
+                  <TableCell>
+                    {n.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={n.imageUrl} alt="" className="h-8 w-8 rounded-md object-cover" />
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="font-mono">{n.sentToAll ? 'All users' : `${n.sentTo.length} users`}</TableCell>
                   <TableCell className="pr-4 text-right">
                     <StatusBadge status={n.status === 'sent' ? 'Sent' : n.status === 'failed' ? 'Failed' : 'Partial'} />
