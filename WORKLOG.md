@@ -3,6 +3,35 @@
 Running record of work done on this repository. Newest entry first.
 One entry per unit of work, with the branch, what changed, and why.
 
+## 13-09-2026
+
+### Version on health probes and AWS redeploy to 4.5.6
+
+Deployed versions were indistinguishable from outside: the admin router
+answers 401 before matching a path, so no unauthenticated probe can tell two
+releases apart. `GET /`, `/health/liveness` and `/health/readiness` now carry
+`version` read off `package.json` at boot through `src/config/version.ts`,
+which resolves relative to its own file so it works under ts-node and the
+compiled output alike. API.md documents the new fields.
+
+The v4.5.4 pipeline failed at `fmt:check` on the new API tables and the
+widened README env table, fixed with the repo prettier config, no content
+changed. v4.5.5 shipped the model, schedule and quest work; v4.5.6 adds the
+version fields.
+
+Production runs on an EC2 box (`testing`, api.nturtle.com) under compose in
+`/opt/studzee` with Caddy in front, not on the Render hook the workflow also
+fires. Redeployed by hand over AWS CLI with a temporary SSH key and a
+temporary /32 ingress rule, both removed afterwards along with the local key
+material: pulled `:latest`, recreated the api container, and set `AI_MODEL`
+to Super in `/opt/studzee/.env`, which had pinned Ultra and would have kept
+503ing past the code default change. The container migration applied at boot.
+Verified live: `/` reports `4.5.6`, readiness is ready on all three stores,
+and the per minute schedule job registered in the boot log.
+
+Verification: BACKEND typecheck clean, lint 0 errors, health suites pass
+(12 tests). Full unit suite last green on the v4.5.5 pipeline run.
+
 ## 10-09-2026
 
 ### Selectable chat model, scheduled drafts, quest drawer, proxy rename

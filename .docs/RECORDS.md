@@ -121,6 +121,8 @@ Date is the date the status last changed.
 | Chat default moved from Nemotron 3 Ultra to Nemotron 3 Super 120B, Ultra answers 503 | BHUVNESH | DONE | 10-09-2026 |
 | Admin selectable global chat model, `GET` and `PUT /admin/ai/config` over a six model allowlist | BHUVNESH | DONE | 10-09-2026 |
 | One shot scheduled document drafts with a per minute runner job, approval gate unchanged | BHUVNESH | DONE | 10-09-2026 |
+| Release version on `GET /`, `/health/liveness` and `/health/readiness` | BHUVNESH | DONE | 13-09-2026 |
+| Production on AWS EC2 under compose with Caddy, redeployed to 4.5.6 with Super as `AI_MODEL` | BHUVNESH | DONE | 13-09-2026 |
 
 ## CLIENTS
 
